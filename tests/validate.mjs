@@ -221,34 +221,50 @@ for (const fc of changeCases.format_cases) {
   check(actual === fc.expected.join('\n'), 'CHANGELOG 节格式化样例', `\n--- 期望 ---\n${fc.expected.join('\n')}\n--- 实际 ---\n${actual}`);
 }
 
-// ---------- 9. step-commit /changelog 自举一致性（SC-120 验收） ----------
-if (scopeBlock && semverBlock && existsSync(join(ROOT, '.git'))) {
-  const probe = spawnSync(GIT_BIN, ['--version'], { cwd: ROOT });
-  if (probe.status === 0) {
-    const gitOut = (args) => execFileSync(GIT_BIN, args, { cwd: ROOT, encoding: 'utf8' }).trim();
-    const scVersion = JSON.parse(readFileSync(join(ROOT, 'plugins/step-commit/step.plugin.json'), 'utf8')).version;
-    const tagExists = gitOut(['tag', '-l', `step-commit-v${scVersion}`]) !== '';
-    if (tagExists) {
-      console.log('SKIP 自举一致性（step-commit-v' + scVersion + ' 已打 tag，条目已定稿）');
-    } else {
-      const lastTag = gitOut(['describe', '--tags', '--abbrev=0', '--match', 'step-commit-v*']);
-      const date = gitOut(['log', '-1', '--pretty=%ad', '--date=short']);
-      const raw = execFileSync(GIT_BIN, ['log', `${lastTag}..HEAD`, '--pretty=%s%n%b%n---'], { cwd: ROOT, encoding: 'utf8' });
-      const commits = raw
-        .split('\n---\n')
-        .map((block) => block.split('\n'))
-        .filter((parts) => parts[0]?.trim())
-        .map((parts) => parseCommit(parts[0].trim(), parts.slice(1).join('\n')));
-      const expected = formatChangelog(scVersion, date, commits);
-      const doc = readFileSync(join(ROOT, 'plugins/step-commit/CHANGELOG.md'), 'utf8');
-      const m = new RegExp(`## \\[${scVersion}\\] - \\d{4}-\\d{2}-\\d{2}[\\s\\S]*?(?=\\n## \\[|\\s*$)`).exec(doc);
-      check(m !== null, `CHANGELOG.md 含 [${scVersion}] 节`);
-      if (m) {
-        check(m[0].trim() === expected.trim(), 'CHANGELOG 自举一致（文件内容 = 库对 git 历史的输出）', `\n--- 期望 ---\n${expected}\n--- 实际 ---\n${m[0]}`);
-      }
-    }
+// ---------- 9. CHANGELOG 自举一致性（SC-120 / TG-100 验收，按插件通用） ----------
+const checkBootstrapChangelog = (pluginId) => {
+  if (!existsSync(join(ROOT, '.git'))) return;
+  if (spawnSync(GIT_BIN, ['--version'], { cwd: ROOT }).status !== 0) return;
+  const dir = join(ROOT, 'plugins', pluginId);
+  const changelogPath = join(dir, 'CHANGELOG.md');
+  if (!existsSync(changelogPath)) {
+    console.log(`SKIP 自举一致性 ${pluginId}（CHANGELOG.md 尚未生成）`);
+    return;
   }
-}
+  const gitOut = (args) => execFileSync(GIT_BIN, args, { cwd: ROOT, encoding: 'utf8' }).trim();
+  const version = JSON.parse(readFileSync(join(dir, 'step.plugin.json'), 'utf8')).version;
+  const tag = `${pluginId}-v${version}`;
+  if (gitOut(['tag', '-l', tag]) !== '') {
+    console.log(`SKIP 自举一致性 ${pluginId}（${tag} 已打 tag，条目已定稿）`);
+    return;
+  }
+  const hasAnyTag = gitOut(['tag', '-l', `${pluginId}-v*`]) !== '';
+  let raw;
+  let date;
+  if (hasAnyTag) {
+    const lastTag = gitOut(['describe', '--tags', '--abbrev=0', '--match', `${pluginId}-v*`]);
+    raw = execFileSync(GIT_BIN, ['log', `${lastTag}..HEAD`, '--pretty=%s%n%b%n---'], { cwd: ROOT, encoding: 'utf8' });
+    date = gitOut(['log', '-1', '--pretty=%ad', '--date=short']);
+  } else {
+    // 首版本：取该插件目录的全部提交历史
+    raw = execFileSync(GIT_BIN, ['log', '--pretty=%s%n%b%n---', '--', `plugins/${pluginId}`], { cwd: ROOT, encoding: 'utf8' });
+    date = gitOut(['log', '-1', '--pretty=%ad', '--date=short', '--', `plugins/${pluginId}`]);
+  }
+  const commits = raw
+    .split('\n---\n')
+    .map((block) => block.split('\n'))
+    .filter((parts) => parts[0]?.trim())
+    .map((parts) => parseCommit(parts[0].trim(), parts.slice(1).join('\n')));
+  const expected = formatChangelog(version, date, commits);
+  const doc = readFileSync(changelogPath, 'utf8');
+  const m = new RegExp(`## \\[${version}\\] - \\d{4}-\\d{2}-\\d{2}[\\s\\S]*?(?=\\n## \\[|\\s*$)`).exec(doc);
+  check(m !== null, `CHANGELOG.md ${pluginId} 含 [${version}] 节`);
+  if (m) {
+    check(m[0].trim() === expected.trim(), `CHANGELOG 自举一致 ${pluginId}（文件内容 = 库对 git 历史的输出）`, `\n--- 期望 ---\n${expected}\n--- 实际 ---\n${m[0]}`);
+  }
+};
+checkBootstrapChangelog('step-commit');
+checkBootstrapChangelog('step-test-guard');
 
 // ---------- 10. step-commit monorepo 与 release PR（SC-130-1/2/3） ----------
 check(changelogCmd.includes('pnpm-workspace.yaml'), 'commands/changelog.md 含 monorepo 检测说明');
@@ -303,6 +319,57 @@ for (const c of monoCases.bump_cases) {
     `monorepo 按 package semver 建议`,
     `\n期望 ${JSON.stringify(c.expected)}\n实际 ${JSON.stringify(actual)}`,
   );
+}
+
+// ---------- 11. step-test-guard（TG-100） ----------
+const tgTestCmd = readFileSync(join(ROOT, 'plugins/step-test-guard/commands/test.md'), 'utf8');
+const tgSkill = readFileSync(join(ROOT, 'plugins/step-test-guard/skills/test-fix-loop/SKILL.md'), 'utf8');
+
+const extractBlock = (text, marker) => {
+  const m = new RegExp(`<!-- ${marker}-START -->\\s*\`\`\`json\\s*([\\s\\S]*?)\`\`\``).exec(text);
+  return m ? JSON.parse(m[1]) : null;
+};
+
+const tgDetectBlock = extractBlock(tgTestCmd, 'TEST-DETECT');
+check(tgDetectBlock !== null && Array.isArray(tgDetectBlock.detectors), 'test.md 含 TEST-DETECT JSON 块');
+const tgPatterns = extractBlock(tgTestCmd, 'TEST-PATTERNS');
+check(tgPatterns !== null && tgPatterns.vitest && tgPatterns.jest && tgPatterns.pytest, 'test.md 含 TEST-PATTERNS JSON 块');
+const tgLoopBlock = extractBlock(tgSkill, 'LOOP-RULES');
+check(tgLoopBlock !== null && tgLoopBlock.max_rounds === 3, 'SKILL.md 含 LOOP-RULES 且上限为 3 轮');
+
+for (const needle of ['docs/test-guard/last-run.log', '以上全未命中时', '不删除、不禁用测试']) {
+  check(tgTestCmd.includes(needle), `commands/test.md 含关键规则「${needle}」`);
+}
+for (const needle of ['断言失败', '环境问题', '真实回归', '最小改动', '全量重跑', 'escalate']) {
+  check(tgSkill.includes(needle), `SKILL.md 含关键规则「${needle}」`);
+}
+
+const { detectStack } = await import('./lib/stack-detect.mjs');
+const { parseTestOutput } = await import('./lib/test-parse.mjs');
+
+const detectFixtures = [
+  ['vitest-sample', 'vitest'],
+  ['jest-sample', 'jest'],
+  ['pytest-sample', 'pytest'],
+  ['node-sample', 'node'],
+];
+for (const [fixture, stack] of detectFixtures) {
+  const detected = detectStack(join(ROOT, 'tests/fixtures/test-projects', fixture), tgDetectBlock.detectors);
+  check(detected?.stack === stack, `框架检测 ${fixture} → ${stack}`, JSON.stringify(detected));
+}
+
+const tgCases = JSON.parse(readFileSync(join(ROOT, 'tests/samples/test-output-cases.json'), 'utf8'));
+for (const c of tgCases.cases) {
+  const entries = parseTestOutput(c.stack, c.log, tgPatterns);
+  check(entries.length === c.expected.length, `输出解析「${c.name}」条数`, `期望 ${c.expected.length}，实际 ${JSON.stringify(entries)}`);
+  for (let i = 0; i < Math.min(entries.length, c.expected.length); i += 1) {
+    const a = entries[i];
+    const e = c.expected[i];
+    check(a.file === e.file && a.case === e.case, `输出解析「${c.name}」#${i + 1} 定位`, JSON.stringify(a));
+    if (e.expect !== undefined) check(a.expect === e.expect, `输出解析「${c.name}」#${i + 1} expect`, JSON.stringify(a));
+    if (e.actual !== undefined) check(a.actual === e.actual, `输出解析「${c.name}」#${i + 1} actual`, JSON.stringify(a));
+    if (e.detailContains !== undefined) check((a.detail ?? '').includes(e.detailContains), `输出解析「${c.name}」#${i + 1} detail`, JSON.stringify(a));
+  }
 }
 
 // ---------- 汇总 ----------
