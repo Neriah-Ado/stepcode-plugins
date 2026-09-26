@@ -4,35 +4,36 @@ description: "测试守护循环：/test 运行测试 → 失败归因 → 定�
 form: declarative
 priority: P0
 effort: S-M
-status: not-started
+status: in-progress
 manifest: step.plugin.json
 requires_env: []
 verify:
   - "vitest/jest/pytest 三种示例项目修复闭环成功率人工评估"
+  - "node tests/validate.mjs 与 node tests/verify-test-guard-flow.mjs 全部通过"
 versions:
   - version: "1.0.0"
     type: major
     theme: 修复闭环 MVP
-    status: not-started
+    status: done
     tasks:
       - id: TG-100-1
         title: 编写 step.plugin.json 清单与 skills/commands 目录
-        done: false
+        done: true
       - id: TG-100-2
         title: 实现 commands/test.md（/test 命令）
         context: |
           检测测试框架（package.json scripts / pytest.ini / vitest.config 等）→ 运行 → 解析输出为结构化失败清单（用例名/文件/断言信息）。
-        done: false
+        done: true
       - id: TG-100-3
         title: 实现 skills/test-fix-loop skill
         context: |
           修复循环规则：失败归因三分类（断言失败/环境问题/真实回归）→ 仅修改相关代码（最小改动）→ 重跑失败用例 → 全绿或达上限。
           上限默认 3 轮，超限停止并列出未解决项转人工。
-        done: false
+        done: true
       - id: TG-100-4
         title: 支持 vitest / jest / pytest 输出解析
         context: "三种框架的失败输出模式（错误行、期望vs实际）写入 skill 解析规则。"
-        done: false
+        done: true
     acceptance:
       - "三种框架示例项目完成闭环"
       - "修复过程零误改无关文件"
