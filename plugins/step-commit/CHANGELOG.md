@@ -2,6 +2,14 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 风格，版本号遵循 semver。
 
+## [1.1.0] - 2026-09-26
+
+### Added
+
+- 提交语言配置：项目根 `.step-commit.json` > 插件目录 `config.json` > 内置默认；`message_language` 切换中/英 subject 与正文，两种语言输出均满足 Conventional Commits 结构。(SC-110-1)
+- 自动 scope 推断：内置目录前缀规则（JSON 规则表内联于命令文本，随 `tests/samples/scope-cases.json` 校验），多文件命中聚合、平票回退、通用目录（src/lib/dist 等）不作为 scope；`scope_map` 支持项目自定义，`scope_strategy: off` 可关闭。(SC-110-2)
+- commitlint 规则联动：存在 commitlint 配置时读取 `type-enum`/`header-max-length`/`scope-enum` 约束生成结果；JS 动态配置按字面量遵守并注明解析局限；无配置回退内置默认。(SC-110-3)
+
 ## [1.0.0] - 2026-09-26
 
 ### Added
