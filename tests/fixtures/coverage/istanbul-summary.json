@@ -1,0 +1,14 @@
+{
+  "total": {
+    "lines": { "pct": 87.4 }
+  },
+  "src/api.ts": {
+    "lines": { "pct": 62.0 }
+  },
+  "src/util.ts": {
+    "lines": { "pct": 95.0 }
+  },
+  "src/index.ts": {
+    "lines": { "pct": 100 }
+  }
+}

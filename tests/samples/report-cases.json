@@ -1,0 +1,57 @@
+{
+  "render_cases": [
+    {
+      "name": "首轮运行含失败",
+      "input": {
+        "date": "2026-09-27",
+        "stack": "vitest",
+        "passed": 10,
+        "failed": 2,
+        "skipped": 1,
+        "exitCode": 1,
+        "failures": [
+          { "file": "src/a.test.ts", "case": "x", "detail": "expected 1 to be 2" },
+          { "file": "src/b.test.ts", "case": "y" }
+        ],
+        "previous": []
+      },
+      "expectContains": [
+        "# 测试报告 2026-09-27",
+        "## 摘要",
+        "通过 10 / 失败 2 / 跳过 1",
+        "退出码：1",
+        "## 失败明细",
+        "case: x",
+        "file: src/a.test.ts",
+        "detail: expected 1 to be 2",
+        "## 与上轮对比",
+        "- 【新增】src/a.test.ts :: x",
+        "- 【新增】src/b.test.ts :: y"
+      ]
+    },
+    {
+      "name": "第二轮对比新增与已解决",
+      "input": {
+        "date": "2026-09-28",
+        "stack": "pytest",
+        "passed": 11,
+        "failed": 1,
+        "skipped": 0,
+        "exitCode": 1,
+        "failures": [
+          { "file": "tests/test_c.py", "case": "z" },
+          { "file": "src/b.test.ts", "case": "y" }
+        ],
+        "previous": [
+          { "file": "src/a.test.ts", "case": "x" },
+          { "file": "src/b.test.ts", "case": "y" }
+        ]
+      },
+      "expectContains": [
+        "- 【新增】tests/test_c.py :: z",
+        "- 【已解决】src/a.test.ts :: x",
+        "- 【仍在】src/b.test.ts :: y"
+      ]
+    }
+  ]
+}

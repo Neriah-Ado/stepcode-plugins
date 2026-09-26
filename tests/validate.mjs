@@ -352,6 +352,10 @@ const detectFixtures = [
   ['jest-sample', 'jest'],
   ['pytest-sample', 'pytest'],
   ['node-sample', 'node'],
+  ['go-sample', 'go'],
+  ['cargo-sample', 'cargo'],
+  ['maven-sample', 'maven'],
+  ['gradle-sample', 'gradle'],
 ];
 for (const [fixture, stack] of detectFixtures) {
   const detected = detectStack(join(ROOT, 'tests/fixtures/test-projects', fixture), tgDetectBlock.detectors);
@@ -371,6 +375,70 @@ for (const c of tgCases.cases) {
     if (e.detailContains !== undefined) check((a.detail ?? '').includes(e.detailContains), `输出解析「${c.name}」#${i + 1} detail`, JSON.stringify(a));
   }
 }
+
+// ---------- 12. step-test-guard 覆盖率解读（TG-110-2） ----------
+check(tgTestCmd.includes('coverage-summary.json') && tgTestCmd.includes('cobertura.xml'), 'test.md 含覆盖率产物说明');
+const covBlock = extractBlock(tgTestCmd, 'COVERAGE-RULES');
+check(covBlock !== null && covBlock.default_threshold === 80, 'test.md 含 COVERAGE-RULES 且默认阈值 80');
+
+const { readIstanbulSummary, readCobertura } = await import('./lib/coverage.mjs');
+const istanbul = readIstanbulSummary(readFileSync(join(ROOT, 'tests/fixtures/coverage/istanbul-summary.json'), 'utf8'), covBlock.default_threshold);
+check(istanbul.overallPct === 87.4, 'istanbul 整体覆盖率读取', JSON.stringify(istanbul));
+check(
+  JSON.stringify(istanbul.lowFiles) === JSON.stringify([{ file: 'src/api.ts', pct: 62 }]),
+  'istanbul 低于阈值文件列表',
+  JSON.stringify(istanbul.lowFiles),
+);
+const cobertura = readCobertura(readFileSync(join(ROOT, 'tests/fixtures/coverage/cobertura.xml'), 'utf8'), covBlock.default_threshold);
+check(cobertura.overallPct === 86, 'cobertura 整体覆盖率读取', JSON.stringify(cobertura));
+check(
+  JSON.stringify(cobertura.lowFiles) === JSON.stringify([{ file: 'src/legacy.ts', pct: 55 }]),
+  'cobertura 低于阈值文件列表',
+  JSON.stringify(cobertura.lowFiles),
+);
+
+// ---------- 13. step-test-guard 失败用例缓存（TG-110-3） ----------
+const cacheBlock = extractBlock(tgTestCmd, 'CACHE-RULES');
+check(cacheBlock !== null && cacheBlock.cache_path === 'docs/test-guard/failed-cases.json', 'test.md 含 CACHE-RULES 且路径正确');
+check(tgSkill.includes('failed-cases.json'), 'SKILL.md 引用失败用例缓存');
+
+const { loadCache, saveCache, mergeCases, rangeMatches } = await import('./lib/fail-cache.mjs');
+check(loadCache(cacheBlock ? JSON.stringify([{ stack: 'vitest', file: 'src/a.test.ts', case: 'x' }]) : null)?.length === 1, '缓存正常读取');
+check(loadCache('{broken json') === null, '缓存损坏时容错返回 null');
+check(loadCache('{"not":"array"}') === null, '缓存格式非数组时返回 null');
+
+const merged = mergeCases(
+  [{ stack: 'vitest', file: 'a.ts', case: 'x' }],
+  [{ stack: 'vitest', file: 'a.ts', case: 'x' }, { stack: 'pytest', file: 't.py', case: 'y' }],
+);
+check(merged.length === 2, '缓存合并按 file+case 去重', JSON.stringify(merged));
+check(rangeMatches([{ stack: 'vitest', file: 'a', case: 'x' }], 'vitest') === true, '缓存范围匹配');
+check(rangeMatches([{ stack: 'vitest', file: 'a', case: 'x' }], 'go') === false, '缓存 stack 变化视为范围不符');
+check(typeof saveCache([{ stack: 'go', file: 'a_test.go', case: 'TestSub' }]) === 'string', '缓存写出为 JSON 字符串');
+
+// ---------- 14. step-test-guard 夜间守护与报告（TG-120-1/2） ----------
+check(existsSync(join(ROOT, 'plugins/step-test-guard/commands/nightly-test.md')), 'commands/nightly-test.md 存在');
+const nightlyCmd = readFileSync(join(ROOT, 'plugins/step-test-guard/commands/nightly-test.md'), 'utf8');
+const nightlyBlock = extractBlock(nightlyCmd, 'NIGHTLY-RULES');
+check(nightlyBlock !== null && nightlyBlock.report_path === 'docs/test-report.md', 'nightly-test.md 含 NIGHTLY-RULES 且报告路径正确');
+check(nightlyBlock?.exit_semantics?.green === '0' && nightlyBlock?.exit_semantics?.has_failures === '1', '夜间任务退出码语义');
+check(nightlyCmd.includes('AGENTS.md') && nightlyCmd.includes('优先于框架自动检测'), '夜间任务含 AGENTS.md 约定协作');
+check(nightlyCmd.includes('禁止 git push'), '无头模式禁外向动作');
+
+const reportBlock = extractBlock(nightlyCmd, 'REPORT-RULES');
+check(reportBlock !== null && JSON.stringify(reportBlock.sections) === JSON.stringify(['摘要', '失败明细', '与上轮对比']), '报告节结构完整');
+
+const { renderReport, diffFailures } = await import('./lib/report.mjs');
+const reportCases = JSON.parse(readFileSync(join(ROOT, 'tests/samples/report-cases.json'), 'utf8'));
+for (const c of reportCases.render_cases) {
+  const md = renderReport(c.input);
+  for (const needle of c.expectContains) check(md.includes(needle), `报告渲染「${c.name}」含「${needle}」`, md);
+}
+const d = diffFailures(
+  [{ file: 'a', case: '1' }, { file: 'b', case: '2' }],
+  [{ file: 'b', case: '2' }, { file: 'c', case: '3' }],
+);
+check(d.added.length === 1 && d.resolved.length === 1 && d.kept.length === 1, '失败集对比三分类', JSON.stringify(d));
 
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);

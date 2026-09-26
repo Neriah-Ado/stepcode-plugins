@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
+<coverage line-rate="0.86" branch-rate="0.71" version="1.9">
+  <packages>
+    <package name="core" line-rate="0.8">
+      <classes>
+        <class name="Calc" filename="src/calc.ts" line-rate="0.92" />
+        <class name="Legacy" filename="src/legacy.ts" line-rate="0.55" />
+      </classes>
+    </package>
+  </packages>
+</coverage>

@@ -32,6 +32,38 @@
         { "file": "tests/test_a.py", "case": "test_one" },
         { "file": "tests/test_b.py", "case": "test_two" }
       ]
+    },
+    {
+      "name": "go 单失败",
+      "stack": "go",
+      "log": "=== RUN   TestAdd\n--- PASS: TestAdd (0.00s)\n=== RUN   TestSub\n    calc_test.go:12: got 3, want 2\n--- FAIL: TestSub (0.00s)\nFAIL\nFAIL\texample.com/calc\t0.5s\n",
+      "expected": [
+        { "file": "calc_test.go", "case": "TestSub", "detailContains": "got 3, want 2" }
+      ]
+    },
+    {
+      "name": "cargo 单失败含断言对比",
+      "stack": "cargo",
+      "log": "running 3 tests\ntest calc::tests::test_add ... ok\ntest calc::tests::test_mul ... ok\ntest calc::tests::test_sub ... FAILED\n\nfailures:\n\nfailures:\n    calc::tests::test_sub\ntest result: FAILED. 2 passed; 1 failed; 0 ignored\n\nfailures:\n    calc::tests::test_sub\nthread 'calc::tests::test_sub' panicked at src/calc.rs:12:5:\nassertion `left == right` failed\n  left: `3`\n right: `2`\n",
+      "expected": [
+        { "file": "src/calc.rs", "case": "calc::tests::test_sub", "expect": "3", "actual": "2" }
+      ]
+    },
+    {
+      "name": "gradle 单失败",
+      "stack": "gradle",
+      "log": "> Task :test\n\ncom.example.CalcTest > testSub FAILED\n    org.opentest4j.AssertionFailedError: expected:<3> but was:<2>\n\n3 tests completed, 1 failed\n",
+      "expected": [
+        { "file": "com.example.CalcTest", "case": "testSub" }
+      ]
+    },
+    {
+      "name": "maven surefire 单失败",
+      "stack": "maven",
+      "log": "-------------------------------------------------------\n T E S T S\n-------------------------------------------------------\nRunning com.example.CalcTest\nTests run: 3, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.031 s\n[INFO] BUILD FAILURE\n[ERROR]   AppTest.testSub:12 expected:<3> but was:<2>\n",
+      "expected": [
+        { "file": "AppTest", "case": "testSub", "detailContains": "expected:<3>" }
+      ]
     }
   ]
 }
