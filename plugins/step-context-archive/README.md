@@ -50,8 +50,15 @@
 
 归档目录默认为项目内 `.stepcode/context-archive/`；`stamp-<id>.md` 的内容是该块**归档前的原文**。
 
-配套技能 `skills/context-archive/SKILL.md` 说明 `#STAMP` 语义、三点摘要协议与召回纪律，
-由 Step Code 在会话中自动加载。
+配套技能 `skills/context-archive/SKILL.md` 说明 `#STAMP` 语义、三点摘要协议与召回纪律。
+
+> **宿主加载状态（如实说明）**：截至 Step Code v0.1.1，插件安装目录
+> （`~/.stepcode/plugins/<name>/`）**尚未接入宿主的命令 / 技能加载器**——`/plugin install`
+> 当前只交付 `mcpServers` 与 `provision`，安装后的 `commands/*.md` 与 `skills/*/SKILL.md`
+> **不会**自动变成斜杠命令或技能（本地实测：安装后 `/archive` 零命中，`/reload` 与完全重启
+> 进程后仍零命中；源码侧 `core/resource-loader.ts` 只从扩展 API 取命令，未读取插件目录）。
+> 本插件的 Markdown 资源本身符合宿主清单规范（`node tests/validate.mjs` 全绿），但**需要宿主
+> 补齐该加载通道后才会生效**。该行为已反馈给上游维护者，详见本 PR 的评论。
 
 ## 形态与范围（重要）
 
