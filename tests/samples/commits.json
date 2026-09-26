@@ -1,0 +1,23 @@
+{
+  "valid": [
+    "feat: 新增登录接口",
+    "fix(auth): 修复 token 过期未刷新的问题",
+    "feat(api)!: 重构响应结构",
+    "chore: 引入插件仓库骨架 (SC-100-1)",
+    "docs: 补充 README 使用说明",
+    "refactor(core): 拆分请求层",
+    "test: 补充清单校验用例",
+    "ci: 调整发布流水线触发条件",
+    "perf(parser): 减少重复扫描",
+    "revert: feat: 临时回退实验特性"
+  ],
+  "invalid": [
+    "updated some stuff",
+    "feat:未加空格",
+    "FEAT: 类型必须小写",
+    "fix(scope 缺右括号: 描述",
+    "feat: 结尾带句号.",
+    "feat: 结尾带中文句号。",
+    "unknown: 非 Conventional 类型"
+  ]
+}
