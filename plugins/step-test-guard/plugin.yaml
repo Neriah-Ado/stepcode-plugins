@@ -60,16 +60,17 @@ versions:
   - version: "1.2.0"
     type: minor
     theme: 常驻守护
-    status: not-started
+    status: done
+    notes: "连续 3 个 /cron 夜间任务的有效性验证依赖官方 /cron 稳定性，交付后观察；报告渲染与对比逻辑已脚本化验证"
     tasks:
       - id: TG-120-1
         title: "watch 模式接入 /cron：夜间全量测试"
         context: "封装为可被 /cron 调用的无头任务说明（step -p 形式）。"
-        done: false
+        done: true
       - id: TG-120-2
         title: 测试报告落盘 docs/test-report.md
         context: "结构：摘要/失败明细/与上轮对比；输出遵循 C5（报告落盘给路径）。"
-        done: false
+        done: true
     acceptance:
       - "连续 3 个 /cron 夜间任务产出有效报告且无误报"
     risks:
