@@ -157,6 +157,31 @@ if (scopeBlock) {
   }
 }
 
+// ---------- 7. step-commit commitlint 规则联动（SC-110-3） ----------
+check(commitCmdFull.includes('commitlint.config'), 'commit.md 含 commitlint 配置查找说明');
+check(commitCmdFull.includes('type-enum') && commitCmdFull.includes('header-max-length'), 'commit.md 含规则映射说明');
+
+const { extractCommitlintRules } = await import('./lib/commitlint-rules.mjs');
+
+const jsonRules = extractCommitlintRules(join(ROOT, 'tests/fixtures/commitlint/json-config'));
+check(jsonRules.dynamic === false, 'commitlint JSON 配置静态解析', JSON.stringify(jsonRules));
+check(
+  JSON.stringify(jsonRules.rules?.typeEnum) === JSON.stringify(['feat', 'fix', 'docs']),
+  'commitlint type-enum 提取',
+  JSON.stringify(jsonRules.rules),
+);
+check(jsonRules.rules?.headerMaxLength === 72, 'commitlint header-max-length 提取');
+check(
+  JSON.stringify(jsonRules.rules?.scopeEnum) === JSON.stringify(['auth', 'api', 'cli']),
+  'commitlint scope-enum 提取',
+);
+
+const dynamicRules = extractCommitlintRules(join(ROOT, 'tests/fixtures/commitlint/dynamic-config'));
+check(dynamicRules.dynamic === true, 'commitlint JS 动态配置标记 dynamic');
+
+const noneRules = extractCommitlintRules(join(ROOT, 'tests/fixtures/commitlint/none-config'));
+check(noneRules.rules === null, 'commitlint 无配置回退 null');
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

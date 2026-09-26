@@ -108,6 +108,17 @@ git diff --staged --stat
 
 示例：`packages/core/src/index.ts` → `core`；`src/auth/login.ts` → `auth`；`docs/guide.md` → `docs`；根目录混合改动 → 省略 scope。
 
+**commitlint 规则联动**：
+
+1. 在仓库根目录查找 commitlint 配置：`commitlint.config.{js,cjs,mjs,ts,json}`、`.commitlintrc{,.json,.yaml,.yml}`、`package.json` 的 `"commitlint"` 字段（查找顺序参照 commitlint 官方约定）。
+2. 找到配置后，读取其中与生成 message 相关的规则并**严格遵守**：
+   - `type-enum` → 只允许列出的 type；
+   - `header-max-length` → 覆盖 `subject_max_length`；
+   - `scope-enum` → scope 只允许列出的值（此时禁用自动推断，从允许值中选最贴近的）；
+   - `subject-full-stop` / `subject-case` 等其余规则按其语义遵守。
+3. JS/TS 动态配置（引用了其他模块、含计算逻辑）无法静态读取时：按文件中可见的字面量规则遵守，无法确认的部分回退内置默认，并在汇报中注明「部分 commitlint 规则未能解析」。
+4. 无任何 commitlint 配置时使用内置默认：type-enum = Conventional 11 类、header ≤ `subject_max_length`、subject 不以句号结尾。
+
 ### 4. HEREDOC 提交（必须用 HEREDOC，防止引号/换行转义问题）
 
 ```bash
