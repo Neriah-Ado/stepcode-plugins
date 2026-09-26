@@ -8,6 +8,7 @@
 | --- | --- | --- |
 | [step-commit](./plugins/step-commit) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | Git 提交工作流套件：`/commit` 规范提交、`/commit-push-pr` 提交并建 PR、`/changelog` 发布辅助、`/release-pr` 发布 PR |
 | [step-test-guard](./plugins/step-test-guard) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 测试守护循环：`/test` 运行测试 → 失败归因 → 定点修复 → 重跑闭环 |
+| [step-context-archive](./plugins/step-context-archive) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 上下文归档与召回：`/archive` 把已完成任务块原文落盘、`/recall` 按 stamp 取回；对话只留三点摘要索引 |
 | 其余插件 | — | 开发中，见 [roadmap.json](./roadmap.json) |
 
 ## 安装
