@@ -221,6 +221,90 @@ for (const fc of changeCases.format_cases) {
   check(actual === fc.expected.join('\n'), 'CHANGELOG 节格式化样例', `\n--- 期望 ---\n${fc.expected.join('\n')}\n--- 实际 ---\n${actual}`);
 }
 
+// ---------- 9. step-commit /changelog 自举一致性（SC-120 验收） ----------
+if (scopeBlock && semverBlock && existsSync(join(ROOT, '.git'))) {
+  const probe = spawnSync(GIT_BIN, ['--version'], { cwd: ROOT });
+  if (probe.status === 0) {
+    const gitOut = (args) => execFileSync(GIT_BIN, args, { cwd: ROOT, encoding: 'utf8' }).trim();
+    const scVersion = JSON.parse(readFileSync(join(ROOT, 'plugins/step-commit/step.plugin.json'), 'utf8')).version;
+    const tagExists = gitOut(['tag', '-l', `step-commit-v${scVersion}`]) !== '';
+    if (tagExists) {
+      console.log('SKIP 自举一致性（step-commit-v' + scVersion + ' 已打 tag，条目已定稿）');
+    } else {
+      const lastTag = gitOut(['describe', '--tags', '--abbrev=0', '--match', 'step-commit-v*']);
+      const date = gitOut(['log', '-1', '--pretty=%ad', '--date=short']);
+      const raw = execFileSync(GIT_BIN, ['log', `${lastTag}..HEAD`, '--pretty=%s%n%b%n---'], { cwd: ROOT, encoding: 'utf8' });
+      const commits = raw
+        .split('\n---\n')
+        .map((block) => block.split('\n'))
+        .filter((parts) => parts[0]?.trim())
+        .map((parts) => parseCommit(parts[0].trim(), parts.slice(1).join('\n')));
+      const expected = formatChangelog(scVersion, date, commits);
+      const doc = readFileSync(join(ROOT, 'plugins/step-commit/CHANGELOG.md'), 'utf8');
+      const m = new RegExp(`## \\[${scVersion}\\] - \\d{4}-\\d{2}-\\d{2}[\\s\\S]*?(?=\\n## \\[|\\s*$)`).exec(doc);
+      check(m !== null, `CHANGELOG.md 含 [${scVersion}] 节`);
+      if (m) {
+        check(m[0].trim() === expected.trim(), 'CHANGELOG 自举一致（文件内容 = 库对 git 历史的输出）', `\n--- 期望 ---\n${expected}\n--- 实际 ---\n${m[0]}`);
+      }
+    }
+  }
+}
+
+// ---------- 10. step-commit monorepo 与 release PR（SC-130-1/2/3） ----------
+check(changelogCmd.includes('pnpm-workspace.yaml'), 'commands/changelog.md 含 monorepo 检测说明');
+const monorepoBlock = (() => {
+  const m = /<!-- MONOREPO-RULES-START -->\s*```json\s*([\s\S]*?)```/.exec(changelogCmd);
+  return m ? JSON.parse(m[1]) : null;
+})();
+check(monorepoBlock !== null, 'changelog.md 含 MONOREPO-RULES JSON 块');
+check(monorepoBlock?.tag_style?.includes('<package短名>-vX.Y.Z'), 'MONOREPO 规则含 per-package tag 风格');
+
+check(existsSync(join(ROOT, 'plugins/step-commit/commands/release-pr.md')), 'commands/release-pr.md 存在');
+const releaseCmd = readFileSync(join(ROOT, 'plugins/step-commit/commands/release-pr.md'), 'utf8');
+for (const needle of ['chore/release-v', 'chore(release): prepare', 'gh pr create', 'glab mr create', '禁止 force push', '每步先向用户确认']) {
+  check(releaseCmd.includes(needle), `commands/release-pr.md 含关键规则「${needle}」`);
+}
+const releaseBlock = (() => {
+  const m = /<!-- RELEASE-PR-RULES-START -->\s*```json\s*([\s\S]*?)```/.exec(releaseCmd);
+  return m ? JSON.parse(m[1]) : null;
+})();
+check(releaseBlock?.remote?.github?.tool === 'gh' && releaseBlock?.remote?.gitlab?.tool === 'glab', 'RELEASE-PR 规则声明双平台工具');
+
+for (const needle of ['glab --version', 'winget install GLab.GLab', 'glab auth login', '--target-branch', 'git remote get-url origin']) {
+  check(cppCmd.includes(needle), `commands/commit-push-pr.md 含关键规则「${needle}」`);
+}
+
+const { detectMonorepo, groupPathsByPackage } = await import('./lib/monorepo.mjs');
+const monoCases = JSON.parse(readFileSync(join(ROOT, 'tests/samples/monorepo-cases.json'), 'utf8'));
+
+for (const c of monoCases.detect_cases) {
+  const detected = detectMonorepo(join(ROOT, 'tests/fixtures', c.fixture));
+  check(detected.isMonorepo === c.isMonorepo && detected.workspaceFile === c.workspaceFile, `monorepo 检测 ${c.fixture}`, JSON.stringify(detected));
+  check(detected.packages.length >= c.packageCount, `monorepo ${c.fixture} 含 ${c.packageCount}+ package`, String(detected.packages.length));
+  const names = detected.packages.map((p) => p.name);
+  for (const n of c.names) check(names.includes(n), `monorepo ${c.fixture} 含 package ${n}`, JSON.stringify(names));
+}
+
+for (const c of monoCases.group_cases) {
+  const grouped = groupPathsByPackage(c.paths, detectMonorepo(join(ROOT, 'tests/fixtures/monorepo-sample')).packages);
+  check(
+    JSON.stringify(grouped) === JSON.stringify(c.expected),
+    `monorepo 归组 [${c.paths.join(', ')}]`,
+    `\n期望 ${JSON.stringify(c.expected)}\n实际 ${JSON.stringify(grouped)}`,
+  );
+}
+
+for (const c of monoCases.bump_cases) {
+  const actual = Object.fromEntries(
+    Object.entries(c.commits_by_package).map(([pkg, commits]) => [pkg, suggestBump(commits.map((s) => parseCommit(s)))]),
+  );
+  check(
+    JSON.stringify(actual) === JSON.stringify(c.expected),
+    `monorepo 按 package semver 建议`,
+    `\n期望 ${JSON.stringify(c.expected)}\n实际 ${JSON.stringify(actual)}`,
+  );
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);
