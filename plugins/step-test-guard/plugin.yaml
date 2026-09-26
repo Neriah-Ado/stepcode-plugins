@@ -4,7 +4,7 @@ description: "测试守护循环：/test 运行测试 → 失败归因 → 定�
 form: declarative
 priority: P0
 effort: S-M
-status: in-progress
+status: done
 manifest: step.plugin.json
 requires_env: []
 verify:
@@ -78,16 +78,16 @@ versions:
   - version: "1.3.0"
     type: minor
     theme: 深水区
-    status: not-started
+    status: done
     tasks:
       - id: TG-130-1
         title: "回归根因定位：git bisect 自动化包装"
         context: "bisect run 脚本生成 + 结果解读；每步操作有明确输出，坏提交定位后转人工确认。"
-        done: false
+        done: true
       - id: TG-130-2
         title: flaky test 识别与隔离建议
         context: "同一用例多轮重跑统计失败率，超阈值标记 flaky 并给隔离方案（skip/retry 配置）。"
-        done: false
+        done: true
     acceptance:
       - "含已知 flaky 用例的仓库识别率可复现"
     risks:
