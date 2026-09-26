@@ -440,6 +440,31 @@ const d = diffFailures(
 );
 check(d.added.length === 1 && d.resolved.length === 1 && d.kept.length === 1, '失败集对比三分类', JSON.stringify(d));
 
+// ---------- 15. step-test-guard bisect 与 flaky（TG-130-1/2） ----------
+check(existsSync(join(ROOT, 'plugins/step-test-guard/commands/bisect.md')), 'commands/bisect.md 存在');
+const bisectCmd = readFileSync(join(ROOT, 'plugins/step-test-guard/commands/bisect.md'), 'utf8');
+const bisectBlock = extractBlock(bisectCmd, 'BISECT-RULES');
+check(bisectBlock !== null && bisectBlock.finish?.includes('git bisect reset'), 'bisect.md 含 BISECT-RULES 且规定 reset');
+for (const needle of ['git status', '转人工确认', '不自动 revert', 'token 经济', '125']) {
+  check(bisectCmd.includes(needle), `commands/bisect.md 含关键规则「${needle}」`);
+}
+
+check(existsSync(join(ROOT, 'plugins/step-test-guard/commands/flaky.md')), 'commands/flaky.md 存在');
+const flakyCmd = readFileSync(join(ROOT, 'plugins/step-test-guard/commands/flaky.md'), 'utf8');
+const flakyBlock = extractBlock(flakyCmd, 'FLAKY-RULES');
+check(flakyBlock !== null && flakyBlock.default_runs === 10, 'flaky.md 含 FLAKY-RULES 且默认 10 轮');
+for (const needle of ['stable-pass', 'flaky', 'stable-fail', '用户确认', 'pytest-rerunfailures']) {
+  check(flakyCmd.includes(needle), `commands/flaky.md 含关键规则「${needle}」`);
+}
+
+const { analyzeFlaky, recommendedAction } = await import('./lib/flaky.mjs');
+check(analyzeFlaky([true, false, true, false, true, false, true, false, true, false]).verdict === 'flaky', 'flaky 判定：间歇失败');
+check(analyzeFlaky([true, true, true, false]).verdict === 'flaky', 'flaky 判定：低频失败');
+check(analyzeFlaky([false, false, false]).verdict === 'stable-fail', 'flaky 判定：全失败为稳定失败');
+check(analyzeFlaky([]).verdict === 'invalid', 'flaky 判定：空数据无效');
+check(recommendedAction('stable-fail').includes('test-fix-loop'), 'stable-fail 建议转修复闭环');
+check(recommendedAction('flaky').includes('用户确认'), 'flaky 隔离动作需用户确认');
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);
