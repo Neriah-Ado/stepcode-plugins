@@ -7,8 +7,9 @@ Git 提交工作流套件。纯声明式插件（commands + Markdown 提示词�
 | 命令 | 说明 |
 | --- | --- |
 | `/commit` | 分析 staged 改动 → 生成 Conventional Commits 规范 message → HEREDOC 格式化提交 |
-| `/commit-push-pr` | 在 `/commit` 基础上推送远端并用 `gh` 创建 PR（标题 + 摘要/变更点/测试说明正文） |
+| `/commit-push-pr` | 推送远端并创建 PR/MR（GitHub 用 `gh`，GitLab 用 `glab`，缺失时输出安装指引） |
 | `/changelog` | 汇聚 commit 历史按 feat/fix/breaking 分类生成 CHANGELOG 条目，semver 升级建议，确认后打 tag |
+| `/release-pr` | release-please 风格发布 PR：分支 + 版本号 + CHANGELOG，双平台创建 |
 
 ## 配置
 
@@ -23,6 +24,10 @@ Git 提交工作流套件。纯声明式插件（commands + Markdown 提示词�
 | `scope_map` | `{}` | 路径前缀 → scope 自定义映射，如 `{ "src/auth/": "auth" }` |
 
 仓库存在 commitlint 配置时，`type-enum`、`header-max-length`、`scope-enum` 等规则自动约束生成结果。
+
+## monorepo
+
+检测到 `pnpm-workspace.yaml` / `workspaces` / `lerna.json` 时自动进入 monorepo 模式：scope 取 package 名、`/changelog` 按 package 分节出独立 CHANGELOG 与独立版本建议、`/release-pr` 按 package 建 release 分支。基于单根工作区内路径前缀实现，不依赖多根工作区能力。
 
 ## 安全规则
 
