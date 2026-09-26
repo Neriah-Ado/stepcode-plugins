@@ -4,6 +4,18 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
+## [1.3.0] - 2026-09-27
+
+### Added
+- /flaky 识别与隔离建议 (TG-130-2)
+- /bisect 回归根因定位命令 (TG-130-1)
+
+### Other Changes
+- 自举 /changelog 生成 step-test-guard v1.3.0 条目 (TG-130)
+- 标记 step-test-guard v1.3.0 任务完成
+- 清单升级 v1.3.0 并补充深水区命令说明
+- flaky 可复现与 bisect 定位端到端验证 (TG-130)
+
 ## [1.2.0] - 2026-09-27
 
 ### Added
