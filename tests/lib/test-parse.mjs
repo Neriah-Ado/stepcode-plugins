@@ -74,7 +74,7 @@ export function parseTestOutput(stack, text, patterns) {
       }
       const c = re(p.fail_case).exec(line);
       if (c) {
-        push(f[1] ?? null, c[1].trim());
+        push(null, c[1].trim());
         continue;
       }
       const e = re(p.expect).exec(line);
