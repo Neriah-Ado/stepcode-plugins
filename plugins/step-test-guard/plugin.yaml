@@ -41,19 +41,19 @@ versions:
   - version: "1.1.0"
     type: minor
     theme: 生态扩展
-    status: not-started
+    status: done
     tasks:
       - id: TG-110-1
         title: "新增 go test / cargo test / mvn / gradle 输出解析"
-        done: false
+        done: true
       - id: TG-110-2
         title: 覆盖率报告解读
         context: "istanbul JSON summary / cobertura XML 读取，输出未覆盖关键路径提示。"
-        done: false
+        done: true
       - id: TG-110-3
         title: 失败用例缓存与增量重跑
         context: "记录上轮失败用例清单，下轮仅先跑失败集再全量确认。"
-        done: false
+        done: true
     acceptance:
       - "三种新栈各通过一个示例仓库"
     risks: []
