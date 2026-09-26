@@ -2,6 +2,17 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 风格，版本号遵循 semver。
 
+## [1.2.0] - 2026-09-27
+
+### Added
+- /changelog 支持 semver 建议与确认打 tag (SC-120-2)
+- 实现 /changelog 命令 (SC-120-1)
+
+### Other Changes
+- 自举 /changelog 生成本仓库 CHANGELOG (SC-120)
+- 标记 step-commit v1.2.0 任务完成
+- 清单升级 v1.2.0 并补充 /changelog 说明
+
 ## [1.1.0] - 2026-09-26
 
 ### Added
