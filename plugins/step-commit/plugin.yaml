@@ -9,6 +9,7 @@ manifest: step.plugin.json
 requires_env: []
 verify:
   - "在示例仓库执行 /commit 生成的 message 通过 commitlint 校验"
+  - "node tests/validate.mjs 与 node tests/verify-commit-flow.mjs 全部通过"
 versions:
   - version: "1.0.0"
     type: major
@@ -41,20 +42,20 @@ versions:
   - version: "1.1.0"
     type: minor
     theme: 提交质量
-    status: not-started
+    status: done
     tasks:
       - id: SC-110-1
         title: "中/英 commit message 语言配置"
         context: "约定配置文件（插件目录 config.json 或 AGENTS.md 约定段），命令文本中定义读取与回退规则（默认中文）。"
-        done: false
+        done: true
       - id: SC-110-2
         title: 自动 scope 推断
         context: "按变更文件路径映射模块/目录生成 scope，映射规则写入命令文本。"
-        done: false
+        done: true
       - id: SC-110-3
         title: commitlint 规则联动
         context: "存在 commitlint 配置时读取其规则并约束生成结果，无配置时用内置默认规则。"
-        done: false
+        done: true
     acceptance:
       - "两种语言输出均符合规范"
       - "scope 命中率人工抽检 >80%"

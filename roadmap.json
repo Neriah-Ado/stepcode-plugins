@@ -28,7 +28,7 @@
     { "weeks": "W15-W16", "goal": "全部达 v1.0.0+", "work": ["step-cron-recipes@1.0.0"], "parallel": ["step-marketplace-cc@1.1.0", "整体复盘"] }
   ],
   "plugins": [
-    { "id": "step-commit", "abbr": "SC", "priority": "P0", "form": "declarative", "effort": "S", "spec": "plugins/step-commit/plugin.yaml", "status": "in-progress", "latest_version": "1.0.0" },
+    { "id": "step-commit", "abbr": "SC", "priority": "P0", "form": "declarative", "effort": "S", "spec": "plugins/step-commit/plugin.yaml", "status": "in-progress", "latest_version": "1.1.0" },
     { "id": "step-test-guard", "abbr": "TG", "priority": "P0", "form": "declarative", "effort": "S-M", "spec": "plugins/step-test-guard/plugin.yaml", "status": "not-started", "latest_version": null },
     { "id": "step-token-meter", "abbr": "TM", "priority": "P0", "form": "mcp", "effort": "M", "spec": "plugins/step-token-meter/plugin.yaml", "status": "not-started", "latest_version": null },
     { "id": "step-docker-mate", "abbr": "DM", "priority": "P1", "form": "hybrid", "effort": "M", "spec": "plugins/step-docker-mate/plugin.yaml", "status": "not-started", "latest_version": null },
