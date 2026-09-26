@@ -11,6 +11,11 @@
       "name": "step-test-guard",
       "description": "测试守护循环：/test 运行测试 → 失败归因 → 定点修复 → 重跑闭环，vitest/jest/pytest 内置",
       "source": "./plugins/step-test-guard"
+    },
+    {
+      "name": "step-context-archive",
+      "description": "上下文归档与召回：/archive 归档已完成任务块，对话只留带三点摘要的 #STAMP 索引行，/recall 按 stamp 取回原文",
+      "source": "./plugins/step-context-archive"
     }
   ]
 }

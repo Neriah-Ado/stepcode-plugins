@@ -1,0 +1,13 @@
+{
+  "id": "step-context-archive",
+  "name": "Step Context Archive",
+  "description": "长会话上下文归档与召回：把已完成任务块的原文落盘，会话中只保留带三点摘要的 #STAMP 索引行，需要细节时按 stamp 召回全文。声明式（纯提示词）实现，不依赖可执行扩展。",
+  "version": "1.0.0",
+  "commands": [
+    "commands/archive.md",
+    "commands/recall.md"
+  ],
+  "skills": [
+    "skills/context-archive"
+  ]
+}
