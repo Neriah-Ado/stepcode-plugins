@@ -57,6 +57,33 @@ mkdir -p docs/test-guard && <run 命令> > docs/test-guard/last-run.log 2>&1; ec
 
 解析规则与三框架的输出模式见下方「框架输出解析」（v1.0.0 内置 vitest/jest/pytest）。解析不出结构化信息的失败（如进程崩溃、编译错误）原样摘录最后 30 行并标记 `triage: environment` 待定。
 
+### 框架输出解析（按行扫描，模式与 tests/lib/test-parse.mjs 共用）
+
+<!-- TEST-PATTERNS-START -->
+```json
+{
+  "vitest": {
+    "fail_file": "FAIL\\s+(\\S+)",
+    "block_file": "❯\\s+(\\S+)\\s+\\(",
+    "fail_case": "[✗×✘]\\s+(.+?)(?:\\s+\\d+ms)?$",
+    "detail_line": "→\\s+(.*)$"
+  },
+  "jest": {
+    "fail_file": "FAIL\\s+(\\S+)",
+    "fail_case": "[✕×●]\\s+(.+?)(?:\\(\\d+\\s*ms\\))?$",
+    "expect": "Expected:\\s*(.*)$",
+    "received": "Received:\\s*(.*)$"
+  },
+  "pytest": {
+    "summary_line": "FAILED\\s+(\\S+?)::(\\S+?)(?:\\s+-\\s+(.*))?$",
+    "detail_line": "^E\\s+(.*)$"
+  }
+}
+```
+<!-- TEST-PATTERNS-END -->
+
+扫描语义：`FAIL <file>` 切换当前文件；用例行（vitest `×`、jest `●`）创建失败条目；`Expected/Received`（jest）与 `→`（vitest）附到最近条目；pytest 从 `FAILED file::case` 汇总行建条目、`E ` 行为断言明细。命中不了的行忽略；输出非 UTF-8 时先转码再解析。
+
 ## 4. 交接
 
 把失败清单交给 test-fix-loop skill 执行修复循环；全部通过时汇报：通过数、耗时、框架、有无跳过/待办（`todo`/`skip` 计数单列）。
