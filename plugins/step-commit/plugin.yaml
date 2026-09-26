@@ -79,18 +79,19 @@ versions:
   - version: "1.3.0"
     type: minor
     theme: 多仓库与生态
-    status: not-started
+    status: done
+    notes: "monorepo 支持基于单根工作区内路径前缀实现，不依赖 Step Code 多根工作区能力；官方开放多根支持后可扩展"
     tasks:
       - id: SC-130-1
         title: monorepo 分 package 提交与分节 CHANGELOG
-        done: false
+        done: true
       - id: SC-130-2
         title: release-please 风格 release PR 生成
-        done: false
+        done: true
       - id: SC-130-3
         title: GitLab MR 适配
         context: "检测远端类型，MR 创建用 glab CLI，缺失时降级指引。"
-        done: false
+        done: true
     acceptance:
       - "在含 5+ package 的 pnpm monorepo 验证"
     risks:
