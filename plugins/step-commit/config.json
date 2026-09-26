@@ -1,0 +1,7 @@
+{
+  "message_language": "zh",
+  "subject_max_length": 100,
+  "body_line_length": 72,
+  "scope_strategy": "auto",
+  "scope_map": {}
+}

@@ -16,6 +16,28 @@ argument-hint: [补充提交意图说明，可选]
 5. **不碰机密**：staged 中出现疑似机密（.env、密钥文件、token/凭证字面量）或异常大文件时，停止提交，列出文件征求用户决定。
 6. **不全量暂存**：不主动执行 `git add -A` / `git add .`；需要补充暂存时只 add 与本次意图相关的文件，并向用户确认。
 
+## 配置读取
+
+按顺序取**第一个存在**的配置，字段缺失时逐级回退到默认值：
+
+1. 项目根 `.step-commit.json`（项目级覆盖，推荐提交进仓库与团队共享）
+2. 插件目录 `config.json`（随插件分发，用户可直接修改）
+3. 内置默认
+
+| 字段 | 默认 | 说明 |
+| --- | --- | --- |
+| `message_language` | `"zh"` | subject 与正文的自然语言：`"zh"` 中文 / `"en"` 英文；type、scope、footer 关键字始终为英文 |
+| `subject_max_length` | `100` | 首行最大长度；commitlint `header-max-length` 存在时以其为准 |
+| `body_line_length` | `72` | 正文每行最大长度 |
+| `scope_strategy` | `"auto"` | `"auto"` 自动推断 scope；`"off"` 一律省略 scope |
+| `scope_map` | `{}` | 额外的路径前缀 → scope 映射，优先于内置规则，如 `{ "src/auth/": "auth" }` |
+
+语言对 message 的影响（两种语言都必须满足 Conventional Commits 结构）：
+
+- 中文：`feat(auth): 新增登录接口`，正文说明为什么改 + 改了什么；
+- 英文：`feat(auth): add login endpoint`，subject 祈使语气小写开头，正文同中文要求；
+- 用户消息与仓库历史里已有提交多数为英文时，即使配置缺失也建议切英文并在汇报中说明。
+
 ## 执行流程
 
 ### 1. 前置检查
@@ -52,8 +74,8 @@ git diff --staged --stat
 
 **格式规则**：
 
-- 首行 `type(scope): subject`；scope 可省略；有破坏性变更时 type 后加 `!`。
-- subject：祈使语气，结尾不加句号，首行总长 ≤ 100 字符，概括「做了什么」。
+- 首行 `type(scope): subject`；scope 可省略（按下方 scope 推断规则生成）；有破坏性变更时 type 后加 `!`。
+- subject：祈使语气，结尾不加句号，首行总长 ≤ `subject_max_length`（默认 100，commitlint 配置存在时以其为准），概括「做了什么」。
 - 正文（默认中文）：空一行后说明**为什么改 + 改了什么**，每行 ≤ 72 字符。
 - 破坏性变更：正文尾部加 `BREAKING CHANGE: <迁移说明>`。
 - 修复 issue：正文尾部加 `Closes #123`。
