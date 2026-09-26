@@ -1,0 +1,25 @@
+{
+  "detect_cases": [
+    { "fixture": "monorepo-sample", "isMonorepo": true, "workspaceFile": "pnpm-workspace.yaml", "packageCount": 5, "names": ["@sample/core", "@sample/cli", "@sample/web", "@sample/utils", "@sample/docs-theme"] }
+  ],
+  "group_cases": [
+    {
+      "paths": ["packages/core/src/index.ts", "packages/cli/main.js", "README.md"],
+      "expected": { "@sample/core": ["packages/core/src/index.ts"], "@sample/cli": ["packages/cli/main.js"], "__root__": ["README.md"] }
+    },
+    {
+      "paths": ["packages/core/src/a.ts", "packages/core/package.json"],
+      "expected": { "@sample/core": ["packages/core/src/a.ts", "packages/core/package.json"] }
+    },
+    {
+      "paths": ["packages/docs-theme/theme.css", "packages/web/src/app.tsx", "packages/utils/format.ts"],
+      "expected": { "@sample/docs-theme": ["packages/docs-theme/theme.css"], "@sample/web": ["packages/web/src/app.tsx"], "@sample/utils": ["packages/utils/format.ts"] }
+    }
+  ],
+  "bump_cases": [
+    {
+      "commits_by_package": { "@sample/core": ["feat: 新增导出"], "@sample/cli": ["fix: 修复参数", "fix: 修复退出码"] },
+      "expected": { "@sample/core": "minor", "@sample/cli": "patch" }
+    }
+  ]
+}

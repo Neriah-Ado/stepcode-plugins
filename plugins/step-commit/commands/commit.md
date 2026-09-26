@@ -108,6 +108,8 @@ git diff --staged --stat
 
 示例：`packages/core/src/index.ts` → `core`；`src/auth/login.ts` → `auth`；`docs/guide.md` → `docs`；根目录混合改动 → 省略 scope。
 
+**monorepo 补充**：命中 `packages/<dir>/` 等包目录时，优先读取该目录 `package.json` 的 `name` 作为 scope（带 `@org/` 前缀的去掉前缀，如 `@sample/core` → `core`；读不到 name 时用目录名）。
+
 **commitlint 规则联动**：
 
 1. 在仓库根目录查找 commitlint 配置：`commitlint.config.{js,cjs,mjs,ts,json}`、`.commitlintrc{,.json,.yaml,.yml}`、`package.json` 的 `"commitlint"` 字段（查找顺序参照 commitlint 官方约定）。

@@ -50,18 +50,40 @@ argument-hint: [起始 tag 或目标版本，可选；默认从最近一个 tag 
 
 建议版本 = 当前最新版本号按建议 bump 递增（无 tag/无版本文件时从 `0.0.0` 起算并以条目内容提示用户）。
 
-## 4. 写入 CHANGELOG.md
+## 4. monorepo 模式
+
+<!-- MONOREPO-RULES-START -->
+```json
+{
+  "detect": ["pnpm-workspace.yaml", "package.json:workspaces", "lerna.json"],
+  "grouping": "提交按文件路径对 package 目录做最长前缀匹配；仓库根级改动归 __root__",
+  "package_entry": "packages/<dir>/CHANGELOG.md（每 package 独立分节，节内仍按 Added/Fixed/Changed）",
+  "root_entry": "根 CHANGELOG.md 生成版本总览，版本节下按 package 二级标题（### @scope/name）",
+  "versioning": "按 package 依自身提交独立建议 semver；无提交的 package 不出节",
+  "tag_style": "单包 tag 用 <package短名>-vX.Y.Z（release-please 风格，如 core-v1.2.0），打 tag 仍需用户确认"
+}
+```
+<!-- MONOREPO-RULES-END -->
+
+进入 monorepo 模式时：
+
+1. 按 workspace 声明（`pnpm-workspace.yaml` / `package.json` 的 `workspaces` / `lerna.json`）枚举 package，读取各 `package.json` 的 `name`。
+2. 提交归组：`git log --name-only` 取每条提交涉及的文件路径，按上表归到 package 或 `__root__`；一次提交横跨多个 package 时在各自节中都列出。
+3. 每个 package 独立跑「分类 → semver 建议」流程，生成/更新该 package 目录下的 `CHANGELOG.md`；根 `CHANGELOG.md` 生成版本总览。
+4. 汇报中列出：每个 package 的建议版本与依据、无变更被跳过的 package 清单。
+
+## 5. 写入 CHANGELOG.md
 
 - 更新仓库根（或 `--file` 指定）的 `CHANGELOG.md`：在头部说明之后**插入**新版本节，不改动既有条目；文件不存在时创建并附「遵循 Keep a Changelog 风格，版本号遵循 semver」头部。
 - 节格式：`## [版本号] - YYYY-MM-DD`（日期取当天），其后为各分类节。
 - 同时在会话中完整展示该节内容供用户核对。
 
-## 5. 打 tag（G3：先确认，再执行）
+## 6. 打 tag（G3：先确认，再执行）
 
 1. 展示：建议版本、bump 依据（几条 feat / 几条 fix / 是否 breaking）、CHANGELOG 节预览。
 2. 用户确认后执行 `git tag vX.Y.Z`（版本号前缀 `v` 与仓库既有 tag 风格一致；本仓库另有 `step-commit-vX.Y.Z` 插件级 tag 时询问用户采用哪种）。
 3. 拒绝或要求改版本号时，按用户意见重出建议，不写任何文件不打 tag。
 
-## 6. 汇报
+## 7. 汇报
 
 版本建议与依据、CHANGELOG 节统计（Added/Fixed/Changed/Other 条数）、tag 是否创建、提醒 `git push --follow-tags`。
