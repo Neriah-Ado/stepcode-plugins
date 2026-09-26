@@ -46,6 +46,14 @@ versions:
           按 AGENTS.md G1：在两个真实项目中走完「长会话 → /archive → 继续工作 → /recall 取回细节」全链路，
           记录归档文件数量、索引行与原文一致性、以及是否出现摘要与原文冲突的情况。
         done: false
+      - id: SCA-100-5
+        title: 补全许可引用与宿主加载状态说明（文档）
+        context: |
+          README 许可节补上参考实现的许可名与链接（agent-shell License v1.0，明确标注
+          并非 MIT、本 PR 不含其代码），消除「采用其自身许可」这一含糊表述可能造成的
+          误读；并如实标注当前宿主（Step Code v0.1.1）未接入插件命令/技能加载器的现状
+          与实测证据，plugin.yaml 的 risks 首条同步该限制。
+        done: true
     acceptance:
       - "索引行与归档文件成对存在，路径可解析"
       - "召回内容与归档原文一致，无凭记忆复述"
