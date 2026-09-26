@@ -1,0 +1,36 @@
+{
+  "bump_cases": [
+    { "commits": ["feat: 新增导出功能", "fix: 修复越界"], "expected": "minor" },
+    { "commits": ["fix: 修复越界", "chore: 清理依赖"], "expected": "patch" },
+    { "commits": ["feat(api)!: 重构响应结构"], "expected": "major" },
+    { "commits": ["docs: 补充说明"], "expected": "patch" },
+    { "commits": [], "expected": null }
+  ],
+  "format_cases": [
+    {
+      "version": "1.2.0",
+      "date": "2026-09-27",
+      "commits": [
+        { "raw": "feat: 实现 /changelog 命令" },
+        { "raw": "feat(cli)!: 移除旧参数", "body": "BREAKING CHANGE: 旧参数 --legacy 已移除，请改用 --strict" },
+        { "raw": "fix: 修复分节错误" },
+        { "raw": "chore: 标记任务完成" }
+      ],
+      "expected": [
+        "## [1.2.0] - 2026-09-27",
+        "",
+        "### Added",
+        "- 实现 /changelog 命令",
+        "",
+        "### Fixed",
+        "- 修复分节错误",
+        "",
+        "### Changed",
+        "- cli: 移除旧参数 **BREAKING CHANGE:** 旧参数 --legacy 已移除，请改用 --strict",
+        "",
+        "### Other Changes",
+        "- 标记任务完成"
+      ]
+    }
+  ]
+}

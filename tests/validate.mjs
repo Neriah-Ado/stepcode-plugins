@@ -182,6 +182,45 @@ check(dynamicRules.dynamic === true, 'commitlint JS 动态配置标记 dynamic')
 const noneRules = extractCommitlintRules(join(ROOT, 'tests/fixtures/commitlint/none-config'));
 check(noneRules.rules === null, 'commitlint 无配置回退 null');
 
+// ---------- 8. step-commit /changelog 分类与 semver 建议（SC-120-1/2） ----------
+check(existsSync(join(ROOT, 'plugins/step-commit/commands/changelog.md')), 'commands/changelog.md 存在');
+const changelogCmd = readFileSync(join(ROOT, 'plugins/step-commit/commands/changelog.md'), 'utf8');
+for (const needle of ['BREAKING CHANGE', 'git push --follow-tags', '必须征得用户明确确认']) {
+  check(changelogCmd.includes(needle), `commands/changelog.md 含关键规则「${needle}」`);
+}
+
+const semverBlock = (() => {
+  const m = /<!-- SEMVER-RULES-START -->\s*```json\s*([\s\S]*?)```/.exec(changelogCmd);
+  return m ? JSON.parse(m[1]) : null;
+})();
+check(semverBlock !== null, 'changelog.md 含 SEMVER-RULES JSON 块');
+
+const { parseCommit, suggestBump, bumpVersion, formatChangelog } = await import('./lib/semver-changelog.mjs');
+
+check(
+  semverBlock && semverBlock.bump_priority?.[0]?.when === 'breaking' && semverBlock.bump_priority?.[0]?.bump === 'major',
+  'SEMVER 规则优先级：breaking → major',
+);
+check(
+  semverBlock && semverBlock.bump_priority?.[1]?.when === 'feat' && semverBlock.bump_priority?.[1]?.bump === 'minor',
+  'SEMVER 规则优先级：feat → minor',
+);
+
+const changeCases = JSON.parse(readFileSync(join(ROOT, 'tests/samples/changelog-cases.json'), 'utf8'));
+for (const c of changeCases.bump_cases) {
+  const parsed = c.commits.map((s) => parseCommit(s));
+  check(suggestBump(parsed) === c.expected, `semver 建议 [${c.commits.join(' | ') || '空'}] → ${c.expected}`, `实际 ${suggestBump(parsed)}`);
+}
+check(bumpVersion('1.1.0', 'minor') === '1.2.0', '版本递增 minor');
+check(bumpVersion('1.1.0', 'patch') === '1.1.1', '版本递增 patch');
+check(bumpVersion('1.1.0', 'major') === '2.0.0', '版本递增 major');
+
+for (const fc of changeCases.format_cases) {
+  const parsed = fc.commits.map((c) => parseCommit(c.raw, c.body ?? ''));
+  const actual = formatChangelog(fc.version, fc.date, parsed);
+  check(actual === fc.expected.join('\n'), 'CHANGELOG 节格式化样例', `\n--- 期望 ---\n${fc.expected.join('\n')}\n--- 实际 ---\n${actual}`);
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);
