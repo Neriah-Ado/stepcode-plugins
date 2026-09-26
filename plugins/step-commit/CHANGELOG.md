@@ -2,6 +2,18 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 风格，版本号遵循 semver。
 
+## [1.3.0] - 2026-09-27
+
+### Added
+- /commit-push-pr 适配 GitLab MR (SC-130-3)
+- 新增 /release-pr 命令 (SC-130-2)
+- monorepo 分 package 提交与分节 CHANGELOG (SC-130-1)
+
+### Other Changes
+- 自举 /changelog 生成本仓库 CHANGELOG (SC-130)
+- 标记 step-commit v1.3.0 任务完成
+- 清单升级 v1.3.0 并补充 monorepo 与发布命令说明
+
 ## [1.2.0] - 2026-09-27
 
 ### Added
