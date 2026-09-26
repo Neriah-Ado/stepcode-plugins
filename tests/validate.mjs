@@ -376,6 +376,27 @@ for (const c of tgCases.cases) {
   }
 }
 
+// ---------- 12. step-test-guard 覆盖率解读（TG-110-2） ----------
+check(tgTestCmd.includes('coverage-summary.json') && tgTestCmd.includes('cobertura.xml'), 'test.md 含覆盖率产物说明');
+const covBlock = extractBlock(tgTestCmd, 'COVERAGE-RULES');
+check(covBlock !== null && covBlock.default_threshold === 80, 'test.md 含 COVERAGE-RULES 且默认阈值 80');
+
+const { readIstanbulSummary, readCobertura } = await import('./lib/coverage.mjs');
+const istanbul = readIstanbulSummary(readFileSync(join(ROOT, 'tests/fixtures/coverage/istanbul-summary.json'), 'utf8'), covBlock.default_threshold);
+check(istanbul.overallPct === 87.4, 'istanbul 整体覆盖率读取', JSON.stringify(istanbul));
+check(
+  JSON.stringify(istanbul.lowFiles) === JSON.stringify([{ file: 'src/api.ts', pct: 62 }]),
+  'istanbul 低于阈值文件列表',
+  JSON.stringify(istanbul.lowFiles),
+);
+const cobertura = readCobertura(readFileSync(join(ROOT, 'tests/fixtures/coverage/cobertura.xml'), 'utf8'), covBlock.default_threshold);
+check(cobertura.overallPct === 86, 'cobertura 整体覆盖率读取', JSON.stringify(cobertura));
+check(
+  JSON.stringify(cobertura.lowFiles) === JSON.stringify([{ file: 'src/legacy.ts', pct: 55 }]),
+  'cobertura 低于阈值文件列表',
+  JSON.stringify(cobertura.lowFiles),
+);
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);
