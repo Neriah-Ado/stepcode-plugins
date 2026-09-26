@@ -8,6 +8,7 @@ Git 提交工作流套件。纯声明式插件（commands + Markdown 提示词�
 | --- | --- |
 | `/commit` | 分析 staged 改动 → 生成 Conventional Commits 规范 message → HEREDOC 格式化提交 |
 | `/commit-push-pr` | 在 `/commit` 基础上推送远端并用 `gh` 创建 PR（标题 + 摘要/变更点/测试说明正文） |
+| `/changelog` | 汇聚 commit 历史按 feat/fix/breaking 分类生成 CHANGELOG 条目，semver 升级建议，确认后打 tag |
 
 ## 配置
 
