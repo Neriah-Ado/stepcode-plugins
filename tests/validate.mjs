@@ -416,6 +416,30 @@ check(rangeMatches([{ stack: 'vitest', file: 'a', case: 'x' }], 'vitest') === tr
 check(rangeMatches([{ stack: 'vitest', file: 'a', case: 'x' }], 'go') === false, '缓存 stack 变化视为范围不符');
 check(typeof saveCache([{ stack: 'go', file: 'a_test.go', case: 'TestSub' }]) === 'string', '缓存写出为 JSON 字符串');
 
+// ---------- 14. step-test-guard 夜间守护与报告（TG-120-1/2） ----------
+check(existsSync(join(ROOT, 'plugins/step-test-guard/commands/nightly-test.md')), 'commands/nightly-test.md 存在');
+const nightlyCmd = readFileSync(join(ROOT, 'plugins/step-test-guard/commands/nightly-test.md'), 'utf8');
+const nightlyBlock = extractBlock(nightlyCmd, 'NIGHTLY-RULES');
+check(nightlyBlock !== null && nightlyBlock.report_path === 'docs/test-report.md', 'nightly-test.md 含 NIGHTLY-RULES 且报告路径正确');
+check(nightlyBlock?.exit_semantics?.green === '0' && nightlyBlock?.exit_semantics?.has_failures === '1', '夜间任务退出码语义');
+check(nightlyCmd.includes('AGENTS.md') && nightlyCmd.includes('优先于框架自动检测'), '夜间任务含 AGENTS.md 约定协作');
+check(nightlyCmd.includes('禁止 git push'), '无头模式禁外向动作');
+
+const reportBlock = extractBlock(nightlyCmd, 'REPORT-RULES');
+check(reportBlock !== null && JSON.stringify(reportBlock.sections) === JSON.stringify(['摘要', '失败明细', '与上轮对比']), '报告节结构完整');
+
+const { renderReport, diffFailures } = await import('./lib/report.mjs');
+const reportCases = JSON.parse(readFileSync(join(ROOT, 'tests/samples/report-cases.json'), 'utf8'));
+for (const c of reportCases.render_cases) {
+  const md = renderReport(c.input);
+  for (const needle of c.expectContains) check(md.includes(needle), `报告渲染「${c.name}」含「${needle}」`, md);
+}
+const d = diffFailures(
+  [{ file: 'a', case: '1' }, { file: 'b', case: '2' }],
+  [{ file: 'b', case: '2' }, { file: 'c', case: '3' }],
+);
+check(d.added.length === 1 && d.resolved.length === 1 && d.kept.length === 1, '失败集对比三分类', JSON.stringify(d));
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);
