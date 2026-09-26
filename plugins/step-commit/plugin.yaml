@@ -63,16 +63,16 @@ versions:
   - version: "1.2.0"
     type: minor
     theme: 发布辅助
-    status: not-started
+    status: done
     tasks:
       - id: SC-120-1
         title: "实现 /changelog 命令"
         context: "按 feat/fix/breaking 分类聚合 commit 历史生成 CHANGELOG 条目。"
-        done: false
+        done: true
       - id: SC-120-2
         title: semver 升级建议与自动打 tag
         context: "依据 breaking/feat/fix 建议 patch/minor/major，打 tag 前必须用户确认（G3）。"
-        done: false
+        done: true
     acceptance:
       - "在本插件仓库自举使用并产出真实 CHANGELOG"
     risks: []
