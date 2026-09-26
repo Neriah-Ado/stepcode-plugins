@@ -352,6 +352,10 @@ const detectFixtures = [
   ['jest-sample', 'jest'],
   ['pytest-sample', 'pytest'],
   ['node-sample', 'node'],
+  ['go-sample', 'go'],
+  ['cargo-sample', 'cargo'],
+  ['maven-sample', 'maven'],
+  ['gradle-sample', 'gradle'],
 ];
 for (const [fixture, stack] of detectFixtures) {
   const detected = detectStack(join(ROOT, 'tests/fixtures/test-projects', fixture), tgDetectBlock.detectors);

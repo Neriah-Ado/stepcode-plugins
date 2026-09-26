@@ -25,6 +25,10 @@ argument-hint: [测试范围或框架提示，可选；如 "src/auth" 或 "pytes
     { "file": "pytest.ini", "stack": "pytest", "run": "python -m pytest -q" },
     { "file": "pyproject.toml[tool.pytest.ini_options]", "stack": "pytest", "run": "python -m pytest -q" },
     { "file": "conftest.py", "stack": "pytest", "run": "python -m pytest -q" },
+    { "file": "go.mod", "stack": "go", "run": "go test ./..." },
+    { "file": "Cargo.toml", "stack": "cargo", "run": "cargo test" },
+    { "file": "pom.xml", "stack": "maven", "run": "mvn test" },
+    { "file": "build.gradle", "stack": "gradle", "run": "gradle test" },
     { "file": "package.json:scripts.test", "stack": "node", "run": "npm test" }
   ],
   "fallback": "以上全未命中时，列出候选证据并询问用户使用什么测试命令；不猜测"
@@ -77,12 +81,28 @@ mkdir -p docs/test-guard && <run 命令> > docs/test-guard/last-run.log 2>&1; ec
   "pytest": {
     "summary_line": "FAILED\\s+(\\S+?)::(\\S+?)(?:\\s+-\\s+(.*))?$",
     "detail_line": "^E\\s+(.*)$"
+  },
+  "go": {
+    "fail_case": "^--- FAIL:\\s+(\\S+)",
+    "detail_line": "^\\s+(\\S+?\\.go):\\d+:\\s+(.*)$"
+  },
+  "cargo": {
+    "fail_case": "^test\\s+(\\S+)\\s+.*FAILED$",
+    "panic_file": "panicked at ([^:]+):",
+    "assert_left": "left:\\s*`([^`]*)`",
+    "assert_right": "right:\\s*`([^`]*)`"
+  },
+  "gradle": {
+    "fail_case": "^(\\S+)\\s*>\\s*(\\S+)\\s+FAILED$"
+  },
+  "maven": {
+    "fail_case": "\\[ERROR\\]\\s+(\\S+)\\.([A-Za-z_][A-Za-z_0-9]*):(.*)$"
   }
 }
 ```
 <!-- TEST-PATTERNS-END -->
 
-扫描语义：`FAIL <file>` 切换当前文件；用例行（vitest `×`、jest `●`）创建失败条目；`Expected/Received`（jest）与 `→`（vitest）附到最近条目；pytest 从 `FAILED file::case` 汇总行建条目、`E ` 行为断言明细。命中不了的行忽略；输出非 UTF-8 时先转码再解析。
+扫描语义：`FAIL <file>` 切换当前文件；用例行（vitest `×`、jest `●`）创建失败条目；`Expected/Received`（jest）与 `→`（vitest）附到最近条目；pytest 从 `FAILED file::case` 汇总行建条目、`E ` 行为断言明细；go 从 `--- FAIL: 用例` 建条目、缩进的 `file.go:行: 消息` 为明细；cargo 从 `test 路径 ... FAILED` 建条目、`panicked at 文件:` 与 `left/right` 反引号为期望对比；gradle `类 > 用例 FAILED`；maven `[ERROR] 类.方法: 明细`。命中不了的行忽略；输出非 UTF-8 时先转码再解析。
 
 ## 4. 交接
 

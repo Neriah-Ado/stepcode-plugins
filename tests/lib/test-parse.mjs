@@ -18,6 +18,7 @@ export function parseTestOutput(stack, text, patterns) {
   const re = (s) => new RegExp(s);
   let current = null;
   let blockFile = null;
+  let pendingGo = null; // go 的失败明细先于 --- FAIL 标记输出，先缓冲
 
   const push = (file, caseName, detail = null) => {
     const effFile = file ?? current?.file ?? blockFile ?? null;
@@ -97,6 +98,64 @@ export function parseTestOutput(stack, text, patterns) {
       const d = re(p.detail_line).exec(line);
       if (d && current && !current.detail) {
         current.detail = d[1].trim();
+        continue;
+      }
+    }
+    if (stack === 'go') {
+      const c = re(p.fail_case).exec(line);
+      if (c) {
+        push(null, c[1].trim());
+        if (pendingGo && current) {
+          current.file = current.file ?? pendingGo.file;
+          current.detail = current.detail ?? pendingGo.detail;
+        }
+        pendingGo = null;
+        continue;
+      }
+      const d = re(p.detail_line).exec(line);
+      if (d) {
+        if (current && !current.detail) {
+          current.file = current.file ?? d[1];
+          current.detail = d[2].trim();
+        } else {
+          pendingGo = { file: d[1], detail: d[2].trim() };
+        }
+        continue;
+      }
+    }
+    if (stack === 'cargo') {
+      const c = re(p.fail_case).exec(line);
+      if (c) {
+        push(null, c[1].trim());
+        continue;
+      }
+      const pf = re(p.panic_file).exec(line);
+      if (pf && current) {
+        current.file = current.file ?? pf[1];
+        continue;
+      }
+      const l = re(p.assert_left).exec(line);
+      if (l && current) {
+        current.expect = l[1].trim();
+        continue;
+      }
+      const r = re(p.assert_right).exec(line);
+      if (r && current) {
+        current.actual = r[1].trim();
+        continue;
+      }
+    }
+    if (stack === 'gradle') {
+      const c = re(p.fail_case).exec(line);
+      if (c) {
+        push(c[1], c[2]);
+        continue;
+      }
+    }
+    if (stack === 'maven') {
+      const c = re(p.fail_case).exec(line);
+      if (c) {
+        push(c[1], c[2], c[3]?.trim() ?? null);
         continue;
       }
     }
