@@ -1,0 +1,96 @@
+id: step-commit
+name: Step Commit
+description: "Git 提交工作流套件：/commit 规范提交、/commit-push-pr、/changelog"
+form: declarative
+priority: P0
+effort: S
+status: not-started
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "在示例仓库执行 /commit 生成的 message 通过 commitlint 校验"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 规范提交 MVP
+    status: done
+    tasks:
+      - id: SC-100-1
+        title: 编写 step.plugin.json 清单
+        context: |
+          字段：id=step-commit，version=1.0.0；commands 指向 commands/ 目录。
+          遵守 AGENTS.md G2 门禁（id 安全名、无 entry/hooks/lspServers 字段）。
+        done: true
+      - id: SC-100-2
+        title: 实现 commands/commit.md（/commit 命令）
+        context: |
+          流程：git status + git diff --staged 分析改动 → 按 Conventional Commits 生成 message（type(scope): subject + 中文正文）→ HEREDOC 格式提交。
+          安全规则必须写入命令文本：不 amend 已推送提交、不 force push、提交前必须先 status/diff 确认范围、pre-commit hook 失败时读取输出修复后重试（绝不 --no-verify 除非用户明确要求）。
+        done: true
+      - id: SC-100-3
+        title: 实现 commands/commit-push-pr.md（/commit-push-pr 命令）
+        context: |
+          在 /commit 基础上追加：生成 PR 标题与正文（摘要 + 测试说明），gh pr create 提交。
+          gh 缺失时输出安装指引（G4）。
+        done: true
+    acceptance:
+      - "示例仓库全流程跑通 /commit 与 /commit-push-pr"
+      - "生成的 message 通过 commitlint 校验"
+      - "pre-commit 失败场景可恢复且未跳过 hook"
+    risks: []
+  - version: "1.1.0"
+    type: minor
+    theme: 提交质量
+    status: not-started
+    tasks:
+      - id: SC-110-1
+        title: "中/英 commit message 语言配置"
+        context: "约定配置文件（插件目录 config.json 或 AGENTS.md 约定段），命令文本中定义读取与回退规则（默认中文）。"
+        done: false
+      - id: SC-110-2
+        title: 自动 scope 推断
+        context: "按变更文件路径映射模块/目录生成 scope，映射规则写入命令文本。"
+        done: false
+      - id: SC-110-3
+        title: commitlint 规则联动
+        context: "存在 commitlint 配置时读取其规则并约束生成结果，无配置时用内置默认规则。"
+        done: false
+    acceptance:
+      - "两种语言输出均符合规范"
+      - "scope 命中率人工抽检 >80%"
+    risks: []
+  - version: "1.2.0"
+    type: minor
+    theme: 发布辅助
+    status: not-started
+    tasks:
+      - id: SC-120-1
+        title: "实现 /changelog 命令"
+        context: "按 feat/fix/breaking 分类聚合 commit 历史生成 CHANGELOG 条目。"
+        done: false
+      - id: SC-120-2
+        title: semver 升级建议与自动打 tag
+        context: "依据 breaking/feat/fix 建议 patch/minor/major，打 tag 前必须用户确认（G3）。"
+        done: false
+    acceptance:
+      - "在本插件仓库自举使用并产出真实 CHANGELOG"
+    risks: []
+  - version: "1.3.0"
+    type: minor
+    theme: 多仓库与生态
+    status: not-started
+    tasks:
+      - id: SC-130-1
+        title: monorepo 分 package 提交与分节 CHANGELOG
+        done: false
+      - id: SC-130-2
+        title: release-please 风格 release PR 生成
+        done: false
+      - id: SC-130-3
+        title: GitLab MR 适配
+        context: "检测远端类型，MR 创建用 glab CLI，缺失时降级指引。"
+        done: false
+    acceptance:
+      - "在含 5+ package 的 pnpm monorepo 验证"
+    risks:
+      - "Step Code 多根工作区支持情况待验证，受阻时记 blocked_reason"
