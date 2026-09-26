@@ -1,0 +1,16 @@
+{
+  "cases": [
+    { "paths": ["src/auth/login.ts", "src/auth/session.ts"], "expected": "auth" },
+    { "paths": ["packages/core/src/index.ts", "packages/core/package.json"], "expected": "core" },
+    { "paths": ["apps/web/src/main.tsx", "apps/web/index.html"], "expected": "web" },
+    { "paths": [".github/workflows/ci.yml"], "expected": "ci" },
+    { "paths": ["docs/guide.md", "docs/api.md"], "expected": "docs" },
+    { "paths": ["tests/unit/a.spec.ts", "tests/unit/b.spec.ts"], "expected": "test" },
+    { "paths": ["package.json", "README.md"], "expected": null },
+    { "paths": ["src/index.ts", "src/app.ts"], "expected": null },
+    { "paths": ["src/api/user.ts", "src/cli/main.ts"], "expected": null },
+    { "paths": ["tests/unit/a.spec.ts", "src/auth/login.ts"], "expected": null },
+    { "paths": ["server/routes/user.ts", "server/routes/order.ts"], "expected": "server" },
+    { "paths": ["packages/README.md"], "expected": null }
+  ]
+}

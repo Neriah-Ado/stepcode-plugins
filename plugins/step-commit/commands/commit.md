@@ -82,6 +82,32 @@ git diff --staged --stat
 
 **混合改动**：一次 staged 里含多种性质时，先建议用户拆分提交（给出拆分方案）；用户拒绝拆分则按主导类型提交，并在正文列明其余改动。
 
+**scope 推断**（`scope_strategy: "off"` 时跳过，直接省略 scope）：
+
+对每个 staged 文件路径按以下规则**顺序匹配，命中即止**；再把所有命中的 scope 聚合——取命中文件最多的 scope，平票或零命中走 fallback。`scope_map`（来自配置）的字面前缀映射最优先，且最长前缀优先。
+
+<!-- SCOPE-RULES-START -->
+```json
+{
+  "builtin_rules": [
+    { "prefix": "packages/", "scope": "<第 2 段目录名>" },
+    { "prefix": "apps/", "scope": "<第 2 段目录名>" },
+    { "prefix": "src/", "scope": "<第 2 段目录名，仅当完整路径 ≥3 段>" },
+    { "prefix": ".github/", "scope": "ci" },
+    { "prefix": "docs/", "scope": "docs" },
+    { "prefix": "test/", "scope": "test" },
+    { "prefix": "tests/", "scope": "test" }
+  ],
+  "aggregate": "取命中文件最多的 scope；平票或零命中进入 fallback",
+  "fallback": "全部文件同属一个非通用顶层目录时用该目录名，否则省略 scope",
+  "generic_dirs": ["src", "lib", "bin", "dist", "build", "packages", "apps"],
+  "notes": "scope 取自目录段，不含点；第 2 段是文件名（含扩展名）时视为未命中"
+}
+```
+<!-- SCOPE-RULES-END -->
+
+示例：`packages/core/src/index.ts` → `core`；`src/auth/login.ts` → `auth`；`docs/guide.md` → `docs`；根目录混合改动 → 省略 scope。
+
 ### 4. HEREDOC 提交（必须用 HEREDOC，防止引号/换行转义问题）
 
 ```bash

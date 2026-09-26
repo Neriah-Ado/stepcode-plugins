@@ -105,6 +105,58 @@ if (existsSync(join(ROOT, '.git'))) {
   }
 }
 
+// ---------- 6. step-commit scope 推断规则与样例（SC-110-2） ----------
+const commitCmdPath = join(ROOT, 'plugins/step-commit/commands/commit.md');
+const commitCmdFull = readFileSync(commitCmdPath, 'utf8');
+
+const scopeBlock = (() => {
+  const m = /<!-- SCOPE-RULES-START -->\s*```json\s*([\s\S]*?)```/.exec(commitCmdFull);
+  return m ? JSON.parse(m[1]) : null;
+})();
+check(scopeBlock !== null, 'commit.md 含 SCOPE-RULES JSON 块');
+
+const inferScope = (paths, rules) => {
+  const generic = new Set(rules.generic_dirs ?? []);
+  const hits = [];
+  for (const p of paths) {
+    const seg = p.split('/');
+    let scope = null;
+    for (const r of rules.builtin_rules ?? []) {
+      if (!p.startsWith(r.prefix)) continue;
+      if (r.scope.startsWith('<')) {
+        const name = seg[1] ?? '';
+        const minSeg = r.prefix === 'src/' ? 3 : 2;
+        if (seg.length >= minSeg && name && !name.includes('.')) scope = name;
+      } else {
+        scope = r.scope;
+      }
+      break;
+    }
+    if (scope) hits.push(scope);
+  }
+  if (hits.length > 0) {
+    const counts = new Map();
+    for (const h of hits) counts.set(h, (counts.get(h) ?? 0) + 1);
+    const max = Math.max(...counts.values());
+    const winners = [...counts.entries()].filter(([, c]) => c === max);
+    return winners.length === 1 ? winners[0][0] : null;
+  }
+  const tops = new Set(paths.map((p) => p.split('/')[0]));
+  if (tops.size === 1 && !generic.has([...tops][0])) return [...tops][0];
+  return null;
+};
+
+if (scopeBlock) {
+  const scopeCases = JSON.parse(readFileSync(join(ROOT, 'tests/samples/scope-cases.json'), 'utf8'));
+  for (const c of scopeCases.cases) {
+    check(
+      inferScope(c.paths, scopeBlock) === c.expected,
+      `scope 推断 [${c.paths.join(', ')}] → ${c.expected}`,
+      `实际 ${inferScope(c.paths, scopeBlock)}`,
+    );
+  }
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);
