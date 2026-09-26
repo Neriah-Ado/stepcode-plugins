@@ -1,0 +1,79 @@
+id: step-docker-mate
+name: Step Docker Mate
+description: "Docker/Compose 容器运维：状态查询、日志解读、编排管理，危险操作默认确认"
+form: hybrid
+priority: P1
+effort: M
+status: not-started
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "3 容器 compose 示例完成 起—查日志—定位崩溃—重启 全流程"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 运维 MVP
+    status: not-started
+    tasks:
+      - id: DM-100-1
+        title: MCP server（TypeScript）：ps / inspect / logs / compose_up / compose_down
+        context: "优先包装 docker CLI（dockerode 备选）；输出结构化 JSON（C5 截断长日志）。"
+        done: false
+      - id: DM-100-2
+        title: 危险操作确认机制
+        context: "rm/prune/down 类操作默认仅列出将受影响资源，用户明确确认后才执行（G3）。"
+        done: false
+      - id: DM-100-3
+        title: docker 缺失降级指引
+        context: "检测 docker 不可用时输出安装/启动指引（G4）。"
+        done: false
+      - id: DM-100-4
+        title: step.plugin.json 注册 mcpServers + 运维 skill
+        done: false
+    acceptance:
+      - "3 容器 compose 示例全流程跑通"
+    risks: []
+  - version: "1.1.0"
+    type: minor
+    theme: 诊断增强
+    status: not-started
+    tasks:
+      - id: DM-110-1
+        title: 常见崩溃模式库
+        context: "OOM（exit 137）/ 端口冲突 / 依赖未就绪 / 卷权限，四类症状→归因→处置写入 skill。"
+        done: false
+      - id: DM-110-2
+        title: "docker events 事件流巡检 skill"
+        done: false
+    acceptance:
+      - "四类故障注入场景归因正确"
+    risks: []
+  - version: "1.2.0"
+    type: minor
+    theme: 深度分析
+    status: not-started
+    tasks:
+      - id: DM-120-1
+        title: 多 compose 项目管理
+        done: false
+      - id: DM-120-2
+        title: 镜像层/体积分析（dive 式解读 + 瘦身建议）
+        done: false
+    acceptance:
+      - "示例镜像减重 >30% 的可执行方案"
+    risks: []
+  - version: "1.3.0"
+    type: minor
+    theme: 远程与自动化
+    status: not-started
+    tasks:
+      - id: DM-130-1
+        title: docker context 远程主机支持
+        context: "远程凭据沿用 requiresEnv/env 注入（C4），禁止写入文件。"
+        done: false
+      - id: DM-130-2
+        title: "/cron 容器健康日报"
+        done: false
+    acceptance:
+      - "远程主机演示环境跑通"
+    risks: []

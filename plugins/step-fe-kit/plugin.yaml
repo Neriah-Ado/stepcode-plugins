@@ -1,0 +1,79 @@
+id: step-fe-kit
+name: Step FE Kit
+description: "前端开发套件：/dev 管理 dev server、playwright 截图视觉验证、/publish 联动 steppage 发布"
+form: declarative
+priority: P1
+effort: S-M
+status: not-started
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "vite + next 两个示例项目跑通 改代码→起服务→发布 全流程"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 一条龙 MVP
+    status: not-started
+    tasks:
+      - id: FK-100-1
+        title: 实现 commands/dev.md（/dev 命令）
+        context: |
+          dev server 生命周期管理 skill：检测框架（vite/next）→ 后台启动 → 解析启动日志确认就绪 → 端口占用处理 → 热重载确认 → 停止。
+          进程管理注意 Windows 兼容（C6）。
+        done: false
+      - id: FK-100-2
+        title: 实现 commands/publish.md（/publish 命令）
+        context: "调内置 steppage 插件的 MCP 工具发布构建产物，回贴预览链接；steppage 未安装时给出 /plugin install 指引。"
+        done: false
+      - id: FK-100-3
+        title: vite / next 启动日志解析规则
+        done: false
+    acceptance:
+      - "两个示例项目全流程跑通"
+    risks:
+      - "内置 playwright/steppage 版本兼容性"
+  - version: "1.1.0"
+    type: minor
+    theme: 视觉验证
+    status: not-started
+    tasks:
+      - id: FK-110-1
+        title: 改版前后截图对比
+        context: "调内置 playwright：改动前截图 → 修改 → 同视口截图 → 对比报告。"
+        done: false
+      - id: FK-110-2
+        title: 浏览器控制台错误采集并入反馈
+        done: false
+    acceptance:
+      - "UI 改动任务中截图对比有效发现问题"
+    risks: []
+  - version: "1.2.0"
+    type: minor
+    theme: 精细验证
+    status: not-started
+    tasks:
+      - id: FK-120-1
+        title: 指定 selector 截图（组件级验证）
+        done: false
+      - id: FK-120-2
+        title: 多视口批量检查（375/768/1440）
+        done: false
+    acceptance:
+      - "响应式问题可在移动视口截图中暴露"
+    risks: []
+  - version: "1.3.0"
+    type: minor
+    theme: 性能与联动
+    status: not-started
+    tasks:
+      - id: FK-130-1
+        title: 性能提示（资源体积/阻塞项解读）
+        done: false
+      - id: FK-130-2
+        title: "与 step-api-forge mock server 联动跑 E2E"
+        context: "跨插件依赖：api-forge 未安装时降级为本地 mock 指引。"
+        done: false
+    acceptance:
+      - "两插件组合演示可复现"
+    risks:
+      - "跨插件依赖顺序，需 api-forge ≥1.1.0"

@@ -1,0 +1,88 @@
+id: step-ci-fixer
+name: Step CI Fixer
+description: "CI 失败修复：/ci-fix 抓取失败日志 → 本地修复 → push 重跑闭环，支持 /goal 挂机"
+form: hybrid
+priority: P1
+effort: M
+status: not-started
+manifest: step.plugin.json
+requires_env: ["GITHUB_TOKEN"]
+verify:
+  - "3 个含历史失败 run 的真实仓库完成闭环"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 修复闭环 MVP
+    status: not-started
+    tasks:
+      - id: CF-100-1
+        title: MCP server 包装 gh CLI
+        context: "工具：list_failed_runs / fetch_run_log（只取最后 N KB 错误段，C5）/ rerun_workflow。"
+        done: false
+      - id: CF-100-2
+        title: 实现 commands/ci-fix.md（/ci-fix 命令）
+        context: |
+          流程：定位失败 run → 截取错误段 → 分析修复 → push 触发重跑 → 循环，上限 3 轮。
+          push 前必须用户确认（G3）。
+        done: false
+      - id: CF-100-3
+        title: gh 缺失/未认证降级指引
+        context: "检测 gh 不可用或未 auth 时输出安装与 gh auth login 指引（G4/C4）。"
+        done: false
+      - id: CF-100-4
+        title: "step.plugin.json 声明 requiresEnv: [GITHUB_TOKEN]"
+        done: false
+    acceptance:
+      - "3 个真实仓库闭环成功"
+    risks:
+      - "gh CLI 为外部依赖"
+  - version: "1.1.0"
+    type: minor
+    theme: 凭据与分类
+    status: not-started
+    tasks:
+      - id: CF-110-1
+        title: GITHUB_TOKEN 缺失引导流程
+        context: "区分 /login 可解决与需手动 export 两种情况给出对应指引。"
+        done: false
+      - id: CF-110-2
+        title: 多 workflow 选择器
+        done: false
+      - id: CF-110-3
+        title: 失败分类（lint/test/build/deploy）与分类修复策略
+        done: false
+    acceptance:
+      - "未配置 token 时提示清晰不报裸错误"
+    risks: []
+  - version: "1.2.0"
+    type: minor
+    theme: 长托管
+    status: not-started
+    tasks:
+      - id: CF-120-1
+        title: "/goal 挂机修 CI 模式"
+        context: "持续监控 run 状态直到绿或超时，定期产出进度报告落盘。"
+        done: false
+      - id: CF-120-2
+        title: PR 评论交互
+        context: "读取 reviewer 意见并转化为修复任务；评论内容截断后喂给模型（C5）。"
+        done: false
+    acceptance:
+      - "挂机 2 小时任务无人值守完成且报告完整"
+    risks:
+      - "/goal 长任务稳定性依赖官方"
+  - version: "1.3.0"
+    type: minor
+    theme: 多平台
+    status: not-started
+    tasks:
+      - id: CF-130-1
+        title: GitLab CI 日志适配
+        done: false
+      - id: CF-130-2
+        title: Jenkins 构建日志适配
+        done: false
+    acceptance:
+      - "各一个示例项目验证"
+    risks:
+      - "平台 API 差异大，允许按需裁剪并在 CHANGELOG 说明"

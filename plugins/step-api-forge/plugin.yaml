@@ -1,0 +1,75 @@
+id: step-api-forge
+name: Step API Forge
+description: "OpenAPI 全链路：文档校验、TS/Python 客户端生成、mock server、API diff 检测"
+form: hybrid
+priority: P1
+effort: M
+status: not-started
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "petstore 3.0/3.1 规格生成可用客户端且通过类型检查"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 生成 MVP
+    status: not-started
+    tasks:
+      - id: AF-100-1
+        title: MCP server：OpenAPI 校验
+        context: "基于 @readme/openapi-parser；支持 3.0 与 3.1。"
+        done: false
+      - id: AF-100-2
+        title: TypeScript 客户端生成工具
+        context: "openapi-typescript 等成熟库包装，产物落盘用户指定目录（C5）。"
+        done: false
+      - id: AF-100-3
+        title: 实现 commands/api-forge.md（生成入口命令）
+        done: false
+    acceptance:
+      - "petstore 规格生成客户端通过编译与类型检查"
+    risks: []
+  - version: "1.1.0"
+    type: minor
+    theme: Mock 与文档
+    status: not-started
+    tasks:
+      - id: AF-110-1
+        title: mock server 生成（MSW/express，供 playwright E2E）
+        done: false
+      - id: AF-110-2
+        title: API 文档页生成
+        done: false
+    acceptance:
+      - "mock server 支撑 step-fe-kit E2E 演示"
+    risks: []
+  - version: "1.2.0"
+    type: minor
+    theme: 变更管理
+    status: not-started
+    tasks:
+      - id: AF-120-1
+        title: API diff 报告（breaking change 检测）
+        done: false
+      - id: AF-120-2
+        title: 版本间兼容性摘要
+        done: false
+    acceptance:
+      - "已知 breaking 样本 100% 检出"
+    risks: []
+  - version: "1.3.0"
+    type: minor
+    theme: 双向与多语言
+    status: not-started
+    tasks:
+      - id: AF-130-1
+        title: Python SDK 生成
+        done: false
+      - id: AF-130-2
+        title: 从代码反向生成/更新 spec
+        context: "允许降级为提示词辅助模式（Agent 读路由代码整理 spec），不强求全自动。"
+        done: false
+    acceptance:
+      - "反向生成与手写 spec diff 可控"
+    risks:
+      - "反向生成难度高，允许降级实现"

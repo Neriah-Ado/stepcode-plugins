@@ -1,0 +1,11 @@
+{
+  "name": "stepcode-plugins",
+  "description": "Step Code 第三方插件集合：规范提交、测试守护、用量监控等（持续开发中）",
+  "plugins": [
+    {
+      "name": "step-commit",
+      "description": "Git 提交工作流套件：/commit 规范提交、/commit-push-pr 提交并创建 PR、/changelog 发布辅助",
+      "source": "./plugins/step-commit"
+    }
+  ]
+}

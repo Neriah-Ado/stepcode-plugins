@@ -1,0 +1,44 @@
+{
+  "project": "stepcode-plugins",
+  "generated": "2026-09-26",
+  "upstream": {
+    "product": "Step Code (StepFun terminal AI agent)",
+    "repo": "https://github.com/stepfun-ai/Step-Code",
+    "docs": "https://platform.stepfun.com/docs/zh/step-code/quickstart",
+    "plugin_loader_source": "packages/coding-agent/src/step/plugins.ts",
+    "notes": "MIT, open-sourced 2026-09-22; plugin API is early-stage"
+  },
+  "entrypoint": "AGENTS.md",
+  "status_vocabulary": ["not-started", "in-progress", "blocked", "done"],
+  "priority_order": ["P0", "P1", "P2"],
+  "watchlist": [
+    "entry 可执行扩展开放加载（当前仅记录不加载）",
+    "hooks 机制引入（当前清单无 hooks 字段）",
+    "官方插件市场目录上线（README 标注 links finalized at release）",
+    "lspServers 支持变化（当前明确不承载）"
+  ],
+  "phases": [
+    { "weeks": "W1-W2", "goal": "P0 双首发", "work": ["step-commit@1.0.0", "step-test-guard@1.0.0"], "parallel": ["建立 _template 插件骨架"] },
+    { "weeks": "W3-W4", "goal": "P0 完成 + 收尾", "work": ["step-token-meter@1.0.0", "step-commit@1.1.0", "step-test-guard@1.1.0"], "parallel": ["核对官方 release notes"] },
+    { "weeks": "W5-W6", "goal": "P1 启动", "work": ["step-fe-kit@1.0.0", "step-docker-mate@1.0.0"], "parallel": ["step-commit@1.2.0", "step-test-guard@1.2.0"] },
+    { "weeks": "W7-W8", "goal": "P1 续", "work": ["step-ci-fixer@1.0.0"], "parallel": ["P0 全部收 v1.3.0", "发布实践文章"] },
+    { "weeks": "W9-W10", "goal": "P1 续", "work": ["step-sec-scan@1.0.0"], "parallel": ["已发布项 v1.1.0"] },
+    { "weeks": "W11-W12", "goal": "P1 全达 v1.0.0", "work": ["step-api-forge@1.0.0"], "parallel": ["step-token-meter@1.2.0", "step-ci-fixer@1.2.0"] },
+    { "weeks": "W13-W14", "goal": "P2 启动", "work": ["step-db-insight@1.0.0", "step-doc-gen@1.0.0", "step-marketplace-cc@1.0.0"], "parallel": [] },
+    { "weeks": "W15-W16", "goal": "全部达 v1.0.0+", "work": ["step-cron-recipes@1.0.0"], "parallel": ["step-marketplace-cc@1.1.0", "整体复盘"] }
+  ],
+  "plugins": [
+    { "id": "step-commit", "abbr": "SC", "priority": "P0", "form": "declarative", "effort": "S", "spec": "plugins/step-commit/plugin.yaml", "status": "in-progress", "latest_version": "1.0.0" },
+    { "id": "step-test-guard", "abbr": "TG", "priority": "P0", "form": "declarative", "effort": "S-M", "spec": "plugins/step-test-guard/plugin.yaml", "status": "not-started", "latest_version": null },
+    { "id": "step-token-meter", "abbr": "TM", "priority": "P0", "form": "mcp", "effort": "M", "spec": "plugins/step-token-meter/plugin.yaml", "status": "not-started", "latest_version": null },
+    { "id": "step-docker-mate", "abbr": "DM", "priority": "P1", "form": "hybrid", "effort": "M", "spec": "plugins/step-docker-mate/plugin.yaml", "status": "not-started", "latest_version": null },
+    { "id": "step-ci-fixer", "abbr": "CF", "priority": "P1", "form": "hybrid", "effort": "M", "spec": "plugins/step-ci-fixer/plugin.yaml", "status": "not-started", "latest_version": null },
+    { "id": "step-fe-kit", "abbr": "FK", "priority": "P1", "form": "declarative", "effort": "S-M", "spec": "plugins/step-fe-kit/plugin.yaml", "status": "not-started", "latest_version": null },
+    { "id": "step-sec-scan", "abbr": "SS", "priority": "P1", "form": "hybrid", "effort": "M", "spec": "plugins/step-sec-scan/plugin.yaml", "status": "not-started", "latest_version": null },
+    { "id": "step-api-forge", "abbr": "AF", "priority": "P1", "form": "hybrid", "effort": "M", "spec": "plugins/step-api-forge/plugin.yaml", "status": "not-started", "latest_version": null },
+    { "id": "step-db-insight", "abbr": "DI", "priority": "P2", "form": "mcp", "effort": "M", "spec": "plugins/step-db-insight/plugin.yaml", "status": "not-started", "latest_version": null },
+    { "id": "step-doc-gen", "abbr": "DG", "priority": "P2", "form": "declarative", "effort": "S", "spec": "plugins/step-doc-gen/plugin.yaml", "status": "not-started", "latest_version": null },
+    { "id": "step-cron-recipes", "abbr": "CR", "priority": "P2", "form": "declarative", "effort": "S", "spec": "plugins/step-cron-recipes/plugin.yaml", "status": "not-started", "latest_version": null },
+    { "id": "step-marketplace-cc", "abbr": "MC", "priority": "P2", "form": "marketplace", "effort": "M", "spec": "plugins/step-marketplace-cc/plugin.yaml", "status": "not-started", "latest_version": null }
+  ]
+}

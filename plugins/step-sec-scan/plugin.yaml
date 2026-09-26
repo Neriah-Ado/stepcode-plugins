@@ -1,0 +1,81 @@
+id: step-sec-scan
+name: Step Sec Scan
+description: "安全审计：/audit 依赖漏洞 + secret 泄漏扫描，结构化报告（严重度/证据/修复建议）"
+form: hybrid
+priority: P1
+effort: M
+status: not-started
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "含已知漏洞依赖与注入 secret 的样本仓库全部命中且零误报高危项"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 审计 MVP
+    status: not-started
+    tasks:
+      - id: SS-100-1
+        title: MCP server 包装扫描器
+        context: "npm audit + gitleaks（staged diff 增量模式）；扫描器二进制存在性检测与安装指引（G4）。"
+        done: false
+      - id: SS-100-2
+        title: 实现 commands/audit.md（/audit 命令）
+        context: |
+          输出结构化报告：严重度分级（critical/high/medium/low）+ 文件行号定位 + 修复建议。
+          报告落盘 docs/security-report.md（C5），终端只给摘要。
+        done: false
+      - id: SS-100-3
+        title: 误报降噪规则
+        context: "测试文件/示例目录中的 secret 样式串、已知 dev 依赖低危项等降噪规则写入 skill。"
+        done: false
+    acceptance:
+      - "样本仓库全部命中"
+      - "零误报高危项"
+    risks:
+      - "扫描器二进制为外部依赖"
+  - version: "1.1.0"
+    type: minor
+    theme: 多生态
+    status: not-started
+    tasks:
+      - id: SS-110-1
+        title: pip-audit / cargo audit 接入
+        done: false
+      - id: SS-110-2
+        title: pre-commit hook 集成模式
+        done: false
+    acceptance:
+      - "三生态样本仓库验证"
+    risks: []
+  - version: "1.2.0"
+    type: minor
+    theme: 基线与 SBOM
+    status: not-started
+    tasks:
+      - id: SS-120-1
+        title: 基线对比（新引入 vs 存量）
+        context: "基线文件存于项目 .stepcode/sec-baseline.json。"
+        done: false
+      - id: SS-120-2
+        title: SBOM 生成（CycloneDX）
+        done: false
+    acceptance:
+      - "修复过程中基线模式只报新增问题"
+    risks: []
+  - version: "1.3.0"
+    type: minor
+    theme: 自动修复
+    status: not-started
+    tasks:
+      - id: SS-130-1
+        title: 依赖升级自动修复 PR
+        context: "bump 依赖 + 联动 step-test-guard 回归；PR 创建前用户确认（G3）。"
+        done: false
+      - id: SS-130-2
+        title: CI 卡点模式（fail 条件配置）
+        done: false
+    acceptance:
+      - "修复 PR 能自动通过 CI"
+    risks:
+      - "依赖 step-test-guard ≥1.0.0"

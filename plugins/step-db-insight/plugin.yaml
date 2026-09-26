@@ -1,0 +1,81 @@
+id: step-db-insight
+name: Step DB Insight
+description: "数据库助手：只读 schema 浏览、EXPLAIN 解读、迁移生成与审查，写操作白名单确认"
+form: mcp
+priority: P2
+effort: M
+status: not-started
+manifest: step.plugin.json
+requires_env: ["DATABASE_URL"]
+verify:
+  - "postgres 示例库只读保证：任何路径都无法产生写语句执行"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 只读 MVP
+    status: not-started
+    tasks:
+      - id: DI-100-1
+        title: MCP server（postgres 只读连接）
+        context: "连接串走 DATABASE_URL（C4）；工具：list_tables / describe_table / sample_rows / explain_query。"
+        done: false
+      - id: DI-100-2
+        title: 强制只读保证
+        context: "连接层使用只读事务/只读账号约束 + 语句白名单解析双重防线；写语句一律拒绝并说明（G3）。"
+        done: false
+      - id: DI-100-3
+        title: 慢查询 EXPLAIN 解读 skill
+        done: false
+      - id: DI-100-4
+        title: 凭据缺失引导
+        context: "DATABASE_URL 未配置时输出 export 示例与安全提示（不落盘，G4）。"
+        done: false
+    acceptance:
+      - "只读保证通过尝试注入写语句的对抗测试"
+    risks:
+      - "连接串含密钥，文档强调 env 注入"
+  - version: "1.1.0"
+    type: minor
+    theme: 迁移与优化
+    status: not-started
+    tasks:
+      - id: DI-110-1
+        title: 迁移脚本生成与审查 skill
+        context: "生成 SQL 迁移文件供人工审查，不直接执行；遵循项目既有命名风格。"
+        done: false
+      - id: DI-110-2
+        title: 慢查询优化建议（索引/改写）
+        done: false
+    acceptance:
+      - "迁移文件符合项目既有风格"
+    risks: []
+  - version: "1.2.0"
+    type: minor
+    theme: 受控写入
+    status: not-started
+    tasks:
+      - id: DI-120-1
+        title: 写操作白名单机制
+        context: "INSERT/UPDATE 逐条确认后执行（G3）；DELETE/DDL 默认永久拒绝。"
+        done: false
+      - id: DI-120-2
+        title: 事务边界提示
+        done: false
+    acceptance:
+      - "写路径全部经过确认流程"
+    risks:
+      - "与 Step Code 权限模式联动，需实测"
+  - version: "1.3.0"
+    type: minor
+    theme: 多数据库
+    status: not-started
+    tasks:
+      - id: DI-130-1
+        title: mysql / sqlite 适配
+        done: false
+      - id: DI-130-2
+        title: schema 演进时间线图
+        done: false
+    acceptance:
+      - "三库示例各自跑通"
+    risks: []

@@ -1,0 +1,92 @@
+id: step-test-guard
+name: Step Test Guard
+description: "测试守护循环：/test 运行测试 → 失败归因 → 定点修复 → 重跑闭环"
+form: declarative
+priority: P0
+effort: S-M
+status: not-started
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "vitest/jest/pytest 三种示例项目修复闭环成功率人工评估"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 修复闭环 MVP
+    status: not-started
+    tasks:
+      - id: TG-100-1
+        title: 编写 step.plugin.json 清单与 skills/commands 目录
+        done: false
+      - id: TG-100-2
+        title: 实现 commands/test.md（/test 命令）
+        context: |
+          检测测试框架（package.json scripts / pytest.ini / vitest.config 等）→ 运行 → 解析输出为结构化失败清单（用例名/文件/断言信息）。
+        done: false
+      - id: TG-100-3
+        title: 实现 skills/test-fix-loop skill
+        context: |
+          修复循环规则：失败归因三分类（断言失败/环境问题/真实回归）→ 仅修改相关代码（最小改动）→ 重跑失败用例 → 全绿或达上限。
+          上限默认 3 轮，超限停止并列出未解决项转人工。
+        done: false
+      - id: TG-100-4
+        title: 支持 vitest / jest / pytest 输出解析
+        context: "三种框架的失败输出模式（错误行、期望vs实际）写入 skill 解析规则。"
+        done: false
+    acceptance:
+      - "三种框架示例项目完成闭环"
+      - "修复过程零误改无关文件"
+    risks: []
+  - version: "1.1.0"
+    type: minor
+    theme: 生态扩展
+    status: not-started
+    tasks:
+      - id: TG-110-1
+        title: "新增 go test / cargo test / mvn / gradle 输出解析"
+        done: false
+      - id: TG-110-2
+        title: 覆盖率报告解读
+        context: "istanbul JSON summary / cobertura XML 读取，输出未覆盖关键路径提示。"
+        done: false
+      - id: TG-110-3
+        title: 失败用例缓存与增量重跑
+        context: "记录上轮失败用例清单，下轮仅先跑失败集再全量确认。"
+        done: false
+    acceptance:
+      - "三种新栈各通过一个示例仓库"
+    risks: []
+  - version: "1.2.0"
+    type: minor
+    theme: 常驻守护
+    status: not-started
+    tasks:
+      - id: TG-120-1
+        title: "watch 模式接入 /cron：夜间全量测试"
+        context: "封装为可被 /cron 调用的无头任务说明（step -p 形式）。"
+        done: false
+      - id: TG-120-2
+        title: 测试报告落盘 docs/test-report.md
+        context: "结构：摘要/失败明细/与上轮对比；输出遵循 C5（报告落盘给路径）。"
+        done: false
+    acceptance:
+      - "连续 3 个 /cron 夜间任务产出有效报告且无误报"
+    risks:
+      - "/cron 与 /goal 组合稳定性依赖官方，异常时记 blocked_reason"
+  - version: "1.3.0"
+    type: minor
+    theme: 深水区
+    status: not-started
+    tasks:
+      - id: TG-130-1
+        title: "回归根因定位：git bisect 自动化包装"
+        context: "bisect run 脚本生成 + 结果解读；每步操作有明确输出，坏提交定位后转人工确认。"
+        done: false
+      - id: TG-130-2
+        title: flaky test 识别与隔离建议
+        context: "同一用例多轮重跑统计失败率，超阈值标记 flaky 并给隔离方案（skip/retry 配置）。"
+        done: false
+    acceptance:
+      - "含已知 flaky 用例的仓库识别率可复现"
+    risks:
+      - "bisect 需大量 bash 调用，注意 token 预算（C5）"

@@ -1,0 +1,84 @@
+id: step-marketplace-cc
+name: Step Marketplace CC Bridge
+description: "Claude Code 插件市场桥：收录验证高星 CC 插件在 Step Code 下的兼容性并修补，元项目"
+form: marketplace
+priority: P2
+effort: M
+status: not-started
+manifest: ".step-plugin/marketplace.json（本插件本身是一个市场仓库）"
+requires_env: []
+verify:
+  - "收录插件全部可通过 /plugin marketplace add 安装并至少启动成功"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 桥接 MVP
+    status: not-started
+    tasks:
+      - id: MC-100-1
+        title: 建立市场仓库骨架
+        context: "清单 .step-plugin/marketplace.json（回退 .claude-plugin/marketplace.json 亦支持）；plugins/<name>/ 子目录逐收录。"
+        done: false
+      - id: MC-100-2
+        title: 精选 10 个高星 Claude Code 插件收录
+        context: "优先纯资源型（commands/skills）——兼容性最高；每插件锁定上游版本号并记录在收录说明中。"
+        done: false
+      - id: MC-100-3
+        title: 逐个兼容性验证与修补
+        context: |
+          依据（源码确认的兼容规则）：.claude-plugin/plugin.json 自动回退读取；name→id 归一化；skills/commands/agents/.mcp.json 目录自动发现。
+          已知不兼容点：lspServers 声明（剔除并标注）；entry 可执行扩展（剔除并标注）。
+        done: false
+      - id: MC-100-4
+        title: README 分类索引 + 兼容性标注表
+        context: "每行：插件名 / 上游仓库 / 锁定版本 / 兼容状态（原生兼容|已修补|不兼容-原因） / 实测表现一句话。"
+        done: false
+    acceptance:
+      - "10 个插件全部安装并至少启动成功"
+    risks:
+      - "上游插件自身变更，用锁定版本对冲"
+  - version: "1.1.0"
+    type: minor
+    theme: 扩容
+    status: not-started
+    tasks:
+      - id: MC-110-1
+        title: "收录扩展至 30+，按 Git/测试/前端/文档/运维 分类"
+        done: false
+      - id: MC-110-2
+        title: 每插件实测表现标注
+        done: false
+    acceptance:
+      - "分类浏览体验完整"
+    risks:
+      - "人工验证成本高，控制节奏"
+  - version: "1.2.0"
+    type: minor
+    theme: 自动化
+    status: not-started
+    tasks:
+      - id: MC-120-1
+        title: 兼容性 CI 检测脚本
+        context: "批量校验收录插件的清单 schema（幂等、可本地跑），输出报告。"
+        done: false
+      - id: MC-120-2
+        title: 不兼容项自动生成修复 PR 草稿
+        done: false
+    acceptance:
+      - "CI 对全部收录项绿灯"
+    risks: []
+  - version: "1.3.0"
+    type: minor
+    theme: 原生化
+    status: not-started
+    tasks:
+      - id: MC-130-1
+        title: 收录原生 Step 插件（非迁移项）
+        done: false
+      - id: MC-130-2
+        title: 星级/活跃度/实测徽章体系
+        done: false
+    acceptance:
+      - "原生与迁移插件共存索引"
+    risks:
+      - "依赖第三方原生插件出现"
