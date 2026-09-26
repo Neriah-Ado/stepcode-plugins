@@ -2,9 +2,10 @@
   "id": "step-test-guard",
   "name": "Step Test Guard",
   "description": "测试守护循环：/test 运行测试 → 失败归因三分类 → 定点修复 → 增量重跑闭环。vitest/jest/pytest 输出解析内置，默认 3 轮上限，超限转人工。",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "commands": [
-    "commands/test.md"
+    "commands/test.md",
+    "commands/nightly-test.md"
   ],
   "skills": [
     "skills/test-fix-loop/SKILL.md"
