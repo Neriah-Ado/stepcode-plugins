@@ -397,6 +397,25 @@ check(
   JSON.stringify(cobertura.lowFiles),
 );
 
+// ---------- 13. step-test-guard 失败用例缓存（TG-110-3） ----------
+const cacheBlock = extractBlock(tgTestCmd, 'CACHE-RULES');
+check(cacheBlock !== null && cacheBlock.cache_path === 'docs/test-guard/failed-cases.json', 'test.md 含 CACHE-RULES 且路径正确');
+check(tgSkill.includes('failed-cases.json'), 'SKILL.md 引用失败用例缓存');
+
+const { loadCache, saveCache, mergeCases, rangeMatches } = await import('./lib/fail-cache.mjs');
+check(loadCache(cacheBlock ? JSON.stringify([{ stack: 'vitest', file: 'src/a.test.ts', case: 'x' }]) : null)?.length === 1, '缓存正常读取');
+check(loadCache('{broken json') === null, '缓存损坏时容错返回 null');
+check(loadCache('{"not":"array"}') === null, '缓存格式非数组时返回 null');
+
+const merged = mergeCases(
+  [{ stack: 'vitest', file: 'a.ts', case: 'x' }],
+  [{ stack: 'vitest', file: 'a.ts', case: 'x' }, { stack: 'pytest', file: 't.py', case: 'y' }],
+);
+check(merged.length === 2, '缓存合并按 file+case 去重', JSON.stringify(merged));
+check(rangeMatches([{ stack: 'vitest', file: 'a', case: 'x' }], 'vitest') === true, '缓存范围匹配');
+check(rangeMatches([{ stack: 'vitest', file: 'a', case: 'x' }], 'go') === false, '缓存 stack 变化视为范围不符');
+check(typeof saveCache([{ stack: 'go', file: 'a_test.go', case: 'TestSub' }]) === 'string', '缓存写出为 JSON 字符串');
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

@@ -34,7 +34,8 @@ description: 测试失败归因三分类与"定点修复→增量重跑"循环�
 ```
 <!-- LOOP-RULES-END -->
 
-1. 对失败清单逐条归因（第 1 节），按 batch 排序：environment 最先（环境不修好，其余结果都不可信）→ regression → assertion。
+1. 修复循环开始前先读失败用例缓存（`docs/test-guard/failed-cases.json`，规则见 /test 命令的 CACHE-RULES）：有缓存且与本次范围一致时**先跑缓存失败集**拿快速信号，再进入全量节奏；缓存只为加速，最终以全量确认为准。
+2. 对失败清单逐条归因（第 1 节），按 batch 排序：environment 最先（环境不修好，其余结果都不可信）→ regression → assertion。
 2. **最小改动**修复：每个被修改的文件必须能对应到失败清单中的用例；不重构、不顺手改格式、不「路过式优化」。
 3. 只重跑失败集（`rerun` 表）；失败集清零后**全量重跑**确认（`full_confirm`）。
 4. 轮次 +1；仍有失败则回到 1；达 `max_rounds` 上限执行 `escalate`。

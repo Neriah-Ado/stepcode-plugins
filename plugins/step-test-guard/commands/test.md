@@ -47,6 +47,22 @@ mkdir -p docs/test-guard && <run 命令> > docs/test-guard/last-run.log 2>&1; ec
 - 记录退出码与耗时；失败时从 `docs/test-guard/last-run.log` 提取失败段解析（一般只有最后 1/3 是失败明细）。
 - 增量范围：参数给了路径/用例过滤时按范围跑；修复循环内的重跑规则见 skill。
 
+### 失败用例缓存（增量重跑）
+
+<!-- CACHE-RULES-START -->
+```json
+{
+  "cache_path": "docs/test-guard/failed-cases.json",
+  "entry_format": { "stack": "vitest", "file": "src/a.test.ts", "case": "用例名" },
+  "policy": "修复循环开始前先跑缓存失败集拿快速信号；全量确认通过后清空缓存；无缓存或缓存与当前范围不符时直接全量",
+  "write_moment": "每轮全量跑后写入当前失败集；全绿时清空"
+}
+```
+<!-- CACHE-RULES-END -->
+
+- 缓存按 `file + case` 去重合并；`stack` 变化时视为范围不符，直接全量。
+- 缓存只作为**加速信号**：快速信号为空不代表没有失败，最终以全量确认为准（宁可多跑，不可漏报）。
+
 ## 3. 解析为结构化失败清单
 
 输出格式（每个失败用例一条）：
