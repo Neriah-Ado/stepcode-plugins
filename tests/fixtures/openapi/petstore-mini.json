@@ -1,0 +1,13 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "Petstore Mini", "version": "1.0.0" },
+  "paths": {
+    "/pets": {
+      "get": { "summary": "List pets", "responses": { "200": { "description": "ok" } } },
+      "post": { "summary": "Create pet", "requestBody": { "content": {} }, "responses": { "201": { "description": "created" } } }
+    },
+    "/pets/{petId}": {
+      "get": { "summary": "Get pet", "parameters": [{ "name": "petId", "in": "path", "required": true, "schema": { "type": "integer" } }], "responses": { "200": { "description": "ok" } } }
+    }
+  }
+}

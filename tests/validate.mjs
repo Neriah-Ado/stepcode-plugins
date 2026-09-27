@@ -932,6 +932,39 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
   check(ssCmd.includes('--multi-ecosystem') && ssCmd.includes('--baseline') && ssCmd.includes('--gate'), 'audit.md 含多生态/基线/卡点参数');
 }
 
+// ---------- 26. step-api-forge（AF-100） ----------
+{
+  const afDir = join(ROOT, 'plugins/step-api-forge');
+  const { validateOpenApi, generateTsClient } = await import('../plugins/step-api-forge/server/lib.mjs');
+  const spec = JSON.parse(readFileSync(join(ROOT, 'tests/fixtures/openapi/petstore-mini.json'), 'utf8'));
+  const v = validateOpenApi(spec);
+  check(v.valid === true && v.operationCount === 3 && v.openapiVersion === '3.0.3', 'petstore 3.0 校验通过', JSON.stringify(v.errors));
+  check(validateOpenApi({ openapi: '3.1.0', info: { title: 'x', version: '1' }, paths: { '/a': { get: { responses: { '200': {} } } } } }).valid === true, '3.1 校验通过');
+  const bad = validateOpenApi({ openapi: '2.0', info: {}, paths: { '/a': { get: {} } } });
+  check(bad.valid === false && bad.errors.length >= 3, '非法 spec 全量报错', JSON.stringify(bad.errors));
+  const client = generateTsClient(spec);
+  check(client.code.includes('getPets') && client.code.includes('postPets') && client.code.includes('getPetsPetId'), 'TS 客户端含全部 operation 方法');
+  check(client.code.includes('step-api-forge 生成') && client.code.includes('${petId}'), '路径参数插值正确');
+
+  const fake = join(ROOT, 'tests/fixtures/gh-fake/fake-gh.mjs');
+  const runMcp4 = (calls, env) => {
+    const r = spawnSync(process.execPath, [join(afDir, 'server/index.mjs')], { input: calls.join('\n') + '\n', encoding: 'utf8', timeout: 30000, env });
+    if (r.status !== 0) throw new Error(`server 退出 ${r.status}: ${r.stderr.slice(0, 200)}`);
+    return (r.stdout + '\n').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  };
+  const specPath = join(ROOT, 'tests/fixtures/openapi/petstore-mini.json');
+  const msgs = runMcp4(
+    [
+      JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'validate_spec', arguments: { specPath } } }),
+      JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'generate_ts_client', arguments: { specPath, baseUrl: 'http://localhost:3000' } } }),
+      '',
+    ],
+    { ...process.env, GH_FIXER_FAKE: fake },
+  );
+  check(msgs.find((m) => m.id === 1)?.result?.structuredContent?.valid === true, 'MCP validate_spec');
+  check(msgs.find((m) => m.id === 2)?.result?.structuredContent?.code?.includes('localhost:3000'), 'MCP generate_ts_client');
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

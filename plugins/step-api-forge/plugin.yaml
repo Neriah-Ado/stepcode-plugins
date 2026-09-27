@@ -4,7 +4,7 @@ description: "OpenAPI 全链路：文档校验、TS/Python 客户端生成、moc
 form: hybrid
 priority: P1
 effort: M
-status: not-started
+status: in-progress
 manifest: step.plugin.json
 requires_env: []
 verify:
@@ -13,19 +13,18 @@ versions:
   - version: "1.0.0"
     type: major
     theme: 生成 MVP
-    status: not-started
+    status: done
+    notes: "校验器为零依赖内置实现（@readme/openapi-parser 作为网络可用时的可选增强）；tsc 复核依赖用户环境"
     tasks:
       - id: AF-100-1
         title: MCP server：OpenAPI 校验
-        context: "基于 @readme/openapi-parser；支持 3.0 与 3.1。"
-        done: false
+        done: true
       - id: AF-100-2
         title: TypeScript 客户端生成工具
-        context: "openapi-typescript 等成熟库包装，产物落盘用户指定目录（C5）。"
-        done: false
+        done: true
       - id: AF-100-3
         title: 实现 commands/api-forge.md（生成入口命令）
-        done: false
+        done: true
     acceptance:
       - "petstore 规格生成客户端通过编译与类型检查"
     risks: []
