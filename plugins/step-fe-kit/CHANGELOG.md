@@ -4,6 +4,12 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
+## [1.2.0] - 2026-09-27
+
+### Other Changes
+- 自举 /changelog 生成 step-fe-kit v1.2.0 条目 (FK-120)
+- 标记 step-fe-kit v1.2.0 任务完成
+
 ## [1.1.0] - 2026-09-27
 
 ### Added
