@@ -1,0 +1,2 @@
+# 仓库统一 LF：保证 validate §9 自举一致性校验在任意平台 / core.autocrlf 配置下结果可复现
+* text=auto eol=lf

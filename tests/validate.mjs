@@ -260,7 +260,8 @@ const checkBootstrapChangelog = (pluginId) => {
   const m = new RegExp(`## \\[${version}\\] - \\d{4}-\\d{2}-\\d{2}[\\s\\S]*?(?=\\n## \\[|\\s*$)`).exec(doc);
   check(m !== null, `CHANGELOG.md ${pluginId} 含 [${version}] 节`);
   if (m) {
-    check(m[0].trim() === expected.trim(), `CHANGELOG 自举一致 ${pluginId}（文件内容 = 库对 git 历史的输出）`, `\n--- 期望 ---\n${expected}\n--- 实际 ---\n${m[0]}`);
+    // 行尾归一化：windows 检出（core.autocrlf=true）会把文件转成 CRLF，与 git 历史生成的 LF 输出逐字符比对会假失败
+    check(m[0].replace(/\r\n/g, '\n').trim() === expected.trim(), `CHANGELOG 自举一致 ${pluginId}（文件内容 = 库对 git 历史的输出）`, `\n--- 期望 ---\n${expected}\n--- 实际 ---\n${m[0]}`);
   }
 };
 checkBootstrapChangelog('step-commit');
