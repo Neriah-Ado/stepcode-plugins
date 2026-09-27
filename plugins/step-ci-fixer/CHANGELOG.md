@@ -4,6 +4,14 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
+## [1.2.0] - 2026-09-27
+
+### Added
+- /ci-watch 挂机监控与 PR 评论交互 (CF-120-1, CF-120-2)
+
+### Other Changes
+- 自举 /changelog 生成 step-ci-fixer v1.2.0 条目 (CF-120)
+
 ## [1.1.0] - 2026-09-27
 
 ### Other Changes
