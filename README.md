@@ -31,6 +31,7 @@
 - [v1.2.0 — 自动化与可视化 / Automation & Visualization](./docs/releases/v1.2.0.md)
 - [v1.3.0 — 深水区与收官 / Deep Water & Wrap-up](./docs/releases/v1.3.0.md)
 - [step-context-archive v1.0.0 — 预发布说明（进行中）/ Pre-release Notes](./docs/releases/step-context-archive-v1.0.0.md)
+- [社区贡献与维护 — 自 PR #1 合并起 / From PR #1 Merge Onward](./docs/releases/community-merge.md)（滚动更新 / rolling）
 
 ## 安装
 
