@@ -8,6 +8,21 @@ argument-hint: <stamp id | stamp-<id>.md | 归档文件路径>
 对话里出现 `#STAMP <id> → <路径> — …` 时，摘要**只是导航**，细节可能失真。
 需要精确内容时用本命令取回原文。
 
+## 规则
+
+<!-- RECALL-RULES-START -->
+```json
+{
+  "read_only": true,
+  "resolve": "12 位十六进制 id → .stepcode/context-archive/stamp-<id>.md；文件名或路径 → 直接读；找不到 → 列出会话内全部 #STAMP 行让用户挑选，不要猜",
+  "answer_from": "归档原文（不是摘要，不是记忆复述）",
+  "conflict": "归档原文与当前工作区文件不一致时说明差异，以当前文件为准",
+  "on_missing": "如实报告失败原因与尝试过的路径，禁止编造原文",
+  "budget": "一次回答只召回所需的最少块"
+}
+```
+<!-- RECALL-RULES-END -->
+
 ## 执行步骤
 
 1. **定位文件**：

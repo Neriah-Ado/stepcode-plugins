@@ -8,6 +8,23 @@ argument-hint: [可选：只归档第 N 轮之前的块，或指定要归档的�
 把本会话里**已经完成、且不再需要逐字保留**的历史任务块写入归档文件，并在对话中留下
 一行索引。这样窗口只承载"索引 + 结论"，被归档的原文需要时再取回，而不是常驻上下文。
 
+## 规则
+
+<!-- ARCHIVE-RULES-START -->
+```json
+{
+  "archive_dir": ".stepcode/context-archive/",
+  "file_naming": "stamp-<id>.md",
+  "id_format": "12 位小写十六进制（块首末消息标识串的 sha256 前 12 位；无法计算时回退 b<块序号>-<yyyymmddhhmm>，不得与已有文件重名）",
+  "overwrite": false,
+  "outside_default_dir": "须先获得用户同意",
+  "content": "任务块原文（不是摘要、不是去重版）",
+  "index_line": "#STAMP <id> → <归档文件绝对路径> — 目标：…；关键决策：…；是否完成：…",
+  "reporting": "归档结束按块汇报：已完成 / 部分完成（缺什么）/ 未完成，不得只给摘要"
+}
+```
+<!-- ARCHIVE-RULES-END -->
+
 ## 什么时候用
 
 - 会话很长（多轮、多日续接），历史任务块已大量堆积；
