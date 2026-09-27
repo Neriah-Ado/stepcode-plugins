@@ -2,7 +2,7 @@
   "id": "step-token-meter",
   "name": "Step Token Meter",
   "description": "本地会话/Token 消耗统计：/usage 按日/项目/模型聚合、成本粗估、CSV 导出；MCP 工具 get_usage / get_usage_by_model。纯本地零网络，隐私优先。",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "commands": [
     "commands/usage.md"
   ],

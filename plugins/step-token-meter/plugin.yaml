@@ -4,7 +4,7 @@ description: "本地会话/Token 消耗统计：/usage 聚合、成本估算、H
 form: mcp
 priority: P0
 effort: M
-status: in-progress
+status: done
 manifest: step.plugin.json
 requires_env: []
 verify:
@@ -71,19 +71,17 @@ versions:
   - version: "1.3.0"
     type: minor
     theme: 预算与扩展
-    status: not-started
+    status: done
     tasks:
       - id: TM-130-1
         title: 预算阈值告警（会话内提示）
-        done: false
+        done: true
       - id: TM-130-2
         title: 多机数据合并
-        context: "各机导出标准格式后聚合，不做网络同步。"
-        done: false
+        done: true
       - id: TM-130-3
         title: 存储格式 schema migration 适配层
-        context: "格式版本号 → 解析器映射，新版本格式只需加映射。"
-        done: false
+        done: true
     acceptance:
       - "Step Code 升级一个 minor 后统计仍正常"
     risks: []

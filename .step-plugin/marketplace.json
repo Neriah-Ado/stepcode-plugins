@@ -11,6 +11,11 @@
       "name": "step-test-guard",
       "description": "测试守护循环：/test 运行测试 → 失败归因 → 定点修复 → 重跑闭环，vitest/jest/pytest 内置",
       "source": "./plugins/step-test-guard"
+    },
+    {
+      "name": "step-token-meter",
+      "description": "本地会话/Token 消耗统计：/usage 聚合、成本粗估、HTML 报告，MCP 工具 get_usage；纯本地零网络",
+      "source": "./plugins/step-token-meter"
     }
   ]
 }
