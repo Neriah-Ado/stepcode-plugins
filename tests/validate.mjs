@@ -746,6 +746,65 @@ check(healthBlock !== null && healthBlock.report === 'docs/docker-health.md' && 
 check(healthBlock?.readonly?.includes('一律禁止'), '日报模式禁危险操作');
 check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
 
+// ---------- 20. step-ci-fixer（CF-100） ----------
+{
+  const cfDir = join(ROOT, 'plugins/step-ci-fixer');
+  const cfManifest = JSON.parse(readFileSync(join(cfDir, 'step.plugin.json'), 'utf8'));
+  check(cfManifest.provision?.requiresEnv?.includes('GITHUB_TOKEN'), 'manifest 声明 provision.requiresEnv GITHUB_TOKEN（CF-100-4）');
+  const cfCmd = readFileSync(join(cfDir, 'commands/ci-fix.md'), 'utf8');
+  check(cfCmd.includes('push 前必须向用户确认') && cfCmd.includes('上限 3 轮'), 'ci-fix.md 含 G3 确认与 3 轮上限');
+
+  const fake = join(ROOT, 'tests/fixtures/gh-fake/fake-gh.mjs');
+  const runMcp3 = (calls, env) => {
+    const r = spawnSync(process.execPath, [join(cfDir, 'server/index.mjs')], {
+      input: calls.join('\n') + '\n', encoding: 'utf8', timeout: 30000, env,
+    });
+    if (r.status !== 0) throw new Error(`server 退出 ${r.status}: ${r.stderr.slice(0, 300)}`);
+    return (r.stdout + '\n').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  };
+  const call3 = (id, name, args) => JSON.stringify({ jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args ?? {} } });
+  const sc3 = (msgs, id) => msgs.find((m) => m.id === id)?.result?.structuredContent;
+  const goodEnv = { ...process.env, GH_FIXER_FAKE: fake, GH_FIXER_AUTH_MODE: '' };
+  const { classifyFailure: classifyCore } = await import('../plugins/step-ci-fixer/server/lib.mjs');
+
+  try {
+    const msgs = runMcp3(
+      [
+        call3(1, 'check_gh'),
+        call3(2, 'list_failed_runs'),
+        call3(3, 'list_failed_runs', { workflow: 'deploy' }),
+        call3(4, 'fetch_run_log', { runId: 9001, maxBytes: 16 * 1024 }),
+        call3(5, 'classify_failure', { text: 'eslint --fix failed with 3 errors (ES2101)' }),
+        call3(6, 'rerun_workflow', { runId: 9001 }),
+        call3(7, 'run_status', { runId: 9001 }),
+        call3(8, 'fetch_pr_comments', { prNumber: 42 }),
+        '',
+      ],
+      goodEnv,
+    );
+    check(sc3(msgs, 1)?.available === true, 'check_gh 正常认证');
+    check(sc3(msgs, 2)?.runs?.length === 2, 'list_failed_runs 两条失败 run');
+    check(sc3(msgs, 3)?.runs?.every((r) => r.workflowName === 'deploy'), 'workflow 选择器过滤');
+    const log = sc3(msgs, 4);
+    check(log?.truncated === true && log?.bytes === 16 * 1024 && log?.text.includes('exit code 1'), 'fetch_run_log 尾部 16KB 截断', JSON.stringify({ bytes: log?.bytes }));
+    check(sc3(msgs, 5)?.kind === 'lint', '失败分类：lint');
+    check(sc3(msgs, 6)?.rerun === true, 'rerun_workflow 触发');
+    check(sc3(msgs, 7)?.conclusion === 'failure', 'run_status 查询');
+    check(sc3(msgs, 8)?.comments?.length === 2, 'PR 评论读取');
+
+    check(classifyCore('error TS2304: Cannot find name "x"') === 'build', '失败分类：build');
+    check(classifyCore('npm publish 403 Forbidden deploy') === 'deploy', '失败分类：deploy');
+    check(classifyCore('random output') === 'unknown', '失败分类：unknown');
+
+    const miss = runMcp3([call3(1, 'check_gh'), ''], { ...process.env, GH_FIXER_FAKE: '', GH_FIXER_BIN: 'no-such-gh-bin-xyz' });
+    check(miss.find((m) => m.id === 1)?.result?.content?.[0]?.text?.includes('winget install GitHub.cli'), 'G4：gh 缺失安装指引');
+    const noauth = runMcp3([call3(1, 'check_gh'), ''], { ...process.env, GH_FIXER_FAKE: fake, GH_FIXER_AUTH_MODE: 'none' });
+    check(noauth.find((m) => m.id === 1)?.result?.content?.[0]?.text?.includes('gh auth login'), 'C4：未认证输出登录指引');
+  } catch (e) {
+    bad('ci-fixer 冒烟', e.message);
+  }
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);
