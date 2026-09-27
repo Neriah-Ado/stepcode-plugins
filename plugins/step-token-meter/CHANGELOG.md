@@ -4,6 +4,15 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
+## [1.2.0] - 2026-09-27
+
+### Added
+- 本地 HTML 报告与 /cron 周报规则 (TM-120-1, TM-120-2)
+
+### Other Changes
+- 自举 /changelog 生成 step-token-meter v1.2.0 条目 (TM-120)
+- 标记 step-token-meter v1.2.0 任务完成
+
 ## [1.1.0] - 2026-09-27
 
 ### Added
