@@ -31,14 +31,14 @@ versions:
   - version: "1.1.0"
     type: minor
     theme: Mock 与文档
-    status: not-started
+    status: done
     tasks:
       - id: AF-110-1
         title: mock server 生成（MSW/express，供 playwright E2E）
-        done: false
+        done: true
       - id: AF-110-2
         title: API 文档页生成
-        done: false
+        done: true
     acceptance:
       - "mock server 支撑 step-fe-kit E2E 演示"
     risks: []

@@ -7,7 +7,7 @@ import { createInterface } from 'node:readline';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateOpenApi, generateTsClient } from './lib.mjs';
+import { validateOpenApi, generateTsClient, generateMockServer, generateDocsPage, diffOpenApi, generatePythonSdk } from './lib.mjs';
 
 const PLUGIN_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION = JSON.parse(readFileSync(join(PLUGIN_DIR, 'step.plugin.json'), 'utf8')).version;
@@ -15,6 +15,10 @@ const VERSION = JSON.parse(readFileSync(join(PLUGIN_DIR, 'step.plugin.json'), 'u
 const TOOLS = [
   { name: 'validate_spec', description: 'OpenAPI 3.0/3.1 结构校验', inputSchema: { type: 'object', properties: { specPath: { type: 'string' } }, required: ['specPath'] } },
   { name: 'generate_ts_client', description: '生成 TypeScript fetch 客户端（产物文本返回，落盘由调用方执行）', inputSchema: { type: 'object', properties: { specPath: { type: 'string' }, baseUrl: { type: 'string' } }, required: ['specPath'] } },
+  { name: 'generate_mock', description: '生成 express/MSW mock server 代码（v1.1.0）', inputSchema: { type: 'object', properties: { specPath: { type: 'string' }, style: { type: 'string', enum: ['express', 'msw'] } }, required: ['specPath'] } },
+  { name: 'generate_docs', description: '生成 API 参考文档 HTML（v1.1.0）', inputSchema: { type: 'object', properties: { specPath: { type: 'string' } }, required: ['specPath'] } },
+  { name: 'diff_spec', description: '两版 spec 对比，报告 breaking changes（v1.2.0）', inputSchema: { type: 'object', properties: { oldSpecPath: { type: 'string' }, newSpecPath: { type: 'string' } }, required: ['oldSpecPath', 'newSpecPath'] } },
+  { name: 'generate_python_sdk', description: '生成 Python requests SDK（v1.3.0）', inputSchema: { type: 'object', properties: { specPath: { type: 'string' } }, required: ['specPath'] } },
 ];
 
 const loadSpec = (p) => {
@@ -34,6 +38,17 @@ function handleCall(name, args) {
       return validateOpenApi(spec);
     case 'generate_ts_client':
       return generateTsClient(spec, { baseUrl: args?.baseUrl });
+    case 'generate_mock':
+      return generateMockServer(spec, { style: args?.style ?? 'express' });
+    case 'generate_docs':
+      return generateDocsPage(spec);
+    case 'diff_spec': {
+      const newSpec = loadSpec(args?.newSpecPath);
+      if (!newSpec) return { error: 'new-spec-not-found-or-invalid-json' };
+      return diffOpenApi(spec, newSpec);
+    }
+    case 'generate_python_sdk':
+      return generatePythonSdk(spec);
     default:
       return null;
   }
