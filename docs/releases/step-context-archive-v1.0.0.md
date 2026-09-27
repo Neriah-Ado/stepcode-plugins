@@ -2,7 +2,7 @@
 
 > 状态 / Status: **in-progress** —— v1.0.0 尚未发布（未打 tag），本文件提前挂出、发布时定稿 / v1.0.0 is **not released yet** (no tag); this file is published early and will be finalized at release
 > 范围 / Scope: 仓库首个社区贡献插件合入（PR #1，作者 [@uos1231234](https://github.com/uos1231234)）/ First community-contributed plugin merged into this repo (PR #1 by @uos1231234)
-> 门禁 / Gate: ALL PASS（739 项断言，含 §31 专属检查区 / 739 assertions incl. the new §31 section）
+> 门禁 / Gate: ALL PASS（约 740 项断言，含 §31 专属检查区 / ≈740 assertions incl. the new §31 section）
 
 ---
 
