@@ -4,6 +4,15 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
+## [1.3.0] - 2026-09-27
+
+### Added
+- 预算告警/多机合并/schema migration 适配层 (TM-130-1, TM-130-2, TM-130-3)
+
+### Other Changes
+- 自举 /changelog 生成 step-token-meter v1.3.0 条目 (TM-130)
+- 标记 step-token-meter v1.3.0 完成并接入市场源
+
 ## [1.2.0] - 2026-09-27
 
 ### Added
