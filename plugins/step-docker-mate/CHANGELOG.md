@@ -4,6 +4,16 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
+## [1.1.0] - 2026-09-27
+
+### Added
+- 崩溃模式库 diagnose 与 docker_events 巡检 (DM-110-1, DM-110-2)
+
+### Other Changes
+- 自举 /changelog 生成 step-docker-mate v1.1.0 条目 (DM-110)
+- 清单升级 v1.1.0
+- 标记 step-docker-mate v1.1.0 任务完成
+
 ## [1.0.0] - 2026-09-27
 
 ### Added
