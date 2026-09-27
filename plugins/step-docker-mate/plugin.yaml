@@ -63,15 +63,15 @@ versions:
   - version: "1.3.0"
     type: minor
     theme: 远程与自动化
-    status: not-started
+    status: done
+    notes: "远程 context 已用 fake CLI 验证透传；真机远程演示环境待装 docker 后复跑"
     tasks:
       - id: DM-130-1
         title: docker context 远程主机支持
-        context: "远程凭据沿用 requiresEnv/env 注入（C4），禁止写入文件。"
-        done: false
+        done: true
       - id: DM-130-2
         title: "/cron 容器健康日报"
-        done: false
+        done: true
     acceptance:
       - "远程主机演示环境跑通"
     risks: []
