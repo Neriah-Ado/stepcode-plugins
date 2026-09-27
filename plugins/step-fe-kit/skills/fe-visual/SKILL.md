@@ -38,3 +38,27 @@ description: 前端视觉验证：改版前后截图对比、浏览器控制台�
 ## 报告格式
 
 报告含四节：`## 视口对比`（逐视口 before/after 路径与差异描述）、`## 控制台错误`、`## 响应式问题`（多视口时）、`## 结论`（是否达到改动目标 + 遗留问题）。
+
+## 性能提示（v1.3.0）
+
+<!-- PERF-RULES-START -->
+```json
+{
+  "input": "npm run build 的输出（vite 风格：文件名 + kB）",
+  "parse": "解析产物清单；单文件 >500kB 提示代码分割，>250kB 提示检查依赖打包，出现渲染阻塞提示按需加载",
+  "c5": "只提示前 10 条，完整清单落盘 docs/fe-visual/build-assets.json"
+}
+```
+<!-- PERF-RULES-END -->
+
+## 与 step-api-forge 联动跑 E2E（v1.3.0）
+
+<!-- MOCK-E2E-START -->
+```json
+{
+  "preferred": "step-api-forge ≥1.1.0 已安装时：启动其 mock server，playwright E2E 的 API 请求指向 mock",
+  "degrade": "api-forge 未安装时降级：指引本地 msw/express mock 的最小搭建步骤，不阻塞验证流程",
+  "cross_plugin": "跨插件调用前用 /plugin list 确认两者版本；演示步骤可复现：起 mock → 起 dev → 跑 E2E → fe-visual 截图"
+}
+```
+<!-- MOCK-E2E-END -->

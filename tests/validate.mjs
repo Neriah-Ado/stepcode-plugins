@@ -860,6 +860,20 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
   check(viewportBatch('/home', [375], '.btn')[0].selector === '.btn', 'selector 组件级截图参数');
 }
 
+// ---------- 24. fe-kit 性能与联动（FK-130） ----------
+{
+  const fkSkill = readFileSync(join(ROOT, 'plugins/step-fe-kit/skills/fe-visual/SKILL.md'), 'utf8');
+  const perfBlock = extractBlock(fkSkill, 'PERF-RULES');
+  check(perfBlock !== null && perfBlock.parse?.includes('500kB'), 'fe-visual 含 PERF-RULES');
+  const mockBlock = extractBlock(fkSkill, 'MOCK-E2E');
+  check(mockBlock !== null && mockBlock.degrade?.includes('api-forge 未安装时降级'), 'fe-visual 含 MOCK-E2E 联动与降级');
+  const { parseViteBuild } = await import('./lib/perf-hints.mjs');
+  const build = parseViteBuild('dist/assets/index-abc.js   612.45 kB │ gzip: 190.2 kB\ndist/assets/index.css   33.20 kB\ndist/assets/chunk-vendor.js  280.11 kB');
+  check(build.assets.length === 3 && build.assets[0].sizeKB === 612.45, 'vite 构建产物解析');
+  check(build.warnings.some((w) => w.includes('612.45') && w.includes('代码分割')), '超大 chunk 告警');
+  check(build.warnings.some((w) => w.includes('280.11')), '偏大 chunk 提示');
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

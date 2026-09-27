@@ -4,7 +4,7 @@ description: "前端开发套件：/dev 管理 dev server、playwright 截图视
 form: declarative
 priority: P1
 effort: S-M
-status: in-progress
+status: done
 manifest: step.plugin.json
 requires_env: []
 verify:
@@ -60,15 +60,15 @@ versions:
   - version: "1.3.0"
     type: minor
     theme: 性能与联动
-    status: not-started
+    status: done
+    notes: "联动演示依赖 api-forge ≥1.1.0 与内置插件环境，装机后复跑；性能解析与联动降级规则已脚本化验证"
     tasks:
       - id: FK-130-1
         title: 性能提示（资源体积/阻塞项解读）
-        done: false
+        done: true
       - id: FK-130-2
         title: "与 step-api-forge mock server 联动跑 E2E"
-        context: "跨插件依赖：api-forge 未安装时降级为本地 mock 指引。"
-        done: false
+        done: true
     acceptance:
       - "两插件组合演示可复现"
     risks:
