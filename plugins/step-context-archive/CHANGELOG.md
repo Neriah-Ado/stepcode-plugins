@@ -11,7 +11,11 @@
 - 实现 /archive 归档命令（原文落盘 + 三点摘要索引 + 完成状态汇报）(SCA-100-2)
 - 新增 step-context-archive 插件清单并登记 roadmap/marketplace (SCA-100-1)
 
+### Fixed
+- #STAMP 索引行改项目相对路径并明确退化 id 例外 (SCA-100)
+
 ### Other Changes
+- 自举 /changelog 刷新 step-context-archive 条目 (SCA-100)
 - 自举 /changelog 生成 step-context-archive CHANGELOG (SCA-100)
 - /archive 与 /recall 补充 validate 规则块 (SCA-100)
 - 补全参考实现的许可引用链接与许可名 (SCA-100-5)
