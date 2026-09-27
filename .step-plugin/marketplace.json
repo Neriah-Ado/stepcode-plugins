@@ -36,6 +36,11 @@
       "name": "step-sec-scan",
       "description": "安全审计：/audit secret 扫描+依赖漏洞、降噪、基线与 SBOM、CI 卡点与修复 PR",
       "source": "./plugins/step-sec-scan"
+    },
+    {
+      "name": "step-api-forge",
+      "description": "OpenAPI 全链路：校验、TS/Python 客户端、mock server、文档页、breaking diff",
+      "source": "./plugins/step-api-forge"
     }
   ]
 }

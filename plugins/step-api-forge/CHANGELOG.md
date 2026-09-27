@@ -4,6 +4,11 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
+## [1.3.0] - 2026-09-27
+
+### Other Changes
+- 自举 /changelog 生成 step-api-forge v1.2.0/v1.3.0 条目并接入市场源 (AF-120, AF-130)
+
 ## [1.1.0] - 2026-09-27
 
 ### Added

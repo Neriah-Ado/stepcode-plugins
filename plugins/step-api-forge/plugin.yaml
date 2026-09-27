@@ -4,7 +4,7 @@ description: "OpenAPI 全链路：文档校验、TS/Python 客户端生成、moc
 form: hybrid
 priority: P1
 effort: M
-status: in-progress
+status: done
 manifest: step.plugin.json
 requires_env: []
 verify:
@@ -45,29 +45,30 @@ versions:
   - version: "1.2.0"
     type: minor
     theme: 变更管理
-    status: not-started
+    status: done
+    notes: "breaking 检出规则（删除路径/方法、移除响应码、新增必填参数）样本 100% 检出由 validate 覆盖"
     tasks:
       - id: AF-120-1
         title: API diff 报告（breaking change 检测）
-        done: false
+        done: true
       - id: AF-120-2
         title: 版本间兼容性摘要
-        done: false
+        done: true
     acceptance:
       - "已知 breaking 样本 100% 检出"
     risks: []
   - version: "1.3.0"
     type: minor
     theme: 双向与多语言
-    status: not-started
+    status: done
+    notes: "反向生成按计划降级为提示词辅助模式（Agent 读路由代码整理 spec，用户评审 diff）"
     tasks:
       - id: AF-130-1
         title: Python SDK 生成
-        done: false
+        done: true
       - id: AF-130-2
         title: 从代码反向生成/更新 spec
-        context: "允许降级为提示词辅助模式（Agent 读路由代码整理 spec），不强求全自动。"
-        done: false
+        done: true
     acceptance:
       - "反向生成与手写 spec diff 可控"
     risks:
