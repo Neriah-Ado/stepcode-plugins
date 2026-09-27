@@ -30,6 +30,7 @@
 - [v1.1.0 — 提交质量与生态扩展 / Quality & Ecosystem](./docs/releases/v1.1.0.md)
 - [v1.2.0 — 自动化与可视化 / Automation & Visualization](./docs/releases/v1.2.0.md)
 - [v1.3.0 — 深水区与收官 / Deep Water & Wrap-up](./docs/releases/v1.3.0.md)
+- [step-context-archive v1.0.0 — 预发布说明（进行中）/ Pre-release Notes](./docs/releases/step-context-archive-v1.0.0.md)
 
 ## 安装
 
