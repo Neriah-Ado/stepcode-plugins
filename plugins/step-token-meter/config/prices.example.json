@@ -1,0 +1,7 @@
+{
+  "_说明": "复制为 config/prices.json 生效（同目录），或用环境变量 STEP_TOKEN_METER_PRICES 指向其他路径；单位：元/百万 tokens；保存后热加载",
+  "default": { "input": 15, "output": 75, "cache_read": 1.5, "cache_write": 15 },
+  "models": {
+    "glm-4.7": { "input": 2, "output": 8, "cache_read": 0.2, "cache_write": 2 }
+  }
+}
