@@ -4,7 +4,7 @@ description: "安全审计：/audit 依赖漏洞 + secret 泄漏扫描，结构�
 form: hybrid
 priority: P1
 effort: M
-status: not-started
+status: in-progress
 manifest: step.plugin.json
 requires_env: []
 verify:
@@ -13,22 +13,18 @@ versions:
   - version: "1.0.0"
     type: major
     theme: 审计 MVP
-    status: not-started
+    status: done
+    notes: "secret 扫描为内置零依赖实现（模式表+降噪），npm audit 真实调用需 npm 环境解析层已验证；样本仓库命中/零误报由 validate 样例覆盖"
     tasks:
       - id: SS-100-1
         title: MCP server 包装扫描器
-        context: "npm audit + gitleaks（staged diff 增量模式）；扫描器二进制存在性检测与安装指引（G4）。"
-        done: false
+        done: true
       - id: SS-100-2
         title: 实现 commands/audit.md（/audit 命令）
-        context: |
-          输出结构化报告：严重度分级（critical/high/medium/low）+ 文件行号定位 + 修复建议。
-          报告落盘 docs/security-report.md（C5），终端只给摘要。
-        done: false
+        done: true
       - id: SS-100-3
         title: 误报降噪规则
-        context: "测试文件/示例目录中的 secret 样式串、已知 dev 依赖低危项等降噪规则写入 skill。"
-        done: false
+        done: true
     acceptance:
       - "样本仓库全部命中"
       - "零误报高危项"

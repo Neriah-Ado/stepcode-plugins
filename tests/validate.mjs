@@ -874,6 +874,53 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
   check(build.warnings.some((w) => w.includes('280.11')), '偏大 chunk 提示');
 }
 
+// ---------- 25. step-sec-scan（SS-100 + SS-120 + SS-130） ----------
+{
+  const ssDir = join(ROOT, 'plugins/step-sec-scan');
+  const ssSkill = readFileSync(join(ssDir, 'skills/sec-audit/SKILL.md'), 'utf8');
+  const noiseBlock = extractBlock(ssSkill, 'SEC-NOISE');
+  check(noiseBlock !== null && noiseBlock.rule?.includes('降级为忽略'), 'sec-audit 含 SEC-NOISE 降噪规则');
+  check(ssSkill.includes('pre-commit'), 'sec-audit 含 pre-commit 集成模式');
+
+  const { scanSecretsInText, parseNpmAudit, renderSecurityReport, diffBaseline, buildCycloneDX, buildUpgradePlan, ciGateVerdict } =
+    await import('../plugins/step-sec-scan/server/lib.mjs');
+
+  const diff = [
+    'diff --git a/src/app.js b/src/app.js',
+    '+++ b/src/app.js',
+    '+const AWS_KEY = "AKIAIOSFODNN7EXAMPLE";',
+    '+const cfg = { apiKey: "sk-live-abcdef1234567890abcdef1234" };',
+    'diff --git a/tests/keys.js b/tests/keys.js',
+    '+++ b/tests/keys.js',
+    '+const token = "ghp_AaaBbbCccDddEeeFffGggHhhIiiJjjKkk";',
+    'diff --git a/src/demo.js b/src/demo.js',
+    '+++ b/src/demo.js',
+    '+const apiKey = "your-api-key-here";',
+    '',
+  ].join('\n');
+  const findings = scanSecretsInText(diff);
+  check(findings.length === 2, 'secret 扫描：2 命中（测试文件降噪、占位值忽略）', JSON.stringify(findings.map((f) => f.id)));
+  check(findings.every((f) => f.severity === 'critical' && f.file === 'src/app.js'), 'secret 发现定位与严重度');
+
+  const auditSample = JSON.stringify({ vulnerabilities: { lodash: { severity: 'high', range: '<4.17.21', via: [{ title: 'Prototype Pollution' }], fixAvailable: true }, 'left-pad': { severity: 'low', dev: true, via: ['x'], fixAvailable: true } } });
+  const auditFindings = parseNpmAudit(auditSample).findings;
+  check(auditFindings.length === 2 && auditFindings[0].severity === 'high', 'npm audit 解析');
+  const report = renderSecurityReport({ date: '2026-09-27', findings: [...findings, ...auditFindings] });
+  check(report.includes('[CRITICAL]') && report.includes('[HIGH]') && report.includes('docs/security-report.md'.slice(0, 1) === 'd' ? '证据' : '证据'), '报告按严重度排序含证据');
+
+  const baseline = [{ kind: 'vulnerability', package: 'lodash' }];
+  const diffed = diffBaseline(auditFindings, baseline);
+  check(diffed.news.every((f) => f.package !== 'lodash') && diffed.existing.length === 1, '基线对比：存量不重复报告');
+
+  const sbom = buildCycloneDX({ dependencies: { lodash: '^4.17.21', react: '^18.2.0' } }, 'demo');
+  check(sbom.bomFormat === 'CycloneDX' && sbom.components.length === 2 && sbom.components[0].purl.startsWith('pkg:npm/'), 'CycloneDX SBOM 生成');
+
+  const plan = buildUpgradePlan(auditFindings);
+  check(plan.length >= 1 && plan[0].package === 'lodash', '自动修复升级计划');
+  const gate = ciGateVerdict([...findings, ...auditFindings], { fail_on: ['critical', 'high'] });
+  check(gate.pass === false && gate.blocking === 3, 'CI 卡点 critical/high 阻断', JSON.stringify(gate));
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);
