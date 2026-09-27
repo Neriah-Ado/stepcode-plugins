@@ -714,6 +714,31 @@ check(mixed.records.length === 2 && mixed.records[1].total === 7, 'v1/v2 混合�
   }
 }
 
+// ---------- 19c. docker-mate 瘦身（DM-120） ----------
+{
+  const fake = join(ROOT, 'tests/fixtures/docker-fake/fake-docker.mjs');
+  const runMcp2 = (calls, env) => {
+    const r = spawnSync(process.execPath, [join(ROOT, 'plugins/step-docker-mate/server/index.mjs')], {
+      input: calls.join('\n') + '\n', encoding: 'utf8', timeout: 30000, env,
+    });
+    if (r.status !== 0) throw new Error(`server 退出 ${r.status}: ${r.stderr.slice(0, 300)}`);
+    return (r.stdout + '\n').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  };
+  try {
+    const msgs = runMcp2(
+      [JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'slimming_plan', arguments: { image: 'demo/web:latest' } } }), ''],
+      { ...process.env, DOCKER_MATE_FAKE: fake },
+    );
+    const plan = msgs.find((m) => m.id === 1)?.result?.structuredContent;
+    check(plan?.suggestions?.length >= 2, '瘦身方案覆盖 node_modules 与 apt 层', JSON.stringify(plan?.suggestions?.length));
+    check(plan?.estSavingPct > 30, `瘦身预估 >30%（实际 ${plan?.estSavingPct}%）`, String(plan?.estSavingPct));
+    const ls = runMcp2([JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'compose_ls', arguments: {} } }), ''], { ...process.env, DOCKER_MATE_FAKE: fake });
+    check(ls.find((m) => m.id === 1)?.result?.structuredContent?.projects?.length === 1, '多 compose 项目列表');
+  } catch (e) {
+    bad('docker-mate v1.2 冒烟', e.message);
+  }
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

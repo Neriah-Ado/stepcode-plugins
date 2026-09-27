@@ -188,6 +188,34 @@ export function dockerEvents({ since, until, ctx } = {}) {
   return { events };
 }
 
+// ---------- v1.2.0 瘦身建议：按最大层指令归类，给出可执行方案与预估减重 ----------
+export function slimmingPlan(layers) {
+  const parseSize = (s) => {
+    const m = /^([\d.]+)(B|kB|MB|GB)$/.exec(String(s));
+    if (!m) return 0;
+    const unit = { B: 1, kB: 1e3, MB: 1e6, GB: 1e9 }[m[2]];
+    return parseFloat(m[1]) * unit;
+  };
+  const suggestions = [];
+  for (const l of layers ?? []) {
+    const bytes = parseSize(l.size);
+    const cmd = (l.createdBy ?? '').toLowerCase();
+    if (bytes < 10 * 1e6) continue;
+    if (/node_modules/.test(cmd)) {
+      suggestions.push({ layer: l.createdBy, size: l.size, plan: '多阶段构建：仅 COPY 产物（npm ci --omit=dev + prod 阶段拷贝），剔除 node_modules 层', estSaving: bytes });
+    } else if (/apt-get/.test(cmd)) {
+      suggestions.push({ layer: l.createdBy, size: l.size, plan: '合并 RUN 并加 --no-install-recommends + rm -rf /var/lib/apt/lists/*；移除非必需包（curl/vim）', estSaving: Math.round(bytes * 0.6) });
+    } else if (/curl|wget/.test(cmd)) {
+      suggestions.push({ layer: l.createdBy, size: l.size, plan: '下载产物后立即删除安装包，合并到同一 RUN', estSaving: Math.round(bytes * 0.5) });
+    } else if (/^copy/i.test(cmd)) {
+      suggestions.push({ layer: l.createdBy, size: l.size, plan: '检查 .dockerignore，避免把构建缓存/测试/文档拷入镜像', estSaving: Math.round(bytes * 0.3) });
+    }
+  }
+  const totalBytes = (layers ?? []).reduce((s, l) => s + parseSize(l.size), 0);
+  const savingBytes = suggestions.reduce((s, x) => s + x.estSaving, 0);
+  return { suggestions, estSavingPct: totalBytes > 0 ? Math.round((savingBytes / totalBytes) * 100) : 0 };
+}
+
 export function imageLayers(image, ctx) {
   const r = runDocker(['history', '--no-trunc', '--format', '{{json .}}', image], { context: ctx });
   if (r.missing || r.code !== 0) return { error: 'docker-failed', stderr: r.stderr.slice(0, 300) };
