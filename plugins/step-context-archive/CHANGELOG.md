@@ -1,18 +1,18 @@
 # Changelog — step-context-archive
 
-本文件记录 step-context-archive 的版本变更。
+遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 风格，版本号遵循 semver。
 
-## 1.0.0
+<!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
-首个版本（声明式形态）：
+## [1.0.0] - 2026-09-27
 
-- 新增 `step.plugin.json` 清单（id / version / commands / skills）；
-- 新增 `/archive` 命令（`commands/archive.md`）：识别已完成任务块 → 三点摘要
-  （目标 / 关键决策 / 是否完成）→ 原文写入 `.stepcode/context-archive/stamp-<id>.md`
-  → 输出 `#STAMP` 索引行 → **明确汇报任务是否完成**；
-- 新增 `/recall` 命令（`commands/recall.md`）：按 stamp 读取归档原文并基于原文回答；
-- 新增 `context-archive` 技能（`skills/context-archive/SKILL.md`）：`#STAMP` 语义、
-  三点摘要协议、召回纪律、适用与不适用边界；
-- 安全规则内置：只归档不销毁、不覆盖既有归档、不越界写盘、不编造原文、不改用户配置。
+### Added
+- 实现 /recall 命令与 context-archive 技能，补充 README 索引与 CHANGELOG (SCA-100-3)
+- 实现 /archive 归档命令（原文落盘 + 三点摘要索引 + 完成状态汇报）(SCA-100-2)
+- 新增 step-context-archive 插件清单并登记 roadmap/marketplace (SCA-100-1)
 
-待完成：真实项目验证（`SCA-100-4`，≥2 个非玩具仓库的端到端链路）。
+### Other Changes
+- 自举 /changelog 生成 step-context-archive CHANGELOG (SCA-100)
+- /archive 与 /recall 补充 validate 规则块 (SCA-100)
+- 补全参考实现的许可引用链接与许可名 (SCA-100-5)
+- 如实标注插件资源在当前宿主的加载状态 (SCA-100-3)
