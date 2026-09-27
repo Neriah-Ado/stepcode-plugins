@@ -13,6 +13,11 @@
       "source": "./plugins/step-test-guard"
     },
     {
+      "name": "step-context-archive",
+      "description": "上下文归档与召回：/archive 归档已完成任务块，对话只留带三点摘要的 #STAMP 索引行，/recall 按 stamp 取回原文",
+      "source": "./plugins/step-context-archive"
+    },
+    {
       "name": "step-token-meter",
       "description": "本地会话/Token 消耗统计：/usage 聚合、成本粗估、HTML 报告，MCP 工具 get_usage；纯本地零网络",
       "source": "./plugins/step-token-meter"

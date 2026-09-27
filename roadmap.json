@@ -39,6 +39,7 @@
     { "id": "step-db-insight", "abbr": "DI", "priority": "P2", "form": "mcp", "effort": "M", "spec": "plugins/step-db-insight/plugin.yaml", "status": "done", "latest_version": "1.3.0" },
     { "id": "step-doc-gen", "abbr": "DG", "priority": "P2", "form": "declarative", "effort": "S", "spec": "plugins/step-doc-gen/plugin.yaml", "status": "done", "latest_version": "1.3.0" },
     { "id": "step-cron-recipes", "abbr": "CR", "priority": "P2", "form": "declarative", "effort": "S", "spec": "plugins/step-cron-recipes/plugin.yaml", "status": "done", "latest_version": "1.3.0" },
-    { "id": "step-marketplace-cc", "abbr": "MC", "priority": "P2", "form": "marketplace", "effort": "M", "spec": "plugins/step-marketplace-cc/plugin.yaml", "status": "done", "latest_version": "1.3.0" }
+    { "id": "step-marketplace-cc", "abbr": "MC", "priority": "P2", "form": "marketplace", "effort": "M", "spec": "plugins/step-marketplace-cc/plugin.yaml", "status": "done", "latest_version": "1.3.0" },
+    { "id": "step-context-archive", "abbr": "SCA", "priority": "P1", "form": "declarative", "effort": "S-M", "spec": "plugins/step-context-archive/plugin.yaml", "status": "in-progress", "latest_version": "1.0.0" }
   ]
 }
