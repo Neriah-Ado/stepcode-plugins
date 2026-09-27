@@ -4,7 +4,7 @@
  * 零依赖：node tests/validate.mjs
  * 环境变量 GIT_BIN 可指定 git 可执行文件（默认 "git"）。
  */
-import { readFileSync, existsSync, statSync, writeFileSync, rmSync } from 'node:fs';
+import { readFileSync, existsSync, statSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -963,6 +963,99 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
   );
   check(msgs.find((m) => m.id === 1)?.result?.structuredContent?.valid === true, 'MCP validate_spec');
   check(msgs.find((m) => m.id === 2)?.result?.structuredContent?.code?.includes('localhost:3000'), 'MCP generate_ts_client');
+}
+
+// ---------- 26b. api-forge mock/docs/diff/python（AF-110/120/130） ----------
+{
+  const { generateMockServer, generateDocsPage, diffOpenApi, generatePythonSdk } = await import('../plugins/step-api-forge/server/lib.mjs');
+  const spec = JSON.parse(readFileSync(join(ROOT, 'tests/fixtures/openapi/petstore-mini.json'), 'utf8'));
+  const mock = generateMockServer(spec, { style: 'express' });
+  check(mock.code.includes("app.get('/pets'") && mock.code.includes('app.listen'), 'express mock 生成');
+  const msw = generateMockServer(spec, { style: 'msw' });
+  check(msw.code.includes('http.get') && msw.code.includes('HttpResponse'), 'MSW handlers 生成');
+  const docs = generateDocsPage(spec);
+  check(docs.html.includes('Petstore Mini') && docs.html.includes('/pets/{petId}'), '文档页生成');
+
+  const newSpec = JSON.parse(JSON.stringify(spec));
+  delete newSpec.paths['/pets/{petId}'];
+  newSpec.paths['/pets'].get.responses = {};
+  const diff = diffOpenApi(spec, newSpec);
+  check(diff.hasBreaking && diff.breaking.some((b) => b.includes('路径被删除')), 'diff：删除路径检出');
+  check(diff.breaking.some((b) => b.includes('响应码被移除')), 'diff：响应码移除检出', JSON.stringify(diff.breaking));
+
+  const addRequired = JSON.parse(JSON.stringify(spec));
+  addRequired.paths['/pets'].post.parameters = [{ name: 'force', in: 'query', required: true }];
+  const diff2 = diffOpenApi(spec, addRequired);
+  check(diff2.hasBreaking && diff2.breaking.some((b) => b.includes('新增必填参数')), 'diff：新增必填参数检出');
+  const compatible = diffOpenApi(spec, (() => { const s = JSON.parse(JSON.stringify(spec)); s.paths['/pets/{petId}/friends'] = { get: { responses: { '200': {} } } }; return s; })());
+  check(!compatible.hasBreaking && compatible.compatible.some((c) => c.includes('新增路径')), 'diff：兼容变更不误报');
+
+  const py = generatePythonSdk(spec);
+  check(py.code.includes('class ApiClient') && py.code.includes('pets_petId_get') && py.code.includes('import requests'), 'Python SDK 生成');
+}
+
+// ---------- 27. step-db-insight（DI-100 ~ DI-130） ----------
+{
+  const diDir = join(ROOT, 'plugins/step-db-insight');
+  const { assertReadOnlyQuery, interpretExplain, buildMigration, classifyWrite, buildWriteConfirmation, dialectInfo, schemaTimeline } =
+    await import('../plugins/step-db-insight/server/lib.mjs');
+
+  // 只读保证对抗测试（验收标准：任何路径都无法产生写语句执行）
+  const adversarial = [
+    'SELECT 1; DROP TABLE users',
+    'WITH x AS (SELECT 1) DELETE FROM users',
+    '/* hidden */ DELETE FROM users',
+    "SELECT * FROM users; UPDATE users SET admin=true",
+    'EXPLAIN ANALYZE DELETE FROM users',
+    'INSERT INTO users VALUES (1)',
+    'select * from users where name = "a" --; drop table users',
+    'SELECT * INTO tmp FROM users',
+    'TRUNCATE users',
+  ];
+  for (const sql of adversarial) {
+    check(assertReadOnlyQuery(sql).ok === false, `只读守卫拒绝「${sql.slice(0, 40)}」`, JSON.stringify(assertReadOnlyQuery(sql)));
+  }
+  check(assertReadOnlyQuery('SELECT * FROM users WHERE id = 1').ok === true, '只读守卫放行正常 SELECT');
+  check(assertReadOnlyQuery('EXPLAIN SELECT * FROM users').ok === true, '只读守卫放行 EXPLAIN');
+  check(assertReadOnlyQuery('WITH t AS (SELECT 1) SELECT * FROM t').ok === true, '只读守卫放行只读 CTE');
+
+  const plan = interpretExplain('Seq Scan on orders  (cost=0.00..1234.00 rows=5000 width=64)\nFilter: (user_id = 42)');
+  check(plan.findings.some((f) => f.includes('orders') && f.includes('索引')), 'EXPLAIN 解读给出索引建议');
+
+  check(JSON.parse(readFileSync(join(diDir, 'step.plugin.json'), 'utf8')).provision?.requiresEnv?.includes('DATABASE_URL'), 'manifest 声明 DATABASE_URL（C4）');
+  const diCmd = readFileSync(join(diDir, 'commands/db-insight.md'), 'utf8');
+  check(diCmd.includes('环境注入') && diCmd.includes('export 示例'), '凭据指引含 export 示例与环境注入（C4）');
+
+  // v1.1/v1.2/v1.3
+  const mig = buildMigration('add user bio', 'add bio column', 'postgres');
+  check(/^\d{14}_add_user_bio\.sql$/.test(mig.filename) && mig.sql.includes('+up') && mig.sql.includes('+down'), '迁移草稿命名与 up/down');
+  const cls = classifyWrite('DELETE FROM users');
+  check(cls.kind === 'reject' && /永久拒绝/.test(cls.reason), 'DELETE 永久拒绝');
+  const wu = buildWriteConfirmation('INSERT INTO users(email) VALUES (\'a@b.c\')', { kind: 'insert' });
+  check(wu.requiresConfirmation === true && wu.transactionHint.includes('ROLLBACK'), '写确认载荷与事务提示');
+  check(dialectInfo('mysql').quote === '`', 'mysql 方言适配');
+  check(dialectInfo('sqlite').client === 'sqlite3', 'sqlite 方言适配');
+
+  const migDir = join(ROOT, 'tests/fixtures/db-migrations');
+  mkdirSync(migDir, { recursive: true });
+  writeFileSync(join(migDir, '20260101120000_create_users.sql'), '-- up\n');
+  writeFileSync(join(migDir, '20260102090000_add_orders.sql'), '-- up\n');
+  const tl = schemaTimeline(migDir);
+  check(tl.count === 2 && tl.mermaid.includes('create_users'), 'schema 时间线生成');
+
+  // MCP 冒烟（fake psql + 缺凭据降级）
+  const runMcp5 = (calls, env) => {
+    const r = spawnSync(process.execPath, [join(diDir, 'server/index.mjs')], { input: calls.join('\n') + '\n', encoding: 'utf8', timeout: 30000, env });
+    if (r.status !== 0) throw new Error(`server 退出 ${r.status}: ${r.stderr.slice(0, 200)}`);
+    return (r.stdout + '\n').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  };
+  const call5 = (id, name, args) => JSON.stringify({ jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args ?? {} } });
+  const fake = join(ROOT, 'tests/fixtures/psql-fake/fake-psql.mjs');
+  const msgs = runMcp5([call5(1, 'list_tables'), call5(2, 'read_query', { sql: 'SELECT 1; DROP TABLE users' }), ''], { ...process.env, PSQL_FAKE: fake, DATABASE_URL: 'postgres://u:p@localhost/db', DB_DIALECT: 'postgres' });
+  check(msgs.find((m) => m.id === 1)?.result?.structuredContent?.output?.includes('users'), 'MCP list_tables（fake psql）');
+  check(msgs.find((m) => m.id === 2)?.result?.structuredContent?.rejected === true, 'MCP 只读守卫拒绝写语句');
+  const nocred = runMcp5([call5(1, 'list_tables'), ''], { ...process.env, PSQL_FAKE: fake, DATABASE_URL: '' });
+  check(nocred.find((m) => m.id === 1)?.result?.content?.[0]?.text?.includes('DATABASE_URL'), 'G4：缺凭据输出 export 指引');
 }
 
 // ---------- 汇总 ----------

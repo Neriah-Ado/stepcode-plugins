@@ -1,0 +1,26 @@
+{
+  "id": "step-db-insight",
+  "name": "Step DB Insight",
+  "description": "数据库只读助手：schema 浏览、白名单守卫的只读查询、EXPLAIN 解读、迁移草稿、受控写入与多库适配。连接串仅环境注入。",
+  "version": "1.3.0",
+  "commands": [
+    "commands/db-insight.md"
+  ],
+  "skills": [
+    "skills/sql-review/SKILL.md"
+  ],
+  "mcpServers": {
+    "step-db-insight": {
+      "command": "node",
+      "args": [
+        "server/index.mjs"
+      ]
+    }
+  },
+  "provision": {
+    "command": "node",
+    "requiresEnv": [
+      "DATABASE_URL"
+    ]
+  }
+}
