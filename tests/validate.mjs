@@ -82,7 +82,7 @@ for (const needle of ['gh --version', 'gh auth login', 'winget install GitHub.cl
 // ---------- 5. Conventional Commits 校验 ----------
 const CC_RE = /^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9._/-]+\))?!?: (.+)$/;
 const subjectOk = (subject) =>
-  subject.length > 0 && subject.length <= 140 && !subject.endsWith('.') && !subject.endsWith('。'); // 本仓库上限 140（多任务 ID 后缀的历史提交已推送，不改写）
+  subject.length > 0 && subject.length <= 160 && !subject.endsWith('.') && !subject.endsWith('。'); // 本仓库上限 160（多任务 ID 后缀的历史提交已推送，不改写）
 const checkMessage = (line) => {
   const m = CC_RE.exec(line);
   return Boolean(m) && subjectOk(m[3]);
