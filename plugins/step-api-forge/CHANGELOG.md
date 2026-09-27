@@ -4,6 +4,14 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
+## [1.1.0] - 2026-09-27
+
+### Added
+- mock server 与文档页生成并标记 v1.1.0 完成 (AF-110-1, AF-110-2)
+
+### Other Changes
+- 自举 /changelog 生成 step-api-forge v1.1.0 条目 (AF-110)
+
 ## [1.0.0] - 2026-09-27
 
 ### Added
