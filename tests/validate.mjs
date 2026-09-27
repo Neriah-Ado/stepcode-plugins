@@ -601,6 +601,74 @@ check(unknown.ok === false || (unknown.warnings ?? []).some((w) => w.startsWith(
 const mixed = parseTextV('{"v":2,"ts":"2026-09-27T01:00:00Z","model":"m","proj":"p","tokens":{"in":1,"out":2}}\n{"timestamp":"2026-09-27T02:00:00Z","message":{"model":"m","usage":{"input_tokens":3,"output_tokens":4}}}');
 check(mixed.records.length === 2 && mixed.records[1].total === 7, 'v1/v2 混合解析', JSON.stringify(mixed));
 
+// ---------- 19. step-docker-mate（DM-100） ----------
+{
+  const dmDir = join(ROOT, 'plugins/step-docker-mate');
+  const dmSkill = readFileSync(join(dmDir, 'skills/docker-ops/SKILL.md'), 'utf8');
+  const dmDanger = extractBlock(dmSkill, 'DANGEROUS-OPS');
+  check(dmDanger !== null && dmDanger.rule?.includes('绝不静默执行'), 'SKILL.md 含 DANGEROUS-OPS 确认红线');
+  check(dmSkill.includes('ExitCode 137') && dmSkill.includes('port is already allocated') && dmSkill.includes('permission denied'), 'SKILL.md 含崩溃模式库（OOM/端口/权限）');
+
+  const fake = join(ROOT, 'tests/fixtures/docker-fake/fake-docker.mjs');
+  const marker = join(ROOT, 'tests/fixtures/docker-fake/down-marker.tmp');
+  rmSync(marker, { force: true });
+  const mkEnv = (extra) => ({ ...process.env, DOCKER_MATE_FAKE: fake, DOCKER_MATE_DOWN_MARKER: marker, ...extra });
+  const runMcp = (calls, env) => {
+    const r = spawnSync(process.execPath, [join(dmDir, 'server/index.mjs')], {
+      input: calls.join('\n') + '\n',
+      encoding: 'utf8',
+      timeout: 30000,
+      env,
+    });
+    if (r.status !== 0) throw new Error(`server 退出 ${r.status}: ${r.stderr.slice(0, 300)}`);
+    return (r.stdout + '\n').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  };
+  const call = (id, name, args) => JSON.stringify({ jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args ?? {} } });
+  const baseEnv = mkEnv({});
+
+  try {
+    const msgs = runMcp(
+      [
+        JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} }),
+        call(2, 'docker_ps'),
+        call(3, 'docker_inspect', { container: 'demo-web' }),
+        call(4, 'docker_logs', { container: 'demo-web', tail: 200 }),
+        call(5, 'compose_up', { file: 'compose.yaml' }),
+        call(6, 'compose_down', { file: 'compose.yaml' }),
+        call(8, 'compose_ls'),
+        call(9, 'image_layers', { image: 'demo/web:latest' }),
+        '',
+      ],
+      baseEnv,
+    );
+    check(msgs.find((m) => m.id === 1)?.result?.serverInfo?.name === 'step-docker-mate', 'docker-mate MCP 握手');
+    const psC = msgs.find((m) => m.id === 2)?.result?.structuredContent;
+    check(psC?.containers?.length === 3 && psC.containers[0].state === 'exited', 'docker_ps 三容器', JSON.stringify(psC?.containers?.length));
+    const ins = msgs.find((m) => m.id === 3)?.result?.structuredContent;
+    check(ins?.state?.ExitCode === 137 && ins?.state?.OOMKilled === true, 'docker_inspect OOM 定位', JSON.stringify(ins?.state));
+    const lg = msgs.find((m) => m.id === 4)?.result?.structuredContent;
+    check(lg?.lines?.length === 200 && lg.lines.at(-1).includes('heap out of memory'), 'docker_logs 尾部截断含 FATAL', String(lg?.lines?.length));
+    check(msgs.find((m) => m.id === 5)?.result?.structuredContent?.started === true, 'compose_up 启动');
+    const dry = msgs.find((m) => m.id === 6)?.result?.structuredContent;
+    check(dry?.dryRun === true && dry?.affected?.length === 3, 'compose_down dry-run 列出 3 资源', JSON.stringify(dry));
+    check(msgs.find((m) => m.id === 8)?.result?.structuredContent?.projects?.[0]?.name === 'demo-app', 'compose_ls 项目列表');
+    check(msgs.find((m) => m.id === 9)?.result?.structuredContent?.biggest?.[0]?.size === '320MB', '镜像层最大层识别');
+    check(!existsSync(marker), 'G3：dry-run 未实际执行 down');
+
+    const msgs2 = runMcp([call(1, 'compose_down', { file: 'compose.yaml', confirm: true }), ''], baseEnv);
+    check(msgs2.find((m) => m.id === 1)?.result?.structuredContent?.removed === true, 'compose_down 确认后执行');
+    check(existsSync(marker), 'G3：确认后 down 真实执行（fake 标记）');
+
+    const bad = runMcp([call(1, 'docker_ps'), ''], mkEnv({ DOCKER_MATE_FAKE: '', DOCKER_MATE_BIN: 'no-such-docker-bin-xyz' }));
+    const fail = bad.find((m) => m.id === 1)?.result;
+    check(fail?.isError === true && fail?.content?.[0]?.text?.includes('winget install Docker'), 'G4：docker 缺失输出安装指引');
+  } catch (e) {
+    bad('docker-mate 冒烟', e.message);
+  } finally {
+    rmSync(marker, { force: true });
+  }
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);
