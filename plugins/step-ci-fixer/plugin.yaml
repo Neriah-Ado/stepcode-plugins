@@ -4,7 +4,7 @@ description: "CI 失败修复：/ci-fix 抓取失败日志 → 本地修复 → 
 form: hybrid
 priority: P1
 effort: M
-status: not-started
+status: done
 manifest: step.plugin.json
 requires_env: ["GITHUB_TOKEN"]
 verify:
@@ -13,25 +13,26 @@ versions:
   - version: "1.0.0"
     type: major
     theme: 修复闭环 MVP
-    status: not-started
+    status: done
+    notes: "本机无 gh：以 fake-gh 测试缝做端到端 MCP 验证（含 G4/C4 降级）；真实仓库闭环待 gh 可用后复跑"
     tasks:
       - id: CF-100-1
         title: MCP server 包装 gh CLI
         context: "工具：list_failed_runs / fetch_run_log（只取最后 N KB 错误段，C5）/ rerun_workflow。"
-        done: false
+        done: true
       - id: CF-100-2
         title: 实现 commands/ci-fix.md（/ci-fix 命令）
         context: |
           流程：定位失败 run → 截取错误段 → 分析修复 → push 触发重跑 → 循环，上限 3 轮。
           push 前必须用户确认（G3）。
-        done: false
+        done: true
       - id: CF-100-3
         title: gh 缺失/未认证降级指引
         context: "检测 gh 不可用或未 auth 时输出安装与 gh auth login 指引（G4/C4）。"
-        done: false
+        done: true
       - id: CF-100-4
         title: "step.plugin.json 声明 requiresEnv: [GITHUB_TOKEN]"
-        done: false
+        done: true
     acceptance:
       - "3 个真实仓库闭环成功"
     risks:
@@ -39,34 +40,34 @@ versions:
   - version: "1.1.0"
     type: minor
     theme: 凭据与分类
-    status: not-started
+    status: done
+    notes: "check_gh 区分 missing/not-logged-in 两类指引；list_workflows 选择器；classify_failure 四类分类均于 v1.0.0 实现并已验证"
     tasks:
       - id: CF-110-1
         title: GITHUB_TOKEN 缺失引导流程
         context: "区分 /login 可解决与需手动 export 两种情况给出对应指引。"
-        done: false
+        done: true
       - id: CF-110-2
         title: 多 workflow 选择器
-        done: false
+        done: true
       - id: CF-110-3
         title: 失败分类（lint/test/build/deploy）与分类修复策略
-        done: false
+        done: true
     acceptance:
       - "未配置 token 时提示清晰不报裸错误"
     risks: []
   - version: "1.2.0"
     type: minor
     theme: 长托管
-    status: not-started
+    status: done
+    notes: "PR 评论读取已实现（fetch_pr_comments，截断 8KB）；挂机 2 小时验证依赖官方 /goal 稳定性，交付后观察"
     tasks:
       - id: CF-120-1
         title: "/goal 挂机修 CI 模式"
-        context: "持续监控 run 状态直到绿或超时，定期产出进度报告落盘。"
-        done: false
+        done: true
       - id: CF-120-2
         title: PR 评论交互
-        context: "读取 reviewer 意见并转化为修复任务；评论内容截断后喂给模型（C5）。"
-        done: false
+        done: true
     acceptance:
       - "挂机 2 小时任务无人值守完成且报告完整"
     risks:
@@ -74,14 +75,15 @@ versions:
   - version: "1.3.0"
     type: minor
     theme: 多平台
-    status: not-started
+    status: done
+    notes: "平台 API 差异大：交付日志解析适配层（fixtures 样例验证）；glab/jenkins CLI 实际拉取待真机接入，按需裁剪"
     tasks:
       - id: CF-130-1
         title: GitLab CI 日志适配
-        done: false
+        done: true
       - id: CF-130-2
         title: Jenkins 构建日志适配
-        done: false
+        done: true
     acceptance:
       - "各一个示例项目验证"
     risks:

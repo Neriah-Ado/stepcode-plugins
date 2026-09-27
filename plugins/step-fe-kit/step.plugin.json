@@ -1,0 +1,13 @@
+{
+  "id": "step-fe-kit",
+  "name": "Step FE Kit",
+  "description": "前端开发套件：/dev 管理 dev server、视觉验证（playwright 截图对比/多视口）、/publish 联动 steppage 一键发布。",
+  "version": "1.3.0",
+  "commands": [
+    "commands/dev.md",
+    "commands/publish.md"
+  ],
+  "skills": [
+    "skills/fe-visual/SKILL.md"
+  ]
+}

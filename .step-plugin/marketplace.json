@@ -16,6 +16,31 @@
       "name": "step-context-archive",
       "description": "上下文归档与召回：/archive 归档已完成任务块，对话只留带三点摘要的 #STAMP 索引行，/recall 按 stamp 取回原文",
       "source": "./plugins/step-context-archive"
+    },
+    {
+      "name": "step-token-meter",
+      "description": "本地会话/Token 消耗统计：/usage 聚合、成本粗估、HTML 报告，MCP 工具 get_usage；纯本地零网络",
+      "source": "./plugins/step-token-meter"
+    },
+    {
+      "name": "step-docker-mate",
+      "description": "Docker/Compose 容器运维：MCP 查询状态/日志/编排，崩溃归因与镜像瘦身，危险操作默认确认",
+      "source": "./plugins/step-docker-mate"
+    },
+    {
+      "name": "step-ci-fixer",
+      "description": "CI 失败修复：/ci-fix 抓取失败日志 → 本地修复 → push 重跑闭环，支持挂机与 PR 评论交互",
+      "source": "./plugins/step-ci-fixer"
+    },
+    {
+      "name": "step-fe-kit",
+      "description": "前端开发套件：/dev 管理 dev server、视觉验证、/publish 联动 steppage 一键发布",
+      "source": "./plugins/step-fe-kit"
+    },
+    {
+      "name": "step-sec-scan",
+      "description": "安全审计：/audit secret 扫描+依赖漏洞、降噪、基线与 SBOM、CI 卡点与修复 PR",
+      "source": "./plugins/step-sec-scan"
     }
   ]
 }

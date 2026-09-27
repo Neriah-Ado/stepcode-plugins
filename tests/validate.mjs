@@ -4,7 +4,7 @@
  * 零依赖：node tests/validate.mjs
  * 环境变量 GIT_BIN 可指定 git 可执行文件（默认 "git"）。
  */
-import { readFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, existsSync, statSync, writeFileSync, rmSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -464,6 +464,473 @@ check(analyzeFlaky([false, false, false]).verdict === 'stable-fail', 'flaky 判�
 check(analyzeFlaky([]).verdict === 'invalid', 'flaky 判定：空数据无效');
 check(recommendedAction('stable-fail').includes('test-fix-loop'), 'stable-fail 建议转修复闭环');
 check(recommendedAction('flaky').includes('用户确认'), 'flaky 隔离动作需用户确认');
+
+// ---------- 16. step-token-meter 用量统计（TM-100） ----------
+check(existsSync(join(ROOT, 'plugins/step-token-meter/docs/storage-format.md')), 'step-token-meter 存储格式文档存在');
+const usageCmd = readFileSync(join(ROOT, 'plugins/step-token-meter/commands/usage.md'), 'utf8');
+for (const needle of ['零网络', 'docs/storage-format.md', '--csv', '容错解析', '成本为按公开单价的粗估']) {
+  check(usageCmd.includes(needle), `commands/usage.md 含关键规则「${needle}」`);
+}
+const usagePrice = extractBlock(usageCmd, 'PRICE-RULES');
+check(usagePrice !== null && usagePrice.default?.input === 15, 'usage.md 含 PRICE-RULES 默认单价表');
+
+const { parseSessionText, aggregate, toCsv, costOf, loadPrices } = await import('./lib/usage.mjs');
+const usageSamples = JSON.parse(readFileSync(join(ROOT, 'tests/samples/usage-samples.json'), 'utf8'));
+const { records, warnings } = parseSessionText(usageSamples.lines.join('\n'));
+check(records.length === usageSamples.expect.recordCount, '容错解析：有效记录数', String(records.length));
+check(warnings.length === usageSamples.expect.warningCount, '容错解析：损坏行警告计数', JSON.stringify(warnings));
+const agg = aggregate(records);
+for (const [day, m] of Object.entries(usageSamples.expect.byDay)) {
+  check(agg.byDay[day]?.total === m.total, `按日聚合 ${day} total=${m.total}`, JSON.stringify(agg.byDay[day]));
+}
+check(agg.byModel && Object.values(agg.byModel)[0].model === usageSamples.expect.byModelTop.model, '按模型聚合排序首位');
+check(Object.values(agg.byModel)[0].total === usageSamples.expect.byModelTop.total, '按模型聚合首位总量');
+const csv = toCsv(records, usagePrice);
+check(csv.startsWith(usageSamples.expect.csvHeader), 'CSV 表头');
+check(csv.trim().split('\n').length === usageSamples.expect.csvRowCount + 1, 'CSV 行数');
+const glmCost = costOf(records[0], usagePrice);
+check(Math.abs(glmCost.cost - (1000 * 2 + 500 * 8 + 200 * 0.2 + 100 * 2) / 1e6) < 1e-9, 'glm-4.7 成本计算', String(glmCost.cost));
+const mysteryCost = costOf(records[3], usagePrice);
+check(mysteryCost.usedDefault && mysteryCost.cost > 0, '未知模型回退 default 单价');
+check(loadPrices(usagePrice, { models: { 'glm-4.7': { input: 1 } } }).models['glm-4.7'].input === 1, '单价覆盖合并');
+
+// ---------- 16b. step-token-meter MCP server（TM-110） ----------
+{
+  const tmDir = join(ROOT, 'plugins/step-token-meter');
+  const tmManifest = JSON.parse(readFileSync(join(tmDir, 'step.plugin.json'), 'utf8'));
+  check(tmManifest.mcpServers?.['step-token-meter']?.command === 'node', 'manifest 注册 mcpServers（node 启动）');
+  check(existsSync(join(tmDir, 'server/index.mjs')) && existsSync(join(tmDir, 'server/lib.mjs')), 'server 代码存在');
+  check(existsSync(join(tmDir, 'config/prices.example.json')), '单价覆盖样例存在');
+
+  const sessionFixture = join(ROOT, 'tests/fixtures/stepcode-projects');
+  const mcpInput = [
+    JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} }),
+    JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }),
+    JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list' }),
+    JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'get_usage', arguments: { range: 'all' } } }),
+    JSON.stringify({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'get_usage_by_model', arguments: { range: 'all' } } }),
+    JSON.stringify({ jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'nope', arguments: {} } }),
+    '',
+  ].join('\n');
+
+  const mkPrices = (glmInputRate) =>
+    JSON.stringify({ default: { input: 15, output: 75, cache_read: 0, cache_write: 0 }, models: { 'glm-4.7': { input: glmInputRate, output: 8, cache_read: 0.2, cache_write: 2 } } });
+  const pricesPath = join(ROOT, 'tests/fixtures/tm-prices.json');
+
+  const runServer = () => {
+    const r = spawnSync(process.execPath, [join(tmDir, 'server/index.mjs')], {
+      input: mcpInput,
+      encoding: 'utf8',
+      timeout: 30000,
+      env: { ...process.env, STEP_TOKEN_METER_DIR: sessionFixture, STEP_TOKEN_METER_PRICES: pricesPath },
+    });
+    if (r.status !== 0) throw new Error(`server 退出 ${r.status}: ${r.stderr}`);
+    return (r.stdout + '\n').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  };
+
+  try {
+    writeFileSync(pricesPath, mkPrices(2));
+    const msgs = runServer();
+    const init = msgs.find((m) => m.id === 1);
+    check(init?.result?.serverInfo?.name === 'step-token-meter', 'MCP initialize 握手', JSON.stringify(init));
+    const tools = msgs.find((m) => m.id === 2);
+    check(
+      JSON.stringify(tools?.result?.tools?.map((t) => t.name)) === JSON.stringify(['get_usage', 'get_usage_by_model']),
+      'MCP tools/list',
+      JSON.stringify(tools?.result?.tools?.map((t) => t.name)),
+    );
+    const usage = msgs.find((m) => m.id === 3);
+    const structured = usage?.result?.structuredContent;
+    check(structured?.grandTotal === 7800, 'get_usage 汇总数', JSON.stringify(structured?.grandTotal));
+    check(structured?.days?.length === 2, 'get_usage 按日条数', JSON.stringify(structured?.days?.length));
+    const byModel = msgs.find((m) => m.id === 4);
+    const bm = byModel?.result?.structuredContent;
+    check(bm?.models?.[0]?.model === 'glm-4.7' && bm?.models?.[0]?.total === 5000, 'get_usage_by_model 排序首位', JSON.stringify(bm?.models?.[0]));
+    check(msgs.find((m) => m.id === 5)?.error?.code === -32602, '未知工具返回 -32602');
+
+    // 热加载：改写单价文件（mtime 变化）后新调用生效
+    writeFileSync(pricesPath, mkPrices(20));
+    const msgs2 = runServer();
+    const usage2 = msgs2.find((m) => m.id === 3)?.result?.structuredContent;
+    check(usage2?.grandTotal === 7800 && usage2?.days?.length === 2, '热加载后再次调用正常', JSON.stringify(usage2?.days));
+    check(usage2?.days?.[0]?.cost !== structured?.days?.[0]?.cost, '单价表热加载生效（成本变化）', `${structured?.days?.[0]?.cost} -> ${usage2?.days?.[0]?.cost}`);
+  } catch (e) {
+    bad('MCP server 冒烟', e.message);
+  } finally {
+    rmSync(pricesPath, { force: true });
+  }
+}
+
+// ---------- 17. step-token-meter 可视化（TM-120） ----------
+const htmlBlock = extractBlock(usageCmd, 'HTML-RULES');
+check(htmlBlock !== null && htmlBlock.no_external?.includes('零外部资源'), 'usage.md 含 HTML-RULES（零外部资源）');
+const weeklyBlock = extractBlock(usageCmd, 'WEEKLY-RULES');
+check(weeklyBlock !== null && weeklyBlock.outputs?.html === 'docs/usage-report/usage-weekly.html', 'usage.md 含 WEEKLY-RULES 周报落盘');
+check(weeklyBlock?.cadence?.includes('/cron'), '周报接入 /cron');
+
+const { renderHtmlReport } = await import('./lib/report-html.mjs');
+const html = renderHtmlReport({ generatedAt: '2026-09-27T08:00:00Z', byDay: agg.byDay, byProject: agg.byProject, byModel: agg.byModel });
+check(!/(src|href)\s*=|@import|url\(/i.test(html.replace(/xmlns="[^"]*"/g, '')), 'HTML 零外部资源（无 src/href/import 引用）');
+check((html.match(/<svg /g) ?? []).length === 3, '三组内联 SVG 图表', String((html.match(/<svg /g) ?? []).length));
+check(html.includes('#0d1117') && html.includes('lang="zh-CN"'), '暗色主题与中文页面');
+check(html.includes('>2026-09-26<') && html.includes('>glm-4.7<'), '图表含日与模型标签');
+
+// ---------- 18. step-token-meter 预算/合并/迁移（TM-130） ----------
+const budgetBlock = extractBlock(usageCmd, 'BUDGET-RULES');
+check(budgetBlock !== null && budgetBlock.rule?.includes('exceed'), 'usage.md 含 BUDGET-RULES');
+const mergeBlock = extractBlock(usageCmd, 'MERGE-RULES');
+check(mergeBlock !== null && mergeBlock.rule?.includes('本机单价表重算'), 'usage.md 含 MERGE-RULES');
+check(usageCmd.includes('SCHEMA_PARSERS') && usageCmd.includes('unknown-schema'), 'usage.md 含 schema migration 说明');
+
+const { checkBudget, mergeCsvs, parseSessionVersioned, parseSessionText: parseTextV } = await import('./lib/usage.mjs');
+check(checkBudget(50, { monthly_cost: 100 }).status === 'ok', '预算 ok');
+check(checkBudget(85, { monthly_cost: 100, warn_at: 0.8 }).status === 'warn', '预算 warn');
+check(checkBudget(120, { monthly_cost: 100 }).status === 'exceed', '预算 exceed');
+check(checkBudget(120, null).status === 'unset', '未配置预算静默');
+
+const csvA = 'day,project,model,input,output,cache_read,cache_write,total,cost\n2026-09-26,E:/a,glm-4.7,1000,500,0,0,1500,0\n';
+const csvB = 'day,project,model,input,output,cache_read,cache_write,total,cost\n2026-09-26,E:/a,glm-4.7,2000,300,0,0,2300,0\n2026-09-27,E:/b,glm-4.6,10,5,0,0,15,0\n';
+const mergedCsv = mergeCsvs([csvA, csvB], usagePrice);
+check(mergedCsv.split('\n')[1].startsWith('2026-09-26,E:/a,glm-4.7,3000,800,0,0,3800'), '多机合并按维度求和', mergedCsv.split('\n')[1]);
+check(mergedCsv.includes('2026-09-27,E:/b,glm-4.6,10,5,0,0,15'), '多机合并保留独立维度');
+
+const v2 = parseSessionVersioned('{"v":2,"ts":"2026-09-27T01:00:00Z","model":"glm-4.7","proj":"E:/v2","tokens":{"in":100,"out":50,"cacheR":10,"cacheW":5}}');
+check(v2.ok && v2.record.total === 165 && v2.record.project === 'E:/v2', 'v2 格式解析', JSON.stringify(v2.record));
+const unknown = parseSessionVersioned('{"v":99,"foo":1}');
+check(unknown.ok === false || (unknown.warnings ?? []).some((w) => w.startsWith('unknown-schema:99')), '未知 schema 回退并警告', JSON.stringify(unknown.warnings ?? unknown));
+const mixed = parseTextV('{"v":2,"ts":"2026-09-27T01:00:00Z","model":"m","proj":"p","tokens":{"in":1,"out":2}}\n{"timestamp":"2026-09-27T02:00:00Z","message":{"model":"m","usage":{"input_tokens":3,"output_tokens":4}}}');
+check(mixed.records.length === 2 && mixed.records[1].total === 7, 'v1/v2 混合解析', JSON.stringify(mixed));
+
+// ---------- 19. step-docker-mate（DM-100） ----------
+{
+  const dmDir = join(ROOT, 'plugins/step-docker-mate');
+  const dmSkill = readFileSync(join(dmDir, 'skills/docker-ops/SKILL.md'), 'utf8');
+  const dmDanger = extractBlock(dmSkill, 'DANGEROUS-OPS');
+  check(dmDanger !== null && dmDanger.rule?.includes('绝不静默执行'), 'SKILL.md 含 DANGEROUS-OPS 确认红线');
+  check(dmSkill.includes('ExitCode 137') && dmSkill.includes('port is already allocated') && dmSkill.includes('permission denied'), 'SKILL.md 含崩溃模式库（OOM/端口/权限）');
+
+  const fake = join(ROOT, 'tests/fixtures/docker-fake/fake-docker.mjs');
+  const marker = join(ROOT, 'tests/fixtures/docker-fake/down-marker.tmp');
+  rmSync(marker, { force: true });
+  const mkEnv = (extra) => ({ ...process.env, DOCKER_MATE_FAKE: fake, DOCKER_MATE_DOWN_MARKER: marker, ...extra });
+  const runMcp = (calls, env) => {
+    const r = spawnSync(process.execPath, [join(dmDir, 'server/index.mjs')], {
+      input: calls.join('\n') + '\n',
+      encoding: 'utf8',
+      timeout: 30000,
+      env,
+    });
+    if (r.status !== 0) throw new Error(`server 退出 ${r.status}: ${r.stderr.slice(0, 300)}`);
+    return (r.stdout + '\n').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  };
+  const call = (id, name, args) => JSON.stringify({ jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args ?? {} } });
+  const baseEnv = mkEnv({});
+
+  try {
+    const msgs = runMcp(
+      [
+        JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} }),
+        call(2, 'docker_ps'),
+        call(3, 'docker_inspect', { container: 'demo-web' }),
+        call(4, 'docker_logs', { container: 'demo-web', tail: 200 }),
+        call(5, 'compose_up', { file: 'compose.yaml' }),
+        call(6, 'compose_down', { file: 'compose.yaml' }),
+        call(8, 'compose_ls'),
+        call(9, 'image_layers', { image: 'demo/web:latest' }),
+        '',
+      ],
+      baseEnv,
+    );
+    check(msgs.find((m) => m.id === 1)?.result?.serverInfo?.name === 'step-docker-mate', 'docker-mate MCP 握手');
+    const psC = msgs.find((m) => m.id === 2)?.result?.structuredContent;
+    check(psC?.containers?.length === 3 && psC.containers[0].state === 'exited', 'docker_ps 三容器', JSON.stringify(psC?.containers?.length));
+    const ins = msgs.find((m) => m.id === 3)?.result?.structuredContent;
+    check(ins?.state?.ExitCode === 137 && ins?.state?.OOMKilled === true, 'docker_inspect OOM 定位', JSON.stringify(ins?.state));
+    const lg = msgs.find((m) => m.id === 4)?.result?.structuredContent;
+    check(lg?.lines?.length === 200 && lg.lines.at(-1).includes('heap out of memory'), 'docker_logs 尾部截断含 FATAL', String(lg?.lines?.length));
+    check(msgs.find((m) => m.id === 5)?.result?.structuredContent?.started === true, 'compose_up 启动');
+    const dry = msgs.find((m) => m.id === 6)?.result?.structuredContent;
+    check(dry?.dryRun === true && dry?.affected?.length === 3, 'compose_down dry-run 列出 3 资源', JSON.stringify(dry));
+    check(msgs.find((m) => m.id === 8)?.result?.structuredContent?.projects?.[0]?.name === 'demo-app', 'compose_ls 项目列表');
+    check(msgs.find((m) => m.id === 9)?.result?.structuredContent?.biggest?.[0]?.size === '320MB', '镜像层最大层识别');
+    check(!existsSync(marker), 'G3：dry-run 未实际执行 down');
+
+    const msgs2 = runMcp([call(1, 'compose_down', { file: 'compose.yaml', confirm: true }), ''], baseEnv);
+    check(msgs2.find((m) => m.id === 1)?.result?.structuredContent?.removed === true, 'compose_down 确认后执行');
+    check(existsSync(marker), 'G3：确认后 down 真实执行（fake 标记）');
+
+    const bad = runMcp([call(1, 'docker_ps'), ''], mkEnv({ DOCKER_MATE_FAKE: '', DOCKER_MATE_BIN: 'no-such-docker-bin-xyz' }));
+    const fail = bad.find((m) => m.id === 1)?.result;
+    check(fail?.isError === true && fail?.content?.[0]?.text?.includes('winget install Docker'), 'G4：docker 缺失输出安装指引');
+  } catch (e) {
+    bad('docker-mate 冒烟', e.message);
+  } finally {
+    rmSync(marker, { force: true });
+  }
+}
+
+// ---------- 19b. docker-mate 诊断增强与远程（DM-110/DM-130） ----------
+{
+  const dmDir = join(ROOT, 'plugins/step-docker-mate');
+  const fake = join(ROOT, 'tests/fixtures/docker-fake/fake-docker.mjs');
+  const mkEnv = (extra) => ({ ...process.env, DOCKER_MATE_FAKE: fake, ...extra });
+  const runMcp = (calls, env) => {
+    const r = spawnSync(process.execPath, [join(dmDir, 'server/index.mjs')], {
+      input: calls.join('\n') + '\n', encoding: 'utf8', timeout: 30000, env,
+    });
+    if (r.status !== 0) throw new Error(`server 退出 ${r.status}: ${r.stderr.slice(0, 300)}`);
+    return (r.stdout + '\n').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  };
+  const call = (id, name, args) => JSON.stringify({ jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args ?? {} } });
+  const sc = (msgs, id) => msgs.find((m) => m.id === id)?.result?.structuredContent;
+
+  try {
+    const msgs = runMcp(
+      [
+        call(1, 'diagnose', { container: 'demo-web' }),
+        call(2, 'diagnose', { container: 'demo-rel' }),
+        call(3, 'diagnose', { container: 'demo-vol' }),
+        call(4, 'docker_events', { since: '10m' }),
+        '',
+      ],
+      mkEnv({}),
+    );
+    check(sc(msgs, 1)?.pattern === 'oom', '诊断：OOM 归因', JSON.stringify(sc(msgs, 1)));
+    check(sc(msgs, 2)?.pattern === 'dependency-not-ready', '诊断：依赖未就绪归因', JSON.stringify(sc(msgs, 2)));
+    check(sc(msgs, 3)?.pattern === 'volume-permission', '诊断：卷权限归因', JSON.stringify(sc(msgs, 3)));
+    const ev = sc(msgs, 4)?.events ?? [];
+    check(ev.length === 3 && ev.some((e) => e.action === 'oom' && e.actor === 'demo-web'), 'events 巡检过滤 die/oom/kill', JSON.stringify(ev));
+
+    const { matchCrashPattern } = await import('../plugins/step-docker-mate/server/lib.mjs');
+    check(
+      matchCrashPattern({ ExitCode: 0, Status: 'running', OOMKilled: false }, [], 'Error: port is already allocated').id === 'port-conflict',
+      '诊断：端口冲突归因（lib 级）',
+    );
+
+    const remote = runMcp([call(1, 'docker_ps'), ''], mkEnv({ DOCKER_MATE_CONTEXT: 'remote-host' }));
+    check(sc(remote, 1)?.containers?.length === 3, '远程 context（DOCKER_MATE_CONTEXT）透传可用');
+  } catch (e) {
+    bad('docker-mate v1.1/v1.3 冒烟', e.message);
+  }
+}
+
+// ---------- 19c. docker-mate 瘦身（DM-120） ----------
+{
+  const fake = join(ROOT, 'tests/fixtures/docker-fake/fake-docker.mjs');
+  const runMcp2 = (calls, env) => {
+    const r = spawnSync(process.execPath, [join(ROOT, 'plugins/step-docker-mate/server/index.mjs')], {
+      input: calls.join('\n') + '\n', encoding: 'utf8', timeout: 30000, env,
+    });
+    if (r.status !== 0) throw new Error(`server 退出 ${r.status}: ${r.stderr.slice(0, 300)}`);
+    return (r.stdout + '\n').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  };
+  try {
+    const msgs = runMcp2(
+      [JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'slimming_plan', arguments: { image: 'demo/web:latest' } } }), ''],
+      { ...process.env, DOCKER_MATE_FAKE: fake },
+    );
+    const plan = msgs.find((m) => m.id === 1)?.result?.structuredContent;
+    check(plan?.suggestions?.length >= 2, '瘦身方案覆盖 node_modules 与 apt 层', JSON.stringify(plan?.suggestions?.length));
+    check(plan?.estSavingPct > 30, `瘦身预估 >30%（实际 ${plan?.estSavingPct}%）`, String(plan?.estSavingPct));
+    const ls = runMcp2([JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'compose_ls', arguments: {} } }), ''], { ...process.env, DOCKER_MATE_FAKE: fake });
+    check(ls.find((m) => m.id === 1)?.result?.structuredContent?.projects?.length === 1, '多 compose 项目列表');
+  } catch (e) {
+    bad('docker-mate v1.2 冒烟', e.message);
+  }
+}
+
+// ---------- 19d. docker-mate 健康日报（DM-130） ----------
+const healthCmd = readFileSync(join(ROOT, 'plugins/step-docker-mate/commands/docker-health.md'), 'utf8');
+const healthBlock = extractBlock(healthCmd, 'HEALTH-RULES');
+check(healthBlock !== null && healthBlock.report === 'docs/docker-health.md' && healthBlock.exit_semantics?.docker_unavailable === '2', 'docker-health.md 含 HEALTH-RULES');
+check(healthBlock?.readonly?.includes('一律禁止'), '日报模式禁危险操作');
+check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
+
+// ---------- 20. step-ci-fixer（CF-100） ----------
+{
+  const cfDir = join(ROOT, 'plugins/step-ci-fixer');
+  const cfManifest = JSON.parse(readFileSync(join(cfDir, 'step.plugin.json'), 'utf8'));
+  check(cfManifest.provision?.requiresEnv?.includes('GITHUB_TOKEN'), 'manifest 声明 provision.requiresEnv GITHUB_TOKEN（CF-100-4）');
+  const cfCmd = readFileSync(join(cfDir, 'commands/ci-fix.md'), 'utf8');
+  check(cfCmd.includes('push 前必须向用户确认') && cfCmd.includes('上限 3 轮'), 'ci-fix.md 含 G3 确认与 3 轮上限');
+
+  const fake = join(ROOT, 'tests/fixtures/gh-fake/fake-gh.mjs');
+  const runMcp3 = (calls, env) => {
+    const r = spawnSync(process.execPath, [join(cfDir, 'server/index.mjs')], {
+      input: calls.join('\n') + '\n', encoding: 'utf8', timeout: 30000, env,
+    });
+    if (r.status !== 0) throw new Error(`server 退出 ${r.status}: ${r.stderr.slice(0, 300)}`);
+    return (r.stdout + '\n').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  };
+  const call3 = (id, name, args) => JSON.stringify({ jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args ?? {} } });
+  const sc3 = (msgs, id) => msgs.find((m) => m.id === id)?.result?.structuredContent;
+  const goodEnv = { ...process.env, GH_FIXER_FAKE: fake, GH_FIXER_AUTH_MODE: '' };
+  const { classifyFailure: classifyCore } = await import('../plugins/step-ci-fixer/server/lib.mjs');
+
+  try {
+    const msgs = runMcp3(
+      [
+        call3(1, 'check_gh'),
+        call3(2, 'list_failed_runs'),
+        call3(3, 'list_failed_runs', { workflow: 'deploy' }),
+        call3(4, 'fetch_run_log', { runId: 9001, maxBytes: 16 * 1024 }),
+        call3(5, 'classify_failure', { text: 'eslint --fix failed with 3 errors (ES2101)' }),
+        call3(6, 'rerun_workflow', { runId: 9001 }),
+        call3(7, 'run_status', { runId: 9001 }),
+        call3(8, 'fetch_pr_comments', { prNumber: 42 }),
+        '',
+      ],
+      goodEnv,
+    );
+    check(sc3(msgs, 1)?.available === true, 'check_gh 正常认证');
+    check(sc3(msgs, 2)?.runs?.length === 2, 'list_failed_runs 两条失败 run');
+    check(sc3(msgs, 3)?.runs?.every((r) => r.workflowName === 'deploy'), 'workflow 选择器过滤');
+    const log = sc3(msgs, 4);
+    check(log?.truncated === true && log?.bytes === 16 * 1024 && log?.text.includes('exit code 1'), 'fetch_run_log 尾部 16KB 截断', JSON.stringify({ bytes: log?.bytes }));
+    check(sc3(msgs, 5)?.kind === 'lint', '失败分类：lint');
+    check(sc3(msgs, 6)?.rerun === true, 'rerun_workflow 触发');
+    check(sc3(msgs, 7)?.conclusion === 'failure', 'run_status 查询');
+    check(sc3(msgs, 8)?.comments?.length === 2, 'PR 评论读取');
+
+    check(classifyCore('error TS2304: Cannot find name "x"') === 'build', '失败分类：build');
+    check(classifyCore('npm publish 403 Forbidden deploy') === 'deploy', '失败分类：deploy');
+    check(classifyCore('random output') === 'unknown', '失败分类：unknown');
+
+    const miss = runMcp3([call3(1, 'check_gh'), ''], { ...process.env, GH_FIXER_FAKE: '', GH_FIXER_BIN: 'no-such-gh-bin-xyz' });
+    check(miss.find((m) => m.id === 1)?.result?.content?.[0]?.text?.includes('winget install GitHub.cli'), 'G4：gh 缺失安装指引');
+    const noauth = runMcp3([call3(1, 'check_gh'), ''], { ...process.env, GH_FIXER_FAKE: fake, GH_FIXER_AUTH_MODE: 'none' });
+    check(noauth.find((m) => m.id === 1)?.result?.content?.[0]?.text?.includes('gh auth login'), 'C4：未认证输出登录指引');
+  } catch (e) {
+    bad('ci-fixer 冒烟', e.message);
+  }
+}
+
+// ---------- 21. ci-fixer 多平台日志适配（CF-130） ----------
+{
+  const { parseGitlabLog, parseJenkinsLog } = await import('./lib/ci-log.mjs');
+  const gl = parseGitlabLog(readFileSync(join(ROOT, 'tests/fixtures/ci-logs/gitlab.txt'), 'utf8'));
+  check(gl.platform === 'gitlab' && gl.classification === 'test', 'GitLab 日志解析与分类', JSON.stringify({ c: gl.classification }));
+  check(gl.errorTail.includes('ECONNREFUSED'), 'GitLab 错误段含连接被拒', gl.errorTail);
+  const jk = parseJenkinsLog(readFileSync(join(ROOT, 'tests/fixtures/ci-logs/jenkins.txt'), 'utf8'));
+  check(jk.buildFailure === true && jk.failedStages.includes('Test'), 'Jenkins 失败 stage 定位', JSON.stringify(jk.failedStages));
+  check(jk.classification === 'test' && jk.errorTail.includes('Expected: 3'), 'Jenkins 错误段与分类', jk.classification);
+}
+
+// ---------- 22. step-fe-kit（FK-100） ----------
+{
+  const fkDir = join(ROOT, 'plugins/step-fe-kit');
+  const devCmd = readFileSync(join(fkDir, 'commands/dev.md'), 'utf8');
+  const pubCmd = readFileSync(join(fkDir, 'commands/publish.md'), 'utf8');
+  const devDetect = extractBlock(devCmd, 'DEV-DETECT');
+  check(devDetect !== null && devDetect.detectors?.some((d) => d.dep === 'vite'), 'dev.md 含框架检测规则');
+  const devLogRules = extractBlock(devCmd, 'DEV-LOG-RULES');
+  check(devLogRules?.vite?.ready && devLogRules?.next?.ready, 'dev.md 含 vite/next 就绪解析规则');
+  check(devCmd.includes('杀进程前必须确认') && devCmd.includes('start /b'), 'dev.md 含 G3 与 Windows 后台启动（C6）');
+  check(pubCmd.includes('/plugin install steppage') && pubCmd.includes('外向动作'), 'publish.md 含 steppage 降级指引与 G3');
+
+  const { parseDevLog } = await import('./lib/dev-log.mjs');
+  const viteLog = '  VITE v6.0.0  ready in 432 ms\n  ➜  Local:   http://localhost:5173/';
+  check(parseDevLog('vite', viteLog, devLogRules).port === 5173, 'vite 就绪与端口解析');
+  const nextLog = '  ▲ Next.js 15\n  - Local:        http://localhost:3000\n  ✓ Ready in 1.2s';
+  check(parseDevLog('next', nextLog, devLogRules).port === 3000, 'next 就绪与端口解析');
+  check(parseDevLog('vite', 'error: listen EADDRINUSE: address already in use 0.0.0.0:5173', devLogRules).error === 'EADDRINUSE', '端口占用错误识别');
+  check(parseDevLog('next', '✗ Failed to compile', devLogRules).error === 'Failed to compile', 'next 编译错误识别');
+}
+
+// ---------- 23. fe-kit 视觉验证（FK-110/120） ----------
+{
+  const fkSkill = readFileSync(join(ROOT, 'plugins/step-fe-kit/skills/fe-visual/SKILL.md'), 'utf8');
+  const visualRules = extractBlock(fkSkill, 'VISUAL-RULES');
+  check(visualRules !== null && visualRules.c5?.includes('不内联 base64'), 'fe-visual 含 VISUAL-RULES 与 C5 约定');
+  check(fkSkill.includes('/plugin install playwright'), 'playwright 缺失降级指引');
+  const svBlock = extractBlock(fkSkill, 'SELECTOR-VIEWPORTS');
+  check(JSON.stringify(svBlock?.viewports) === JSON.stringify([375, 768, 1440]), '多视口定义 375/768/1440');
+
+  const { renderVisualReport, viewportBatch } = await import('./lib/visual-report.mjs');
+  const report = renderVisualReport({
+    page: '/home',
+    viewports: [{ width: 375, height: 720, before: 'docs/fe-visual/before-375.png', after: 'docs/fe-visual/after-375.png', diff: '按钮换行' }],
+    consoleErrors: ['Uncaught TypeError: x is not a function'],
+    responsiveIssues: ['375 视口横向溢出'],
+    conclusion: '响应式问题已暴露',
+  });
+  check(report.includes('docs/fe-visual/before-375.png') && report.includes('Uncaught TypeError'), '报告含截图路径与控制台错误');
+  const batch = viewportBatch('/home');
+  check(batch.map((b) => b.width).join(',') === '375,768,1440' && batch[0].path.includes('375'), '多视口批量计划生成');
+  check(viewportBatch('/home', [375], '.btn')[0].selector === '.btn', 'selector 组件级截图参数');
+}
+
+// ---------- 24. fe-kit 性能与联动（FK-130） ----------
+{
+  const fkSkill = readFileSync(join(ROOT, 'plugins/step-fe-kit/skills/fe-visual/SKILL.md'), 'utf8');
+  const perfBlock = extractBlock(fkSkill, 'PERF-RULES');
+  check(perfBlock !== null && perfBlock.parse?.includes('500kB'), 'fe-visual 含 PERF-RULES');
+  const mockBlock = extractBlock(fkSkill, 'MOCK-E2E');
+  check(mockBlock !== null && mockBlock.degrade?.includes('api-forge 未安装时降级'), 'fe-visual 含 MOCK-E2E 联动与降级');
+  const { parseViteBuild } = await import('./lib/perf-hints.mjs');
+  const build = parseViteBuild('dist/assets/index-abc.js   612.45 kB │ gzip: 190.2 kB\ndist/assets/index.css   33.20 kB\ndist/assets/chunk-vendor.js  280.11 kB');
+  check(build.assets.length === 3 && build.assets[0].sizeKB === 612.45, 'vite 构建产物解析');
+  check(build.warnings.some((w) => w.includes('612.45') && w.includes('代码分割')), '超大 chunk 告警');
+  check(build.warnings.some((w) => w.includes('280.11')), '偏大 chunk 提示');
+}
+
+// ---------- 25. step-sec-scan（SS-100 + SS-120 + SS-130） ----------
+{
+  const ssDir = join(ROOT, 'plugins/step-sec-scan');
+  const ssSkill = readFileSync(join(ssDir, 'skills/sec-audit/SKILL.md'), 'utf8');
+  const noiseBlock = extractBlock(ssSkill, 'SEC-NOISE');
+  check(noiseBlock !== null && noiseBlock.rule?.includes('降级为忽略'), 'sec-audit 含 SEC-NOISE 降噪规则');
+  check(ssSkill.includes('pre-commit'), 'sec-audit 含 pre-commit 集成模式');
+
+  const { scanSecretsInText, parseNpmAudit, renderSecurityReport, diffBaseline, buildCycloneDX, buildUpgradePlan, ciGateVerdict } =
+    await import('../plugins/step-sec-scan/server/lib.mjs');
+
+  const diff = [
+    'diff --git a/src/app.js b/src/app.js',
+    '+++ b/src/app.js',
+    '+const AWS_KEY = "AKIAIOSFODNN7EXAMPLE";',
+    '+const cfg = { apiKey: "sk-live-abcdef1234567890abcdef1234" };',
+    'diff --git a/tests/keys.js b/tests/keys.js',
+    '+++ b/tests/keys.js',
+    '+const token = "ghp_AaaBbbCccDddEeeFffGggHhhIiiJjjKkk";',
+    'diff --git a/src/demo.js b/src/demo.js',
+    '+++ b/src/demo.js',
+    '+const apiKey = "your-api-key-here";',
+    '',
+  ].join('\n');
+  const findings = scanSecretsInText(diff);
+  check(findings.length === 2, 'secret 扫描：2 命中（测试文件降噪、占位值忽略）', JSON.stringify(findings.map((f) => f.id)));
+  check(findings.every((f) => f.severity === 'critical' && f.file === 'src/app.js'), 'secret 发现定位与严重度');
+
+  const auditSample = JSON.stringify({ vulnerabilities: { lodash: { severity: 'high', range: '<4.17.21', via: [{ title: 'Prototype Pollution' }], fixAvailable: true }, 'left-pad': { severity: 'low', dev: true, via: ['x'], fixAvailable: true } } });
+  const auditFindings = parseNpmAudit(auditSample).findings;
+  check(auditFindings.length === 2 && auditFindings[0].severity === 'high', 'npm audit 解析');
+  const report = renderSecurityReport({ date: '2026-09-27', findings: [...findings, ...auditFindings] });
+  check(report.includes('[CRITICAL]') && report.includes('[HIGH]') && report.includes('docs/security-report.md'.slice(0, 1) === 'd' ? '证据' : '证据'), '报告按严重度排序含证据');
+
+  const baseline = [{ kind: 'vulnerability', package: 'lodash' }];
+  const diffed = diffBaseline(auditFindings, baseline);
+  check(diffed.news.every((f) => f.package !== 'lodash') && diffed.existing.length === 1, '基线对比：存量不重复报告');
+
+  const sbom = buildCycloneDX({ dependencies: { lodash: '^4.17.21', react: '^18.2.0' } }, 'demo');
+  check(sbom.bomFormat === 'CycloneDX' && sbom.components.length === 2 && sbom.components[0].purl.startsWith('pkg:npm/'), 'CycloneDX SBOM 生成');
+
+  const plan = buildUpgradePlan(auditFindings);
+  check(plan.length >= 1 && plan[0].package === 'lodash', '自动修复升级计划');
+  const gate = ciGateVerdict([...findings, ...auditFindings], { fail_on: ['critical', 'high'] });
+  check(gate.pass === false && gate.blocking === 3, 'CI 卡点 critical/high 阻断', JSON.stringify(gate));
+}
+
+// ---------- 25b. sec-scan 多生态（SS-110） ----------
+{
+  const { parsePipAudit, parseCargoAudit } = await import('../plugins/step-sec-scan/server/lib.mjs');
+  const pip = parsePipAudit(JSON.stringify({ dependencies: [{ name: 'requests', vulns: [{ id: 'PYSEC-2026-1', aliases: ['CVE-2026-1234'], fix_versions: ['2.32.0'] }] }] }));
+  check(pip.findings.length === 1 && pip.findings[0].package === 'requests' && pip.findings[0].severity === 'high', 'pip-audit 解析');
+  const cargo = parseCargoAudit(JSON.stringify({ vulnerabilities: { list: [{ package: { name: 'openssl-src' }, advisory: { id: 'RUSTSEC-2026-0001', title: 'buffer overflow', severity: 'high' }, versions: { patched: ['111.0.0'] } }] } }));
+  check(cargo.findings.length === 1 && cargo.findings[0].fixAvailable === true, 'cargo audit 解析');
+  const ssCmd = readFileSync(join(ROOT, 'plugins/step-sec-scan/commands/audit.md'), 'utf8');
+  check(ssCmd.includes('--multi-ecosystem') && ssCmd.includes('--baseline') && ssCmd.includes('--gate'), 'audit.md 含多生态/基线/卡点参数');
+}
 
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
