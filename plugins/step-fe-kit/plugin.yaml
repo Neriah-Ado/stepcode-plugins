@@ -46,14 +46,14 @@ versions:
   - version: "1.2.0"
     type: minor
     theme: 精细验证
-    status: not-started
+    status: done
     tasks:
       - id: FK-120-1
         title: 指定 selector 截图（组件级验证）
-        done: false
+        done: true
       - id: FK-120-2
         title: 多视口批量检查（375/768/1440）
-        done: false
+        done: true
     acceptance:
       - "响应式问题可在移动视口截图中暴露"
     risks: []
