@@ -74,6 +74,37 @@ argument-hint: [范围或导出路径，可选；如 "7d" 或 "--csv usage.csv"]
 ```
 <!-- WEEKLY-RULES-END -->
 
+## 预算阈值告警（v1.3.0）
+
+<!-- BUDGET-RULES-START -->
+```json
+{
+  "config": "config/budget.json 或环境变量 STEP_TOKEN_METER_BUDGET：{ \"monthly_cost\": 100, \"warn_at\": 0.8 }",
+  "rule": "本月成本 ≥ monthly_cost → exceed；≥ warn_at 比例 → warn；未配置 → 静默跳过",
+  "action": "会话内显著提示（无头模式写入报告摘要）；只提示，不阻断工作"
+}
+```
+<!-- BUDGET-RULES-END -->
+
+聚合完成后按本月（当月 1 日起）成本检查预算并在汇报头部给出状态行（ok / warn / exceed + 比例）。
+
+## 多机数据合并（v1.3.0）
+
+<!-- MERGE-RULES-START -->
+```json
+{
+  "standard": "v1.0.0 的 CSV 格式（day,project,model,input,output,cache_read,cache_write,total,cost）",
+  "flow": "每台机器各自 /usage --csv 导出 → 收集到同一目录 → --merge <目录> 聚合；不做网络同步",
+  "rule": "按 day,project,model 求和 token 列；成本以本机单价表重算（口径一致性优先于各机导出值）",
+  "output": "合并后的 CSV 给绝对路径（C5），损坏行跳过并计警告"
+}
+```
+<!-- MERGE-RULES-END -->
+
+## 存储格式版本适配（v1.3.0）
+
+解析层按 `schemaVersion`（或 `v`）字段分发到对应解析器（映射表见 tests/lib/usage.mjs 与 server/lib.mjs 的 SCHEMA_PARSERS）：缺失视为 1；未知版本回退当前解析器并警告 `unknown-schema:N`。Step Code 升级导致格式变动时，**只需新增解析器映射，不改命令与统计逻辑**。
+
 ## 输出格式
 
 先表格后警告：三个维度的表格（日 / 项目 / 模型，含成本列）→ 解析警告统计 → 成本口径说明 → 导出路径（如有）。范围参数（如 `7d`）在解析后按时间过滤。

@@ -575,6 +575,32 @@ check((html.match(/<svg /g) ?? []).length === 3, '三组内联 SVG 图表', Stri
 check(html.includes('#0d1117') && html.includes('lang="zh-CN"'), '暗色主题与中文页面');
 check(html.includes('>2026-09-26<') && html.includes('>glm-4.7<'), '图表含日与模型标签');
 
+// ---------- 18. step-token-meter 预算/合并/迁移（TM-130） ----------
+const budgetBlock = extractBlock(usageCmd, 'BUDGET-RULES');
+check(budgetBlock !== null && budgetBlock.rule?.includes('exceed'), 'usage.md 含 BUDGET-RULES');
+const mergeBlock = extractBlock(usageCmd, 'MERGE-RULES');
+check(mergeBlock !== null && mergeBlock.rule?.includes('本机单价表重算'), 'usage.md 含 MERGE-RULES');
+check(usageCmd.includes('SCHEMA_PARSERS') && usageCmd.includes('unknown-schema'), 'usage.md 含 schema migration 说明');
+
+const { checkBudget, mergeCsvs, parseSessionVersioned, parseSessionText: parseTextV } = await import('./lib/usage.mjs');
+check(checkBudget(50, { monthly_cost: 100 }).status === 'ok', '预算 ok');
+check(checkBudget(85, { monthly_cost: 100, warn_at: 0.8 }).status === 'warn', '预算 warn');
+check(checkBudget(120, { monthly_cost: 100 }).status === 'exceed', '预算 exceed');
+check(checkBudget(120, null).status === 'unset', '未配置预算静默');
+
+const csvA = 'day,project,model,input,output,cache_read,cache_write,total,cost\n2026-09-26,E:/a,glm-4.7,1000,500,0,0,1500,0\n';
+const csvB = 'day,project,model,input,output,cache_read,cache_write,total,cost\n2026-09-26,E:/a,glm-4.7,2000,300,0,0,2300,0\n2026-09-27,E:/b,glm-4.6,10,5,0,0,15,0\n';
+const mergedCsv = mergeCsvs([csvA, csvB], usagePrice);
+check(mergedCsv.split('\n')[1].startsWith('2026-09-26,E:/a,glm-4.7,3000,800,0,0,3800'), '多机合并按维度求和', mergedCsv.split('\n')[1]);
+check(mergedCsv.includes('2026-09-27,E:/b,glm-4.6,10,5,0,0,15'), '多机合并保留独立维度');
+
+const v2 = parseSessionVersioned('{"v":2,"ts":"2026-09-27T01:00:00Z","model":"glm-4.7","proj":"E:/v2","tokens":{"in":100,"out":50,"cacheR":10,"cacheW":5}}');
+check(v2.ok && v2.record.total === 165 && v2.record.project === 'E:/v2', 'v2 格式解析', JSON.stringify(v2.record));
+const unknown = parseSessionVersioned('{"v":99,"foo":1}');
+check(unknown.ok === false || (unknown.warnings ?? []).some((w) => w.startsWith('unknown-schema:99')), '未知 schema 回退并警告', JSON.stringify(unknown.warnings ?? unknown));
+const mixed = parseTextV('{"v":2,"ts":"2026-09-27T01:00:00Z","model":"m","proj":"p","tokens":{"in":1,"out":2}}\n{"timestamp":"2026-09-27T02:00:00Z","message":{"model":"m","usage":{"input_tokens":3,"output_tokens":4}}}');
+check(mixed.records.length === 2 && mixed.records[1].total === 7, 'v1/v2 混合解析', JSON.stringify(mixed));
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

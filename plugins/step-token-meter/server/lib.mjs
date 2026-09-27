@@ -57,7 +57,7 @@ export function parseSessionText(text) {
   const records = [];
   const warnings = [];
   for (const line of text.split(/\r?\n/)) {
-    const r = parseSessionLine(line);
+    const r = parseSessionVersioned(line);
     if (r.ok) {
       records.push(r.record);
       warnings.push(...(r.warnings ?? []));
@@ -135,6 +135,93 @@ export function costOf(record, prices) {
     per(record.input, price.input) + per(record.output, price.output) +
     per(record.cacheRead, price.cache_read ?? 0) + per(record.cacheWrite, price.cache_write ?? 0);
   return { cost, usedDefault: !Object.keys(prices.models ?? {}).some((prefix) => record.model.startsWith(prefix)) };
+}
+
+// ---------- schema migration（TM-130-3）：版本号 → 解析器映射，新格式只需加映射 ----------
+export const SCHEMA_VERSION = 1;
+
+export function parseV2SessionLine(line) {
+  let obj;
+  try {
+    obj = JSON.parse(line);
+  } catch {
+    return { ok: false, warning: 'bad-json' };
+  }
+  const t = obj?.tokens ?? {};
+  const num = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : 0);
+  return {
+    ok: true,
+    warnings: [],
+    record: {
+      input: num(t.in),
+      output: num(t.out),
+      cacheRead: num(t.cacheR),
+      cacheWrite: num(t.cacheW),
+      total: num(t.in) + num(t.out) + num(t.cacheR) + num(t.cacheW),
+      model: typeof obj.model === 'string' && obj.model ? obj.model : 'unknown',
+      timestamp: typeof obj.ts === 'string' ? obj.ts : null,
+      project: typeof obj.proj === 'string' && obj.proj ? obj.proj : 'unknown',
+    },
+  };
+}
+
+const SCHEMA_PARSERS = {
+  1: (line) => parseSessionLine(line),
+  2: (line) => parseV2SessionLine(line),
+};
+
+export function parseSessionVersioned(line) {
+  if (!line || !line.trim()) return { ok: false, warning: 'empty' };
+  let obj;
+  try {
+    obj = JSON.parse(line);
+  } catch {
+    return { ok: false, warning: 'bad-json' };
+  }
+  const version = obj?.schemaVersion ?? obj?.v ?? 1;
+  const parser = SCHEMA_PARSERS[version];
+  if (!parser) {
+    const r = SCHEMA_PARSERS[SCHEMA_VERSION](line);
+    return { ...r, warnings: [...(r.warnings ?? []), `unknown-schema:${version}`] };
+  }
+  return parser(line);
+}
+
+// ---------- 预算阈值（TM-130-1） ----------
+export function checkBudget(monthCost, budget) {
+  if (!budget || typeof budget.monthly_cost !== 'number' || budget.monthly_cost <= 0) {
+    return { status: 'unset', ratio: null, note: '未配置预算（config/budget.json 或 STEP_TOKEN_METER_BUDGET）' };
+  }
+  const warnAt = typeof budget.warn_at === 'number' ? budget.warn_at : 0.8;
+  const ratio = Math.round((monthCost / budget.monthly_cost) * 1000) / 1000;
+  const status = monthCost >= budget.monthly_cost ? 'exceed' : monthCost >= budget.monthly_cost * warnAt ? 'warn' : 'ok';
+  return { status, ratio, monthly_cost: budget.monthly_cost, monthCost: Math.round(monthCost * 1e4) / 1e4 };
+}
+
+// ---------- 多机数据合并（TM-130-2）：标准格式为 v1.0.0 CSV，按 day,project,model 求和，成本按本机单价重算 ----------
+export function mergeCsvs(texts, prices) {
+  const buckets = new Map();
+  for (const text of texts ?? []) {
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    for (const line of lines.slice(1)) {
+      const cols = line.split(',');
+      if (cols.length !== 9) continue;
+      const [day, project, model, input, output, cacheRead, cacheWrite] = cols;
+      const key = `${day}\u0000${project}\u0000${model}`;
+      const b = buckets.get(key) ?? { day, project, model, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0, cost: 0 };
+      for (const [k, v] of [['input', input], ['output', output], ['cacheRead', cacheRead], ['cacheWrite', cacheWrite]]) {
+        const n = Number(v);
+        if (Number.isFinite(n) && n >= 0) b[k] += n;
+      }
+      b.total = b.input + b.output + b.cacheRead + b.cacheWrite;
+      b.cost = costOf({ model, input: b.input, output: b.output, cacheRead: b.cacheRead, cacheWrite: b.cacheWrite }, prices).cost;
+      buckets.set(key, b);
+    }
+  }
+  const rows = [...buckets.values()].sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0));
+  const header = 'day,project,model,input,output,cache_read,cache_write,total,cost';
+  const body = rows.map((r) => [r.day, r.project, r.model, r.input, r.output, r.cacheRead, r.cacheWrite, r.total, r.cost.toFixed(4)].join(','));
+  return `${[header, ...body].join('\n')}\n`;
 }
 
 export function toCsv(records, prices) {
