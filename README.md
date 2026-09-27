@@ -21,6 +21,15 @@
 
 全部 12 个插件均已达到 v1.3.0。
 
+## 发布说明 / Release Notes
+
+每个版本号一份双语发布文件（中/EN，理工男叙事）：12 个插件在该版本的更新与修复明细。
+
+- [v1.0.0 — MVP 全量首发 / Full MVP Launch](./docs/releases/v1.0.0.md)
+- [v1.1.0 — 提交质量与生态扩展 / Quality & Ecosystem](./docs/releases/v1.1.0.md)
+- [v1.2.0 — 自动化与可视化 / Automation & Visualization](./docs/releases/v1.2.0.md)
+- [v1.3.0 — 深水区与收官 / Deep Water & Wrap-up](./docs/releases/v1.3.0.md)
+
 ## 安装
 
 ```bash
