@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | [step-commit](./plugins/step-commit) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | Git 提交工作流套件：`/commit` 规范提交、`/commit-push-pr` 提交并建 PR、`/changelog` 发布辅助、`/release-pr` 发布 PR |
 | [step-test-guard](./plugins/step-test-guard) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | 测试守护循环：`/test` 运行测试 → 失败归因 → 定点修复 → 重跑闭环 |
-| [step-context-archive](./plugins/step-context-archive) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 上下文归档与召回：`/archive` 把已完成任务块原文落盘、`/recall` 按 stamp 取回；对话只留三点摘要索引 |
+| [step-context-archive](./plugins/step-context-archive) | ![in-progress](https://img.shields.io/badge/status-in--progress-yellow) | 上下文归档与召回：`/archive` 把已完成任务块原文落盘、`/recall` 按 stamp 取回；对话只留三点摘要索引 |
 | [step-token-meter](./plugins/step-token-meter) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | 本地 Token 用量统计：`/usage` 聚合与成本粗估、MCP 工具、HTML 报告，纯本地零网络 |
 | [step-docker-mate](./plugins/step-docker-mate) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | Docker/Compose 运维：MCP 查询/编排、崩溃归因、镜像瘦身，危险操作默认确认 |
 | [step-ci-fixer](./plugins/step-ci-fixer) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | CI 失败修复：/ci-fix 闭环、挂机监控、PR 评论交互、多平台日志适配 |
@@ -20,7 +20,7 @@
 | [step-cron-recipes](./plugins/step-cron-recipes) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | 定时任务模板库：6 模板 + 向导 + 变量系统 + 社区规范 |
 | [step-marketplace-cc](./plugins/step-marketplace-cc) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | Claude Code 插件市场桥：兼容性检查/修补/收录目录 |
 
-全部 12 个插件均已达到 v1.3.0。
+12 个首发插件均已达到 v1.3.0；社区贡献的 [step-context-archive](./plugins/step-context-archive)（PR #1）v1.0.0 开发中（in-progress）。
 
 ## 发布说明 / Release Notes
 
