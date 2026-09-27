@@ -4,6 +4,12 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
+## [1.1.0] - 2026-09-27
+
+### Other Changes
+- 自举 /changelog 生成 step-ci-fixer v1.0.0/v1.1.0 条目 (CF-100, CF-110)
+- 标记 step-ci-fixer v1.0.0/v1.1.0 任务完成
+
 ## [1.0.0] - 2026-09-27
 
 ### Added
