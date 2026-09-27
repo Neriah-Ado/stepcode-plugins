@@ -38,19 +38,18 @@ versions:
   - version: "1.1.0"
     type: minor
     theme: MCP 化与精度
-    status: not-started
+    status: done
+    notes: "MCP server 以零依赖 Node 实现 stdio JSON-RPC（协议与 @modelcontextprotocol/sdk 兼容）：C6 Windows/断网环境下保证零安装可测可分发；如需 SDK 版本可在网络可用时切换"
     tasks:
       - id: TM-110-1
         title: MCP server 化（TypeScript + @modelcontextprotocol/sdk）
-        context: "工具：get_usage(range)、get_usage_by_model(range)；npx 可运行（C1/C6）。"
-        done: false
+        done: true
       - id: TM-110-2
         title: 可配置单价表
-        context: "JSON 覆盖内置默认，支持热加载；路径走环境变量或配置约定。"
-        done: false
+        done: true
       - id: TM-110-3
         title: 更新 step.plugin.json 注册 mcpServers
-        done: false
+        done: true
     acceptance:
       - "MCP 工具在交互中被模型正确调用"
       - "单价表热加载生效"
