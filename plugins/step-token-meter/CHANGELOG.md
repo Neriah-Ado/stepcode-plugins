@@ -4,6 +4,16 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
+## [1.1.0] - 2026-09-27
+
+### Added
+- 清单注册 mcpServers 并新增 MCP 冒烟校验 (TM-110-3)
+- 零依赖 MCP server 化 get_usage/get_usage_by_model (TM-110-1)
+
+### Other Changes
+- 自举 /changelog 生成 step-token-meter v1.1.0 条目 (TM-110)
+- 标记 step-token-meter v1.1.0 任务完成
+
 ## [1.0.0] - 2026-09-27
 
 ### Added
