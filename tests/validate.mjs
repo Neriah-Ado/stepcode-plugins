@@ -561,6 +561,20 @@ check(loadPrices(usagePrice, { models: { 'glm-4.7': { input: 1 } } }).models['gl
   }
 }
 
+// ---------- 17. step-token-meter 可视化（TM-120） ----------
+const htmlBlock = extractBlock(usageCmd, 'HTML-RULES');
+check(htmlBlock !== null && htmlBlock.no_external?.includes('零外部资源'), 'usage.md 含 HTML-RULES（零外部资源）');
+const weeklyBlock = extractBlock(usageCmd, 'WEEKLY-RULES');
+check(weeklyBlock !== null && weeklyBlock.outputs?.html === 'docs/usage-report/usage-weekly.html', 'usage.md 含 WEEKLY-RULES 周报落盘');
+check(weeklyBlock?.cadence?.includes('/cron'), '周报接入 /cron');
+
+const { renderHtmlReport } = await import('./lib/report-html.mjs');
+const html = renderHtmlReport({ generatedAt: '2026-09-27T08:00:00Z', byDay: agg.byDay, byProject: agg.byProject, byModel: agg.byModel });
+check(!/(src|href)\s*=|@import|url\(/i.test(html.replace(/xmlns="[^"]*"/g, '')), 'HTML 零外部资源（无 src/href/import 引用）');
+check((html.match(/<svg /g) ?? []).length === 3, '三组内联 SVG 图表', String((html.match(/<svg /g) ?? []).length));
+check(html.includes('#0d1117') && html.includes('lang="zh-CN"'), '暗色主题与中文页面');
+check(html.includes('>2026-09-26<') && html.includes('>glm-4.7<'), '图表含日与模型标签');
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

@@ -57,15 +57,14 @@ versions:
   - version: "1.2.0"
     type: minor
     theme: 可视化
-    status: not-started
+    status: done
     tasks:
       - id: TM-120-1
         title: HTML 本地报告（内联图表，无外部 CDN）
-        context: "日/项目/模型三维度图表；暗色主题可读。"
-        done: false
+        done: true
       - id: TM-120-2
         title: "/cron 周报自动生成落盘"
-        done: false
+        done: true
     acceptance:
       - "报告在 4K/暗色环境可读"
     risks: []
