@@ -4,6 +4,14 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
+## [1.1.0] - 2026-09-27
+
+### Added
+- fe-visual 视觉验证 skill 与报告渲染 (FK-110-1, FK-110-2)
+
+### Other Changes
+- 自举 /changelog 生成 step-fe-kit v1.1.0 条目 (FK-110)
+
 ## [1.0.0] - 2026-09-27
 
 ### Added
