@@ -124,6 +124,70 @@ export function composeLs(ctx) {
 }
 
 // 镜像层分析（dive 式解读）：docker history --format json 逐层大小
+// ---------- v1.1.0 诊断增强 ----------
+// 纯函数：状态+挂载+日志尾部 → 崩溃模式（lib 级可单测）
+export function matchCrashPattern(state = {}, mounts = [], tail = '') {
+  const patterns = [
+    {
+      id: 'oom',
+      match: state.ExitCode === 137 || state.OOMKilled === true || /heap out of memory|OOMKilled|Killed/i.test(tail),
+      cause: 'OOM：内存不足或泄漏（ExitCode 137 / OOMKilled）',
+      action: '提高内存限制（mem_limit / deploy.resources）或排查泄漏；勿盲目重启掩盖问题',
+    },
+    {
+      id: 'port-conflict',
+      match: /port is already allocated|address already in use/i.test(tail),
+      cause: '端口冲突：宿主端口被其他进程/容器占用',
+      action: '找到占用方并调整端口映射',
+    },
+    {
+      id: 'dependency-not-ready',
+      match: /dependency failed to start|ECONNREFUSED|connection refused/i.test(tail) || (state.Status === 'restarting' && (state.RestartCount ?? 0) > 0),
+      cause: '依赖未就绪：连接 DB/上游服务被拒或反复重启',
+      action: '为依赖加 healthcheck 与 depends_on.condition；应用侧重试退避',
+    },
+    {
+      id: 'volume-permission',
+      match: /permission denied/i.test(tail) && (mounts ?? []).length > 0,
+      cause: '卷权限：挂载路径属主/共享配置与容器 UID 不匹配',
+      action: '检查宿主目录属主与盘符共享（Windows）；对齐容器运行 UID',
+    },
+  ];
+  return patterns.find((p) => p.match) ?? null;
+}
+
+// 崩溃模式库：症状 → 归因 → 处置（与 skills/docker-ops/SKILL.md 表格一致）
+export function diagnose(container, ctx) {
+  const ins = inspect(container, ctx);
+  if (ins.error) return ins;
+  const lg = logs(container, { tail: 200, ctx });
+  const tail = (lg.lines ?? []).join('\n');
+  const state = ins.state ?? {};
+  const hit = matchCrashPattern(state, ins.mounts ?? [], tail);
+  if (hit) return { container, pattern: hit.id, cause: hit.cause, action: hit.action, exitCode: state.ExitCode ?? null, evidence: (lg.lines ?? []).slice(-10) };
+  if (state.ExitCode === 0 && state.Status === 'running') return { container, pattern: 'none', cause: '容器运行中，未见故障模式', action: '无需处置', exitCode: 0 };
+  return { container, pattern: 'app-error', cause: `应用自身异常（ExitCode ${state.ExitCode ?? '未知'}），含应用栈回溯`, action: '按日志定位代码，转入修复闭环', exitCode: state.ExitCode ?? null, evidence: (lg.lines ?? []).slice(-10) };
+}
+
+// docker events 巡检（只读）：过滤 die/oom/kill 事件
+export function dockerEvents({ since, until, ctx } = {}) {
+  const args = ['events', '--format', '{{json .}}'];
+  if (since) args.push('--since', since);
+  if (until) args.push('--until', until);
+  const r = runDocker(args, { context: ctx, timeoutMs: 30000 });
+  if (r.missing) return { error: 'docker-not-found', guidance: INSTALL_GUIDANCE };
+  if (r.code !== 0) return { error: 'docker-failed', stderr: r.stderr.slice(0, 300) };
+  const events = r.stdout.split('\n').filter(Boolean).map((l) => {
+    try {
+      const j = JSON.parse(l);
+      return { time: j.time, type: j.Type, action: j.Action, actor: j.Actor?.Attributes?.name ?? j.Actor?.ID };
+    } catch {
+      return null;
+    }
+  }).filter((e) => e && /die|oom|kill|stop|start/i.test(e.action));
+  return { events };
+}
+
 export function imageLayers(image, ctx) {
   const r = runDocker(['history', '--no-trunc', '--format', '{{json .}}', image], { context: ctx });
   if (r.missing || r.code !== 0) return { error: 'docker-failed', stderr: r.stderr.slice(0, 300) };

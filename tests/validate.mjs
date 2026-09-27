@@ -669,6 +669,51 @@ check(mixed.records.length === 2 && mixed.records[1].total === 7, 'v1/v2 混合�
   }
 }
 
+// ---------- 19b. docker-mate 诊断增强与远程（DM-110/DM-130） ----------
+{
+  const dmDir = join(ROOT, 'plugins/step-docker-mate');
+  const fake = join(ROOT, 'tests/fixtures/docker-fake/fake-docker.mjs');
+  const mkEnv = (extra) => ({ ...process.env, DOCKER_MATE_FAKE: fake, ...extra });
+  const runMcp = (calls, env) => {
+    const r = spawnSync(process.execPath, [join(dmDir, 'server/index.mjs')], {
+      input: calls.join('\n') + '\n', encoding: 'utf8', timeout: 30000, env,
+    });
+    if (r.status !== 0) throw new Error(`server 退出 ${r.status}: ${r.stderr.slice(0, 300)}`);
+    return (r.stdout + '\n').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  };
+  const call = (id, name, args) => JSON.stringify({ jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args ?? {} } });
+  const sc = (msgs, id) => msgs.find((m) => m.id === id)?.result?.structuredContent;
+
+  try {
+    const msgs = runMcp(
+      [
+        call(1, 'diagnose', { container: 'demo-web' }),
+        call(2, 'diagnose', { container: 'demo-rel' }),
+        call(3, 'diagnose', { container: 'demo-vol' }),
+        call(4, 'docker_events', { since: '10m' }),
+        '',
+      ],
+      mkEnv({}),
+    );
+    check(sc(msgs, 1)?.pattern === 'oom', '诊断：OOM 归因', JSON.stringify(sc(msgs, 1)));
+    check(sc(msgs, 2)?.pattern === 'dependency-not-ready', '诊断：依赖未就绪归因', JSON.stringify(sc(msgs, 2)));
+    check(sc(msgs, 3)?.pattern === 'volume-permission', '诊断：卷权限归因', JSON.stringify(sc(msgs, 3)));
+    const ev = sc(msgs, 4)?.events ?? [];
+    check(ev.length === 3 && ev.some((e) => e.action === 'oom' && e.actor === 'demo-web'), 'events 巡检过滤 die/oom/kill', JSON.stringify(ev));
+
+    const { matchCrashPattern } = await import('../plugins/step-docker-mate/server/lib.mjs');
+    check(
+      matchCrashPattern({ ExitCode: 0, Status: 'running', OOMKilled: false }, [], 'Error: port is already allocated').id === 'port-conflict',
+      '诊断：端口冲突归因（lib 级）',
+    );
+
+    const remote = runMcp([call(1, 'docker_ps'), ''], mkEnv({ DOCKER_MATE_CONTEXT: 'remote-host' }));
+    check(sc(remote, 1)?.containers?.length === 3, '远程 context（DOCKER_MATE_CONTEXT）透传可用');
+  } catch (e) {
+    bad('docker-mate v1.1/v1.3 冒烟', e.message);
+  }
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

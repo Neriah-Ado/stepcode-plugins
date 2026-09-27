@@ -8,7 +8,7 @@ import { createInterface } from 'node:readline';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { dockerVersion, ps, inspect, logs, composeUp, composeDown, composeLs, imageLayers, INSTALL_GUIDANCE } from './lib.mjs';
+import { dockerVersion, ps, inspect, logs, composeUp, composeDown, composeLs, imageLayers, diagnose, dockerEvents, INSTALL_GUIDANCE } from './lib.mjs';
 
 const PLUGIN_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION = JSON.parse(readFileSync(join(PLUGIN_DIR, 'step.plugin.json'), 'utf8')).version;
@@ -22,6 +22,8 @@ const TOOLS = [
   { name: 'compose_down', description: '停止并移除 compose 栈。默认 dry-run 只列受影响资源；confirm=true 才执行（G3）', inputSchema: { type: 'object', properties: { file: { type: 'string' }, confirm: { type: 'boolean' }, removeVolumes: { type: 'boolean' } }, required: ['file'] } },
   { name: 'compose_ls', description: '列出本机全部 compose 项目', inputSchema: { type: 'object', properties: {} } },
   { name: 'image_layers', description: '镜像层体积分析（瘦身建议见 skill）', inputSchema: { type: 'object', properties: { image: { type: 'string' } }, required: ['image'] } },
+  { name: 'diagnose', description: '崩溃归因：综合 inspect+logs 匹配崩溃模式库（OOM/端口/依赖/卷权限/应用错误）', inputSchema: { type: 'object', properties: { container: { type: 'string' } }, required: ['container'] } },
+  { name: 'docker_events', description: '事件流巡检（只读）：过滤 die/oom/kill/stop/start', inputSchema: { type: 'object', properties: { since: { type: 'string' }, until: { type: 'string' } } } },
 ];
 
 function handleCall(name, args) {
@@ -42,6 +44,10 @@ function handleCall(name, args) {
       return composeLs(ctx);
     case 'image_layers':
       return args?.image ? imageLayers(args.image, ctx) : { error: 'missing-arg: image' };
+    case 'diagnose':
+      return args?.container ? diagnose(args.container, ctx) : { error: 'missing-arg: container' };
+    case 'docker_events':
+      return dockerEvents({ since: args?.since, until: args?.until, ctx });
     default:
       return null;
   }

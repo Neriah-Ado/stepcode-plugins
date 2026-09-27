@@ -3,6 +3,7 @@
 import { appendFileSync } from 'node:fs';
 
 const args = process.argv.slice(2);
+if (args[0] === '--context') args.splice(0, 2); // 远程 context 前缀对 fake 透明
 const marker = process.env.DOCKER_MATE_DOWN_MARKER;
 const out = (lines) => process.stdout.write(lines.map((l) => (typeof l === 'string' ? l : JSON.stringify(l))).join('\n') + '\n');
 
@@ -18,14 +19,32 @@ if (args[0] === 'version') {
   const name = args[1] ?? '';
   if (name.includes('web')) {
     out([JSON.stringify([{ Name: '/demo-web', Config: { Image: 'demo/web:latest' }, State: { Status: 'exited', ExitCode: 137, OOMKilled: true, Error: '' }, RestartCount: 3, Mounts: [{ Source: '/data/web', Destination: '/var/www' }] }])]);
+  } else if (name.includes('rel')) {
+    out([JSON.stringify([{ Name: '/demo-rel', Config: { Image: 'demo/rel:latest' }, State: { Status: 'restarting', ExitCode: 1, OOMKilled: false, Error: '' }, RestartCount: 5, Mounts: [] }])]);
+  } else if (name.includes('vol')) {
+    out([JSON.stringify([{ Name: '/demo-vol', Config: { Image: 'demo/vol:latest' }, State: { Status: 'running', ExitCode: 0, OOMKilled: false, Error: '' }, RestartCount: 0, Mounts: [{ Source: '/srv/data', Destination: '/var/lib/data' }] }])]);
   } else {
     out([JSON.stringify([{ Name: `/${name}`, Config: { Image: 'demo/other:latest' }, State: { Status: 'running', ExitCode: 0, OOMKilled: false, Error: '' }, RestartCount: 0, Mounts: [] }])]);
   }
 } else if (args[0] === 'logs') {
+  const name = args.at(-1) ?? '';
   const lines = [];
-  for (let i = 1; i <= 250; i += 1) lines.push(`line-${i} app working`);
-  lines.push('FATAL ERROR: Reached heap limit - Allocation failed - JavaScript heap out of memory');
+  if (name.includes('rel')) {
+    for (let i = 1; i <= 5; i += 1) lines.push(`Error: connect ECONNREFUSED 127.0.0.1:5432 (attempt ${i}), retrying`);
+  } else if (name.includes('vol')) {
+    for (let i = 1; i <= 3; i += 1) lines.push(`open /var/lib/data/store.db: permission denied`);
+  } else {
+    for (let i = 1; i <= 250; i += 1) lines.push(`line-${i} app working`);
+    lines.push('FATAL ERROR: Reached heap limit - Allocation failed - JavaScript heap out of memory');
+  }
   out(lines);
+} else if (args[0] === 'events') {
+  out([
+    { time: 1769500000, Type: 'container', Action: 'die', Actor: { Attributes: { name: 'demo-web' } } },
+    { time: 1769500001, Type: 'container', Action: 'oom', Actor: { Attributes: { name: 'demo-web' } } },
+    { time: 1769500002, Type: 'container', Action: 'start', Actor: { Attributes: { name: 'demo-api' } } },
+    { time: 1769500003, Type: 'network', Action: 'connect', Actor: { Attributes: { name: 'bridge' } } },
+  ]);
 } else if (args[0] === 'compose' && args[1] === '-f') {
   const rest = args.slice(3);
   if (rest[0] === 'ps') {
