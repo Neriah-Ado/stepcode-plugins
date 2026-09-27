@@ -739,6 +739,13 @@ check(mixed.records.length === 2 && mixed.records[1].total === 7, 'v1/v2 混合�
   }
 }
 
+// ---------- 19d. docker-mate 健康日报（DM-130） ----------
+const healthCmd = readFileSync(join(ROOT, 'plugins/step-docker-mate/commands/docker-health.md'), 'utf8');
+const healthBlock = extractBlock(healthCmd, 'HEALTH-RULES');
+check(healthBlock !== null && healthBlock.report === 'docs/docker-health.md' && healthBlock.exit_semantics?.docker_unavailable === '2', 'docker-health.md 含 HEALTH-RULES');
+check(healthBlock?.readonly?.includes('一律禁止'), '日报模式禁危险操作');
+check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);
