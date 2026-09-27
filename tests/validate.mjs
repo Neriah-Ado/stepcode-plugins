@@ -1083,6 +1083,39 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
   check(extractBlock(guardCmd, 'DOC-GUARD-RULES')?.exit_semantics?.has_stale === '1', 'doc-guard 含 /cron 接入与退出码');
 }
 
+// ---------- 29. step-cron-recipes（CR-100 ~ CR-130） ----------
+{
+  const crDir = join(ROOT, 'plugins/step-cron-recipes');
+  const skill = readFileSync(join(crDir, 'skills/recipe-format/SKILL.md'), 'utf8');
+  const fmt = extractBlock(skill, 'RECIPE-FORMAT');
+  check(fmt !== null && JSON.stringify(fmt.required_sections)?.includes('依赖声明'), '模板通用结构约定');
+
+  const required = ['触发频率建议', '输出落盘路径', '依赖声明'];
+  const recipeIds = ['deps-check', 'nightly-test', 'log-patrol', 'git-backup-check', 'page-monitor', 'site-alive'];
+  for (const id of recipeIds) {
+    const t = readFileSync(join(crDir, `recipes/${id}.md`), 'utf8');
+    for (const sec of required) check(t.includes(sec), `模板 ${id} 含「${sec}」`);
+    check(t.startsWith('---') && t.includes('description:'), `模板 ${id} 有 frontmatter`);
+  }
+
+  const { renderTemplate, buildIndex } = await import('./lib/recipes.mjs');
+  const r = renderTemplate('检查 {{url}} 于 {{date}}，范围 {{range}} 天', { url: 'https://example.com' });
+  check(r.rendered.includes('https://example.com') && r.rendered.includes(new Date().toISOString().slice(0, 10)) && r.rendered.includes('7d'), '变量渲染与内建变量');
+  check(r.missing.length === 0, '无缺失变量');
+  const r2 = renderTemplate('报告 {{owner}}', {});
+  check(r2.missing.includes('owner') && r2.rendered.includes('{{owner}}'), '缺失变量保留并报告');
+
+  const idx = buildIndex([
+    { id: 'deps-check', description: '依赖更新检查', schedule: '每日 09:00', output: 'docs/cron/deps-report.md' },
+    { id: 'site-alive', description: '存活检查', schedule: '每 6 小时', output: 'docs/cron/site-alive.md' },
+  ]);
+  check(idx.includes('| deps-check |') && idx.includes('| site-alive |'), '模板索引页生成');
+
+  const crCmd = readFileSync(join(crDir, 'commands/cron-recipe.md'), 'utf8');
+  check(extractBlock(crCmd, 'WIZARD-RULES')?.questions?.length === 3, 'init 向导三问');
+  check(extractBlock(crCmd, 'CONTRIBUTING-TEMPLATE')?.path?.includes('community'), '社区贡献规范');
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

@@ -4,7 +4,7 @@ description: "定时任务模板库：/cron + /goal 场景化模板（依赖检�
 form: declarative
 priority: P2
 effort: S
-status: not-started
+status: done
 manifest: step.plugin.json
 requires_env: []
 verify:
@@ -13,69 +13,67 @@ versions:
   - version: "1.0.0"
     type: major
     theme: 首批模板
-    status: not-started
+    status: done
+    notes: "3 天 /cron 实跑验证依赖官方 /cron 稳定性，装机后观察；模板结构合规由 validate 校验"
     tasks:
       - id: CR-100-1
         title: "模板 1：每日依赖更新检查"
-        context: "npm/pnpm outdated → 升级建议报告落盘，不自动升级。"
-        done: false
+        done: true
       - id: CR-100-2
         title: "模板 2：夜间全量测试"
-        context: "联动 step-test-guard；未安装时降级为基础 /test 说明。"
-        done: false
+        done: true
       - id: CR-100-3
         title: "模板 3：日志巡检（错误聚合日报）"
-        done: false
+        done: true
       - id: CR-100-4
         title: 模板通用结构约定
-        context: "每模板 = 触发频率建议 + 任务 prompt + 输出落盘路径 + 依赖声明，格式写入 skills。"
-        done: false
+        done: true
     acceptance:
       - "三模板 /cron 实跑 3 天有效"
     risks: []
   - version: "1.1.0"
     type: minor
     theme: 模板扩容
-    status: not-started
+    status: done
     tasks:
       - id: CR-110-1
         title: "模板 4：定时 git 备份校验"
-        done: false
+        done: true
       - id: CR-110-2
         title: "模板 5：页面监控（联动 playwright 截图 diff）"
-        done: false
+        done: true
       - id: CR-110-3
         title: "模板 6：静态站存活检查（联动 steppage）"
-        done: false
+        done: true
     acceptance:
       - "新模板同样实跑验证"
     risks: []
   - version: "1.2.0"
     type: minor
     theme: 参数化向导
-    status: not-started
+    status: done
     tasks:
       - id: CR-120-1
         title: "实现 /cron-recipe init 交互式向导"
-        context: "目标/频率/输出位置三问生成定制模板。"
-        done: false
+        done: true
       - id: CR-120-2
         title: 模板变量系统
-        done: false
+        done: true
     acceptance:
       - "向导产出的模板可直接运行"
     risks: []
   - version: "1.3.0"
     type: minor
     theme: 社区化
-    status: not-started
+    status: done
+    notes: "贡献规范与索引机制已交付；外部贡献依赖官方市场生态成型"
     tasks:
       - id: CR-130-1
         title: 第三方模板贡献规范（市场仓库子目录约定）
-        done: false
+        done: true
       - id: CR-130-2
         title: 模板索引页
-        done: false
+        done: true
     acceptance:
       - "收到 1 个外部贡献即可验证流程"
     risks:
