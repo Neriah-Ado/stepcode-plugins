@@ -465,6 +465,35 @@ check(analyzeFlaky([]).verdict === 'invalid', 'flaky 判定：空数据无效');
 check(recommendedAction('stable-fail').includes('test-fix-loop'), 'stable-fail 建议转修复闭环');
 check(recommendedAction('flaky').includes('用户确认'), 'flaky 隔离动作需用户确认');
 
+// ---------- 16. step-token-meter 用量统计（TM-100） ----------
+check(existsSync(join(ROOT, 'plugins/step-token-meter/docs/storage-format.md')), 'step-token-meter 存储格式文档存在');
+const usageCmd = readFileSync(join(ROOT, 'plugins/step-token-meter/commands/usage.md'), 'utf8');
+for (const needle of ['零网络', 'docs/storage-format.md', '--csv', '容错解析', '成本为按公开单价的粗估']) {
+  check(usageCmd.includes(needle), `commands/usage.md 含关键规则「${needle}」`);
+}
+const usagePrice = extractBlock(usageCmd, 'PRICE-RULES');
+check(usagePrice !== null && usagePrice.default?.input === 15, 'usage.md 含 PRICE-RULES 默认单价表');
+
+const { parseSessionText, aggregate, toCsv, costOf, loadPrices } = await import('./lib/usage.mjs');
+const usageSamples = JSON.parse(readFileSync(join(ROOT, 'tests/samples/usage-samples.json'), 'utf8'));
+const { records, warnings } = parseSessionText(usageSamples.lines.join('\n'));
+check(records.length === usageSamples.expect.recordCount, '容错解析：有效记录数', String(records.length));
+check(warnings.length === usageSamples.expect.warningCount, '容错解析：损坏行警告计数', JSON.stringify(warnings));
+const agg = aggregate(records);
+for (const [day, m] of Object.entries(usageSamples.expect.byDay)) {
+  check(agg.byDay[day]?.total === m.total, `按日聚合 ${day} total=${m.total}`, JSON.stringify(agg.byDay[day]));
+}
+check(agg.byModel && Object.values(agg.byModel)[0].model === usageSamples.expect.byModelTop.model, '按模型聚合排序首位');
+check(Object.values(agg.byModel)[0].total === usageSamples.expect.byModelTop.total, '按模型聚合首位总量');
+const csv = toCsv(records, usagePrice);
+check(csv.startsWith(usageSamples.expect.csvHeader), 'CSV 表头');
+check(csv.trim().split('\n').length === usageSamples.expect.csvRowCount + 1, 'CSV 行数');
+const glmCost = costOf(records[0], usagePrice);
+check(Math.abs(glmCost.cost - (1000 * 2 + 500 * 8 + 200 * 0.2 + 100 * 2) / 1e6) < 1e-9, 'glm-4.7 成本计算', String(glmCost.cost));
+const mysteryCost = costOf(records[3], usagePrice);
+check(mysteryCost.usedDefault && mysteryCost.cost > 0, '未知模型回退 default 单价');
+check(loadPrices(usagePrice, { models: { 'glm-4.7': { input: 1 } } }).models['glm-4.7'].input === 1, '单价覆盖合并');
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);
