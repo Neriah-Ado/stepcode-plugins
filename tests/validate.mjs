@@ -921,6 +921,17 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
   check(gate.pass === false && gate.blocking === 3, 'CI 卡点 critical/high 阻断', JSON.stringify(gate));
 }
 
+// ---------- 25b. sec-scan 多生态（SS-110） ----------
+{
+  const { parsePipAudit, parseCargoAudit } = await import('../plugins/step-sec-scan/server/lib.mjs');
+  const pip = parsePipAudit(JSON.stringify({ dependencies: [{ name: 'requests', vulns: [{ id: 'PYSEC-2026-1', aliases: ['CVE-2026-1234'], fix_versions: ['2.32.0'] }] }] }));
+  check(pip.findings.length === 1 && pip.findings[0].package === 'requests' && pip.findings[0].severity === 'high', 'pip-audit 解析');
+  const cargo = parseCargoAudit(JSON.stringify({ vulnerabilities: { list: [{ package: { name: 'openssl-src' }, advisory: { id: 'RUSTSEC-2026-0001', title: 'buffer overflow', severity: 'high' }, versions: { patched: ['111.0.0'] } }] } }));
+  check(cargo.findings.length === 1 && cargo.findings[0].fixAvailable === true, 'cargo audit 解析');
+  const ssCmd = readFileSync(join(ROOT, 'plugins/step-sec-scan/commands/audit.md'), 'utf8');
+  check(ssCmd.includes('--multi-ecosystem') && ssCmd.includes('--baseline') && ssCmd.includes('--gate'), 'audit.md 含多生态/基线/卡点参数');
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

@@ -100,6 +100,46 @@ export function renderSecurityReport({ date, findings, note }) {
   return lines.join('\n');
 }
 
+// ---------- v1.1.0 多生态审计解析 ----------
+export function parsePipAudit(jsonText) {
+  let data;
+  try {
+    data = JSON.parse(jsonText);
+  } catch {
+    return { error: 'parse-failed' };
+  }
+  const findings = [];
+  for (const dep of data?.dependencies ?? []) {
+    for (const v of dep.vulns ?? []) {
+      findings.push({
+        kind: 'vulnerability', package: dep.name, severity: (v.fix_versions?.length ? 'high' : 'medium'),
+        title: v.aliases?.[0] ?? v.id ?? 'unknown', fixAvailable: (v.fix_versions?.length ?? 0) > 0,
+        evidence: `${dep.name} ${v.id ?? ''}`,
+      });
+    }
+  }
+  return { findings };
+}
+
+export function parseCargoAudit(jsonText) {
+  let data;
+  try {
+    data = JSON.parse(jsonText);
+  } catch {
+    return { error: 'parse-failed' };
+  }
+  const findings = [];
+  for (const v of data?.vulnerabilities?.list ?? []) {
+    findings.push({
+      kind: 'vulnerability', package: v.package?.name, severity: String(v.advisory?.severity ?? 'medium').toLowerCase(),
+      title: v.advisory?.title ?? v.advisory?.id ?? 'unknown', fixAvailable: Boolean(vVersions(v)?.length),
+      evidence: `${v.package?.name} ${v.advisory?.id ?? ''}`,
+    });
+  }
+  return { findings };
+}
+const vVersions = (v) => v?.versions?.patched;
+
 // ---------- v1.2.0 基线对比 ----------
 export function diffBaseline(current, baseline) {
   const key = (f) => `${f.kind ?? 'secret'}\u0000${f.package ?? f.id}\u0000${f.file ?? ''}`;

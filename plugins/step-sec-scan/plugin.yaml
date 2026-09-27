@@ -33,14 +33,14 @@ versions:
   - version: "1.1.0"
     type: minor
     theme: 多生态
-    status: not-started
+    status: done
     tasks:
       - id: SS-110-1
         title: pip-audit / cargo audit 接入
-        done: false
+        done: true
       - id: SS-110-2
         title: pre-commit hook 集成模式
-        done: false
+        done: true
     acceptance:
       - "三生态样本仓库验证"
     risks: []
