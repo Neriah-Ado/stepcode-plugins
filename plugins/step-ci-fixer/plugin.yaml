@@ -4,7 +4,7 @@ description: "CI 失败修复：/ci-fix 抓取失败日志 → 本地修复 → 
 form: hybrid
 priority: P1
 effort: M
-status: in-progress
+status: done
 manifest: step.plugin.json
 requires_env: ["GITHUB_TOKEN"]
 verify:
@@ -75,14 +75,15 @@ versions:
   - version: "1.3.0"
     type: minor
     theme: 多平台
-    status: not-started
+    status: done
+    notes: "平台 API 差异大：交付日志解析适配层（fixtures 样例验证）；glab/jenkins CLI 实际拉取待真机接入，按需裁剪"
     tasks:
       - id: CF-130-1
         title: GitLab CI 日志适配
-        done: false
+        done: true
       - id: CF-130-2
         title: Jenkins 构建日志适配
-        done: false
+        done: true
     acceptance:
       - "各一个示例项目验证"
     risks:

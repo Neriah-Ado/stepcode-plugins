@@ -805,6 +805,17 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
   }
 }
 
+// ---------- 21. ci-fixer 多平台日志适配（CF-130） ----------
+{
+  const { parseGitlabLog, parseJenkinsLog } = await import('./lib/ci-log.mjs');
+  const gl = parseGitlabLog(readFileSync(join(ROOT, 'tests/fixtures/ci-logs/gitlab.txt'), 'utf8'));
+  check(gl.platform === 'gitlab' && gl.classification === 'test', 'GitLab 日志解析与分类', JSON.stringify({ c: gl.classification }));
+  check(gl.errorTail.includes('ECONNREFUSED'), 'GitLab 错误段含连接被拒', gl.errorTail);
+  const jk = parseJenkinsLog(readFileSync(join(ROOT, 'tests/fixtures/ci-logs/jenkins.txt'), 'utf8'));
+  check(jk.buildFailure === true && jk.failedStages.includes('Test'), 'Jenkins 失败 stage 定位', JSON.stringify(jk.failedStages));
+  check(jk.classification === 'test' && jk.errorTail.includes('Expected: 3'), 'Jenkins 错误段与分类', jk.classification);
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

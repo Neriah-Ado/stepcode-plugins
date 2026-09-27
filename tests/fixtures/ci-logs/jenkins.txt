@@ -1,0 +1,21 @@
+Started by user Neriah
+[Pipeline] stage (Build)
+[Pipeline] { (Build)
+[Pipeline] sh
++ npm run build
+[Pipeline] }
+[Pipeline] stage (Test)
+[Pipeline] { (Test)
+[Pipeline] sh
++ npm test
+[ERROR] ✕ calc suite › sub
+[ERROR] Expected: 3 Received: 2
+[ERROR] Tests: 1 failed
+[Pipeline] }
+[Pipeline] stage (Deploy)
+[Pipeline] { (Deploy)
+[Pipeline] }
+[Pipeline] End of Pipeline
+ERROR: script returned exit code 1
+Finished: FAILURE
+BUILD FAILURE

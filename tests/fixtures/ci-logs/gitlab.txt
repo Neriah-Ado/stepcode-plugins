@@ -1,0 +1,17 @@
+$ gitlab-runner helper image
+$ CI/CD job #42
+Running with gitlab-runner 17.0
+Preparing the "docker" executor
+Using Docker executor with image node:20 ...
+Getting source from repository
+$ export GIT_STRATEGY=clone
+Fetching changes
+checkout tests/spec/integration.spec.ts
+$ npm ci
+$ npm run lint
+$ npm run test:integration
+
+> integration tests
+ERROR: An unhandled error occurred: connect ECONNREFUSED 127.0.0.1:5432
+ERROR: Job failed: exit code 1
+ERROR: Job failed (test stage)
