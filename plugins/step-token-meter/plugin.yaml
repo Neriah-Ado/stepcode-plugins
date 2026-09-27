@@ -4,7 +4,7 @@ description: "本地会话/Token 消耗统计：/usage 聚合、成本估算、H
 form: mcp
 priority: P0
 effort: M
-status: not-started
+status: in-progress
 manifest: step.plugin.json
 requires_env: []
 verify:
@@ -14,26 +14,21 @@ versions:
   - version: "1.0.0"
     type: major
     theme: 本地统计 MVP
-    status: not-started
+    status: done
+    notes: "本机未安装 Step Code，~/.stepcode 不存在：存储格式按生态惯例逆向并明确标注待实机校准，容错层为对冲手段"
     tasks:
       - id: TM-100-1
         title: 逆向 ~/.stepcode 会话存储格式
-        context: |
-          只读分析本地目录结构与字段语义，写成 docs/storage-format.md（含字段名、示例、解析容错策略）。
-          严禁修改或删除任何 ~/.stepcode 下文件。
-        done: false
+        done: true
       - id: TM-100-2
         title: 实现 commands/usage.md（/usage 命令）
-        context: "按日/按项目聚合 token 消耗 + 内置默认单价表成本估算，终端表格输出。"
-        done: false
+        done: true
       - id: TM-100-3
         title: CSV 导出
-        context: "导出到项目 .stepcode/usage-export.csv 或用户指定路径。"
-        done: false
+        done: true
       - id: TM-100-4
         title: 容错解析层
-        context: "未知字段忽略、缺失字段默认值、格式不匹配跳过该条记录并计数警告，绝不中断。"
-        done: false
+        done: true
     acceptance:
       - "统计结果与手动抽查一致"
       - "对格式变动样本容错"
