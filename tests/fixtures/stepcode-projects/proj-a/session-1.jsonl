@@ -1,0 +1,3 @@
+{"type":"assistant","timestamp":"2026-09-26T08:15:30.000Z","cwd":"E:/proj-a","message":{"model":"glm-4.7","usage":{"input_tokens":1000,"output_tokens":500,"cache_read_input_tokens":200,"cache_creation_input_tokens":100}}}
+{"type":"assistant","timestamp":"2026-09-26T09:00:00.000Z","cwd":"E:/proj-a","message":{"model":"claude-sonnet-4-5","usage":{"input_tokens":2000,"output_tokens":800}}}
+{"type":"assistant","timestamp":"2026-09-27T10:00:00.000Z","cwd":"E:/proj-b","message":{"model":"glm-4.7","usage":{"input_tokens":3000,"output_tokens":200}}}

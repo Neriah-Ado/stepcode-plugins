@@ -4,7 +4,7 @@
  * 零依赖：node tests/validate.mjs
  * 环境变量 GIT_BIN 可指定 git 可执行文件（默认 "git"）。
  */
-import { readFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, existsSync, statSync, writeFileSync, rmSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -493,6 +493,73 @@ check(Math.abs(glmCost.cost - (1000 * 2 + 500 * 8 + 200 * 0.2 + 100 * 2) / 1e6) 
 const mysteryCost = costOf(records[3], usagePrice);
 check(mysteryCost.usedDefault && mysteryCost.cost > 0, '未知模型回退 default 单价');
 check(loadPrices(usagePrice, { models: { 'glm-4.7': { input: 1 } } }).models['glm-4.7'].input === 1, '单价覆盖合并');
+
+// ---------- 16b. step-token-meter MCP server（TM-110） ----------
+{
+  const tmDir = join(ROOT, 'plugins/step-token-meter');
+  const tmManifest = JSON.parse(readFileSync(join(tmDir, 'step.plugin.json'), 'utf8'));
+  check(tmManifest.mcpServers?.['step-token-meter']?.command === 'node', 'manifest 注册 mcpServers（node 启动）');
+  check(existsSync(join(tmDir, 'server/index.mjs')) && existsSync(join(tmDir, 'server/lib.mjs')), 'server 代码存在');
+  check(existsSync(join(tmDir, 'config/prices.example.json')), '单价覆盖样例存在');
+
+  const sessionFixture = join(ROOT, 'tests/fixtures/stepcode-projects');
+  const mcpInput = [
+    JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} }),
+    JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }),
+    JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list' }),
+    JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'get_usage', arguments: { range: 'all' } } }),
+    JSON.stringify({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'get_usage_by_model', arguments: { range: 'all' } } }),
+    JSON.stringify({ jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'nope', arguments: {} } }),
+    '',
+  ].join('\n');
+
+  const mkPrices = (glmInputRate) =>
+    JSON.stringify({ default: { input: 15, output: 75, cache_read: 0, cache_write: 0 }, models: { 'glm-4.7': { input: glmInputRate, output: 8, cache_read: 0.2, cache_write: 2 } } });
+  const pricesPath = join(ROOT, 'tests/fixtures/tm-prices.json');
+
+  const runServer = () => {
+    const r = spawnSync(process.execPath, [join(tmDir, 'server/index.mjs')], {
+      input: mcpInput,
+      encoding: 'utf8',
+      timeout: 30000,
+      env: { ...process.env, STEP_TOKEN_METER_DIR: sessionFixture, STEP_TOKEN_METER_PRICES: pricesPath },
+    });
+    if (r.status !== 0) throw new Error(`server 退出 ${r.status}: ${r.stderr}`);
+    return (r.stdout + '\n').split('\n').filter(Boolean).map((l) => JSON.parse(l));
+  };
+
+  try {
+    writeFileSync(pricesPath, mkPrices(2));
+    const msgs = runServer();
+    const init = msgs.find((m) => m.id === 1);
+    check(init?.result?.serverInfo?.name === 'step-token-meter', 'MCP initialize 握手', JSON.stringify(init));
+    const tools = msgs.find((m) => m.id === 2);
+    check(
+      JSON.stringify(tools?.result?.tools?.map((t) => t.name)) === JSON.stringify(['get_usage', 'get_usage_by_model']),
+      'MCP tools/list',
+      JSON.stringify(tools?.result?.tools?.map((t) => t.name)),
+    );
+    const usage = msgs.find((m) => m.id === 3);
+    const structured = usage?.result?.structuredContent;
+    check(structured?.grandTotal === 7800, 'get_usage 汇总数', JSON.stringify(structured?.grandTotal));
+    check(structured?.days?.length === 2, 'get_usage 按日条数', JSON.stringify(structured?.days?.length));
+    const byModel = msgs.find((m) => m.id === 4);
+    const bm = byModel?.result?.structuredContent;
+    check(bm?.models?.[0]?.model === 'glm-4.7' && bm?.models?.[0]?.total === 5000, 'get_usage_by_model 排序首位', JSON.stringify(bm?.models?.[0]));
+    check(msgs.find((m) => m.id === 5)?.error?.code === -32602, '未知工具返回 -32602');
+
+    // 热加载：改写单价文件（mtime 变化）后新调用生效
+    writeFileSync(pricesPath, mkPrices(20));
+    const msgs2 = runServer();
+    const usage2 = msgs2.find((m) => m.id === 3)?.result?.structuredContent;
+    check(usage2?.grandTotal === 7800 && usage2?.days?.length === 2, '热加载后再次调用正常', JSON.stringify(usage2?.days));
+    check(usage2?.days?.[0]?.cost !== structured?.days?.[0]?.cost, '单价表热加载生效（成本变化）', `${structured?.days?.[0]?.cost} -> ${usage2?.days?.[0]?.cost}`);
+  } catch (e) {
+    bad('MCP server 冒烟', e.message);
+  } finally {
+    rmSync(pricesPath, { force: true });
+  }
+}
 
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
