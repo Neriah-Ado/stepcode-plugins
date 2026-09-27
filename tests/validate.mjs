@@ -265,6 +265,7 @@ const checkBootstrapChangelog = (pluginId) => {
 };
 checkBootstrapChangelog('step-commit');
 checkBootstrapChangelog('step-test-guard');
+checkBootstrapChangelog('step-context-archive');
 
 // ---------- 10. step-commit monorepo 与 release PR（SC-130-1/2/3） ----------
 check(changelogCmd.includes('pnpm-workspace.yaml'), 'commands/changelog.md 含 monorepo 检测说明');
@@ -1138,6 +1139,52 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
   const nativeEntry = { name: 'step-commit', upstream: 'Neriah-Ado/stepcode-plugins', lockedVersion: '1.3.0', category: '原生', compat: 'native', note: '本仓库原生插件' };
   const mixedIndex = buildCcIndex([nativeEntry, ...catalog.entries.slice(0, 2)], { includeBadges: true });
   check(mixedIndex.includes('step-commit') && mixedIndex.includes('★'), '原生与迁移插件共存索引 + 徽章（MC-130）');
+}
+
+// ---------- 31. step-context-archive（SCA-100，PR #1 社区贡献） ----------
+{
+  const scaDir = join(ROOT, 'plugins/step-context-archive');
+  const archiveCmd = readFileSync(join(scaDir, 'commands/archive.md'), 'utf8');
+  const recallCmd = readFileSync(join(scaDir, 'commands/recall.md'), 'utf8');
+  const scaSkill = readFileSync(join(scaDir, 'skills/context-archive/SKILL.md'), 'utf8');
+  const scaYaml = readFileSync(join(scaDir, 'plugin.yaml'), 'utf8');
+
+  // frontmatter（与 Claude Code Agent Skills 同构）
+  for (const [name, text] of [['archive.md', archiveCmd], ['recall.md', recallCmd]]) {
+    check(text.startsWith('---') && text.includes('description:'), `commands/${name} 有 frontmatter`);
+  }
+
+  // 规则块（validate 单一事实源）
+  const archiveBlock = extractBlock(archiveCmd, 'ARCHIVE-RULES');
+  check(archiveBlock !== null, 'archive.md 含 ARCHIVE-RULES JSON 块');
+  check(archiveBlock?.archive_dir === '.stepcode/context-archive/', 'ARCHIVE-RULES 归档目录固定');
+  check(archiveBlock?.id_format?.startsWith('12 位小写十六进制'), 'ARCHIVE-RULES id 格式');
+  check(archiveBlock?.overwrite === false, 'ARCHIVE-RULES 禁止覆盖既有归档');
+  check(archiveBlock?.outside_default_dir?.includes('用户同意'), 'ARCHIVE-RULES 越界写盘需用户同意');
+  const recallBlock = extractBlock(recallCmd, 'RECALL-RULES');
+  check(recallBlock !== null, 'recall.md 含 RECALL-RULES JSON 块');
+  check(recallBlock?.read_only === true, 'RECALL-RULES 只读召回');
+  check(recallBlock?.answer_from?.includes('原文'), 'RECALL-RULES 基于原文回答');
+  check(recallBlock?.on_missing?.includes('禁止编造'), 'RECALL-RULES 缺失时禁止编造');
+
+  // 安全红线与关键规则（G3）
+  for (const needle of ['只归档、不销毁', '不越界写盘', '不夹带机密', '不编造原文', '不改用户配置']) {
+    check(archiveCmd.includes(needle), `archive.md 含安全红线「${needle}」`);
+  }
+  check(archiveCmd.includes('#STAMP') && archiveCmd.includes('是否完成'), 'archive.md 含 STAMP 索引行与完成状态汇报');
+  for (const needle of ['不要猜', '以**当前文件**为准']) {
+    check(recallCmd.includes(needle), `recall.md 含召回规则「${needle}」`);
+  }
+  for (const needle of ['目标：', '关键决策：', '是否完成：', '召回纪律']) {
+    check(scaSkill.includes(needle), `SKILL.md 含「${needle}」`);
+  }
+
+  // 诚实状态一致性（G1）：SCA-100-4（真实项目验证）未完成前不得标 done
+  check(/- id: SCA-100-4[\s\S]*?done: false/.test(scaYaml), 'plugin.yaml SCA-100-4 保持未完成（G1 诚实标注）');
+  check(scaYaml.includes('status: in-progress'), 'plugin.yaml 版本状态 in-progress');
+  const scaRoadmap = roadmap.plugins.find((p) => p.id === 'step-context-archive');
+  check(scaRoadmap?.status === 'in-progress', 'roadmap 状态与 plugin.yaml 一致');
+  check(scaRoadmap?.latest_version === null, 'roadmap latest_version 待 v1.0.0 发布后再回填');
 }
 
 // ---------- 汇总 ----------
