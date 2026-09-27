@@ -837,6 +837,29 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
   check(parseDevLog('next', '✗ Failed to compile', devLogRules).error === 'Failed to compile', 'next 编译错误识别');
 }
 
+// ---------- 23. fe-kit 视觉验证（FK-110/120） ----------
+{
+  const fkSkill = readFileSync(join(ROOT, 'plugins/step-fe-kit/skills/fe-visual/SKILL.md'), 'utf8');
+  const visualRules = extractBlock(fkSkill, 'VISUAL-RULES');
+  check(visualRules !== null && visualRules.c5?.includes('不内联 base64'), 'fe-visual 含 VISUAL-RULES 与 C5 约定');
+  check(fkSkill.includes('/plugin install playwright'), 'playwright 缺失降级指引');
+  const svBlock = extractBlock(fkSkill, 'SELECTOR-VIEWPORTS');
+  check(JSON.stringify(svBlock?.viewports) === JSON.stringify([375, 768, 1440]), '多视口定义 375/768/1440');
+
+  const { renderVisualReport, viewportBatch } = await import('./lib/visual-report.mjs');
+  const report = renderVisualReport({
+    page: '/home',
+    viewports: [{ width: 375, height: 720, before: 'docs/fe-visual/before-375.png', after: 'docs/fe-visual/after-375.png', diff: '按钮换行' }],
+    consoleErrors: ['Uncaught TypeError: x is not a function'],
+    responsiveIssues: ['375 视口横向溢出'],
+    conclusion: '响应式问题已暴露',
+  });
+  check(report.includes('docs/fe-visual/before-375.png') && report.includes('Uncaught TypeError'), '报告含截图路径与控制台错误');
+  const batch = viewportBatch('/home');
+  check(batch.map((b) => b.width).join(',') === '375,768,1440' && batch[0].path.includes('375'), '多视口批量计划生成');
+  check(viewportBatch('/home', [375], '.btn')[0].selector === '.btn', 'selector 组件级截图参数');
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

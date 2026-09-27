@@ -32,15 +32,14 @@ versions:
   - version: "1.1.0"
     type: minor
     theme: 视觉验证
-    status: not-started
+    status: done
     tasks:
       - id: FK-110-1
         title: 改版前后截图对比
-        context: "调内置 playwright：改动前截图 → 修改 → 同视口截图 → 对比报告。"
-        done: false
+        done: true
       - id: FK-110-2
         title: 浏览器控制台错误采集并入反馈
-        done: false
+        done: true
     acceptance:
       - "UI 改动任务中截图对比有效发现问题"
     risks: []
