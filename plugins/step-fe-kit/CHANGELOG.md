@@ -4,6 +4,14 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
+## [1.3.0] - 2026-09-27
+
+### Added
+- 性能提示与 api-forge mock 联动并标记 v1.3.0 完成 (FK-130-1, FK-130-2)
+
+### Other Changes
+- 自举 /changelog 生成 step-fe-kit v1.3.0 条目 (FK-130)
+
 ## [1.2.0] - 2026-09-27
 
 ### Other Changes
