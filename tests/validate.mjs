@@ -1161,6 +1161,7 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
   check(archiveBlock?.id_format?.startsWith('12 位小写十六进制'), 'ARCHIVE-RULES id 格式');
   check(archiveBlock?.overwrite === false, 'ARCHIVE-RULES 禁止覆盖既有归档');
   check(archiveBlock?.outside_default_dir?.includes('用户同意'), 'ARCHIVE-RULES 越界写盘需用户同意');
+  check(archiveBlock?.path_style?.includes('项目相对路径'), 'ARCHIVE-RULES 索引行使用项目相对路径');
   const recallBlock = extractBlock(recallCmd, 'RECALL-RULES');
   check(recallBlock !== null, 'recall.md 含 RECALL-RULES JSON 块');
   check(recallBlock?.read_only === true, 'RECALL-RULES 只读召回');

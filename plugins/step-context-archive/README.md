@@ -22,7 +22,7 @@
   2. 每块生成三点摘要：目标 / 关键决策 / 是否完成
   3. 块原文 → .stepcode/context-archive/stamp-<id>.md
   4. 对话里留下索引行：
-     #STAMP <id> → <绝对路径> — 目标：…；关键决策：…；是否完成：…
+     #STAMP <id> → .stepcode/context-archive/stamp-<id>.md — 目标：…；关键决策：…；是否完成：…
   5. 明确汇报每个任务的完成状态（已完成 / 部分完成 / 未完成）
 
 /recall <id>
@@ -49,6 +49,8 @@
 | `/recall <id>` | 按 stamp 取回归档原文 |
 
 归档目录默认为项目内 `.stepcode/context-archive/`；`stamp-<id>.md` 的内容是该块**归档前的原文**。
+索引行记录**项目相对路径**（跨机器/移动仓库仍可解析）；`<id>` 优先为 12 位小写十六进制
+（无法计算哈希时退化为 `b` 前缀短 id）。
 
 配套技能 `skills/context-archive/SKILL.md` 说明 `#STAMP` 语义、三点摘要协议与召回纪律。
 

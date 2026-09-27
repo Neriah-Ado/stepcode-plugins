@@ -14,7 +14,7 @@ argument-hint: <stamp id | stamp-<id>.md | 归档文件路径>
 ```json
 {
   "read_only": true,
-  "resolve": "12 位十六进制 id → .stepcode/context-archive/stamp-<id>.md；文件名或路径 → 直接读；找不到 → 列出会话内全部 #STAMP 行让用户挑选，不要猜",
+  "resolve": "id → .stepcode/context-archive/stamp-<id>.md（12 位十六进制主格式，或 b 前缀退化短 id）；文件名或路径 → 相对项目根解析后读；旧索引行若为绝对路径 → 取其 stamp-<id>.md 文件名在归档目录内定位；找不到 → 列出会话内全部 #STAMP 行让用户挑选，不要猜",
   "answer_from": "归档原文（不是摘要，不是记忆复述）",
   "conflict": "归档原文与当前工作区文件不一致时说明差异，以当前文件为准",
   "on_missing": "如实报告失败原因与尝试过的路径，禁止编造原文",
@@ -25,9 +25,11 @@ argument-hint: <stamp id | stamp-<id>.md | 归档文件路径>
 
 ## 执行步骤
 
-1. **定位文件**：
-   - 参数是 12 位十六进制 id → 读 `.stepcode/context-archive/stamp-<id>.md`；
-   - 参数是文件名或路径 → 直接读该路径；
+1. **定位文件**（索引行记录的是项目相对路径）：
+   - 参数是 id（12 位十六进制主格式，或 `b` 前缀退化短 id）→ 读
+     `.stepcode/context-archive/stamp-<id>.md`；
+   - 参数是文件名或路径 → 相对项目根解析后读取；
+   - 旧索引行若记录绝对路径 → 取其中的 `stamp-<id>.md` 文件名在归档目录内定位；
    - 参数缺失或找不到对应块 → 先列出当前会话里的全部 #STAMP 行让用户挑选，
      **不要猜**、也不要用相近的块顶替。
 2. **读取全文**（用宿主自带的读文件工具）。
