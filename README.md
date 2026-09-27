@@ -24,7 +24,7 @@
 
 ## 发布说明 / Release Notes
 
-每个版本号一份双语发布文件（中/EN，理工男叙事）：12 个插件在该版本的更新与修复明细。
+全部发布说明已同步发布到 [GitHub Releases](https://github.com/Neriah-Ado/stepcode-plugins/releases)；以下为文本源文件。
 
 - [v1.0.0 — MVP 全量首发 / Full MVP Launch](./docs/releases/v1.0.0.md)
 - [v1.1.0 — 提交质量与生态扩展 / Quality & Ecosystem](./docs/releases/v1.1.0.md)
