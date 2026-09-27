@@ -1,0 +1,16 @@
+{
+  "id": "step-doc-gen",
+  "name": "Step Doc Gen",
+  "description": "文档生成：/readme、/api-docs、中文排版规范 skill、/i18n-docs 多语言 README、docs 站点骨架、/doc-guard 一致性守护。",
+  "version": "1.3.0",
+  "commands": [
+    "commands/readme.md",
+    "commands/api-docs.md",
+    "commands/i18n-docs.md",
+    "commands/site-scaffold.md",
+    "commands/doc-guard.md"
+  ],
+  "skills": [
+    "skills/zh-style/SKILL.md"
+  ]
+}

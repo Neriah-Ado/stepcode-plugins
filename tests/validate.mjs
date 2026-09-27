@@ -1058,6 +1058,31 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
   check(nocred.find((m) => m.id === 1)?.result?.content?.[0]?.text?.includes('DATABASE_URL'), 'G4：缺凭据输出 export 指引');
 }
 
+// ---------- 28. step-doc-gen（DG-100 ~ DG-130） ----------
+{
+  const dgDir = join(ROOT, 'plugins/step-doc-gen');
+  const readmeCmd = readFileSync(join(dgDir, 'commands/readme.md'), 'utf8');
+  const structure = extractBlock(readmeCmd, 'README-STRUCTURE');
+  check(structure !== null && structure.honesty?.includes('绝不编造'), 'readme.md 含节结构与诚实规则');
+  check(extractBlock(readFileSync(join(dgDir, 'commands/api-docs.md'), 'utf8'), 'API-DOCS-RULES') !== null, 'api-docs.md 含规则块');
+  check(readFileSync(join(dgDir, 'skills/zh-style/SKILL.md'), 'utf8').includes('全角标点'), '中文排版规范内置');
+
+  const { headingsSync, staleCheck } = await import('./lib/i18n.mjs');
+  const src = '# T\n## 安装\n## 使用\n### 示例\n';
+  const okZh = '# 标题\n## 安装（中文）\n## 使用说明\n### 示例（中文）\n';
+  check(headingsSync(src, okZh).inSync === true, 'i18n 结构同步通过');
+  check(headingsSync(src, '# T\n## 使用\n').inSync === false, 'i18n 结构缺失检出');
+  const stale = staleCheck(['src/auth.ts'], { 'docs/guide.md': '见 src/auth.ts 的登录流程', 'README.md': '无关内容' });
+  check(stale.count === 1 && stale.stale[0].doc === 'docs/guide.md', '过期文档样本 100% 检出', JSON.stringify(stale));
+
+  const { buildMkdocsNav } = await import('./lib/site.mjs');
+  const nav = buildMkdocsNav(['index.md', 'guide/index.md', 'guide/quickstart.md', 'api.md']);
+  check(nav.includes('  - guide:') && nav.includes('- quickstart: guide/quickstart.md') && nav.includes('index.md'), 'mkdocs 侧边栏自动组织', nav);
+
+  const guardCmd = readFileSync(join(dgDir, 'commands/doc-guard.md'), 'utf8');
+  check(extractBlock(guardCmd, 'DOC-GUARD-RULES')?.exit_semantics?.has_stale === '1', 'doc-guard 含 /cron 接入与退出码');
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

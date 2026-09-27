@@ -41,6 +41,16 @@
       "name": "step-api-forge",
       "description": "OpenAPI 全链路：校验、TS/Python 客户端、mock server、文档页、breaking diff",
       "source": "./plugins/step-api-forge"
+    },
+    {
+      "name": "step-db-insight",
+      "description": "数据库只读助手：schema 浏览、EXPLAIN 解读、迁移草稿、受控写入、多库适配",
+      "source": "./plugins/step-db-insight"
+    },
+    {
+      "name": "step-doc-gen",
+      "description": "文档生成：/readme、/api-docs、中文排版规范、多语言 README、站点骨架、一致性守护",
+      "source": "./plugins/step-doc-gen"
     }
   ]
 }
