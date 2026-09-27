@@ -34,15 +34,14 @@ versions:
   - version: "1.1.0"
     type: minor
     theme: 诊断增强
-    status: not-started
+    status: done
     tasks:
       - id: DM-110-1
         title: 常见崩溃模式库
-        context: "OOM（exit 137）/ 端口冲突 / 依赖未就绪 / 卷权限，四类症状→归因→处置写入 skill。"
-        done: false
+        done: true
       - id: DM-110-2
         title: "docker events 事件流巡检 skill"
-        done: false
+        done: true
     acceptance:
       - "四类故障注入场景归因正确"
     risks: []
