@@ -4,6 +4,15 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
+## [1.2.0] - 2026-09-27
+
+### Added
+- slimming_plan 镜像瘦身方案与多 compose 项目管理 (DM-120-1, DM-120-2)
+
+### Other Changes
+- 自举 /changelog 生成 step-docker-mate v1.2.0 条目 (DM-120)
+- 标记 step-docker-mate v1.2.0 任务完成
+
 ## [1.1.0] - 2026-09-27
 
 ### Added
