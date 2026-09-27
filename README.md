@@ -51,6 +51,8 @@
 node tests/validate.mjs
 ```
 
+该门禁同时由 GitHub Actions 在 push / PR 时于 ubuntu 与 windows 双平台运行（[`.github/workflows/validate.yml`](./.github/workflows/validate.yml)）。
+
 ## License
 
 [MIT](./LICENSE)
