@@ -816,6 +816,27 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
   check(jk.classification === 'test' && jk.errorTail.includes('Expected: 3'), 'Jenkins 错误段与分类', jk.classification);
 }
 
+// ---------- 22. step-fe-kit（FK-100） ----------
+{
+  const fkDir = join(ROOT, 'plugins/step-fe-kit');
+  const devCmd = readFileSync(join(fkDir, 'commands/dev.md'), 'utf8');
+  const pubCmd = readFileSync(join(fkDir, 'commands/publish.md'), 'utf8');
+  const devDetect = extractBlock(devCmd, 'DEV-DETECT');
+  check(devDetect !== null && devDetect.detectors?.some((d) => d.dep === 'vite'), 'dev.md 含框架检测规则');
+  const devLogRules = extractBlock(devCmd, 'DEV-LOG-RULES');
+  check(devLogRules?.vite?.ready && devLogRules?.next?.ready, 'dev.md 含 vite/next 就绪解析规则');
+  check(devCmd.includes('杀进程前必须确认') && devCmd.includes('start /b'), 'dev.md 含 G3 与 Windows 后台启动（C6）');
+  check(pubCmd.includes('/plugin install steppage') && pubCmd.includes('外向动作'), 'publish.md 含 steppage 降级指引与 G3');
+
+  const { parseDevLog } = await import('./lib/dev-log.mjs');
+  const viteLog = '  VITE v6.0.0  ready in 432 ms\n  ➜  Local:   http://localhost:5173/';
+  check(parseDevLog('vite', viteLog, devLogRules).port === 5173, 'vite 就绪与端口解析');
+  const nextLog = '  ▲ Next.js 15\n  - Local:        http://localhost:3000\n  ✓ Ready in 1.2s';
+  check(parseDevLog('next', nextLog, devLogRules).port === 3000, 'next 就绪与端口解析');
+  check(parseDevLog('vite', 'error: listen EADDRINUSE: address already in use 0.0.0.0:5173', devLogRules).error === 'EADDRINUSE', '端口占用错误识别');
+  check(parseDevLog('next', '✗ Failed to compile', devLogRules).error === 'Failed to compile', 'next 编译错误识别');
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

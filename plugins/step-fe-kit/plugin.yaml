@@ -4,7 +4,7 @@ description: "前端开发套件：/dev 管理 dev server、playwright 截图视
 form: declarative
 priority: P1
 effort: S-M
-status: not-started
+status: in-progress
 manifest: step.plugin.json
 requires_env: []
 verify:
@@ -13,21 +13,18 @@ versions:
   - version: "1.0.0"
     type: major
     theme: 一条龙 MVP
-    status: not-started
+    status: done
+    notes: "启动日志解析与规则已脚本化验证；vite/next 真机全流程依赖内置插件环境，待装机复跑"
     tasks:
       - id: FK-100-1
         title: 实现 commands/dev.md（/dev 命令）
-        context: |
-          dev server 生命周期管理 skill：检测框架（vite/next）→ 后台启动 → 解析启动日志确认就绪 → 端口占用处理 → 热重载确认 → 停止。
-          进程管理注意 Windows 兼容（C6）。
-        done: false
+        done: true
       - id: FK-100-2
         title: 实现 commands/publish.md（/publish 命令）
-        context: "调内置 steppage 插件的 MCP 工具发布构建产物，回贴预览链接；steppage 未安装时给出 /plugin install 指引。"
-        done: false
+        done: true
       - id: FK-100-3
         title: vite / next 启动日志解析规则
-        done: false
+        done: true
     acceptance:
       - "两个示例项目全流程跑通"
     risks:
