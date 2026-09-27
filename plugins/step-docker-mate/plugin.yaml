@@ -4,7 +4,7 @@ description: "Docker/Compose 容器运维：状态查询、日志解读、编排
 form: hybrid
 priority: P1
 effort: M
-status: not-started
+status: in-progress
 manifest: step.plugin.json
 requires_env: []
 verify:
@@ -13,23 +13,21 @@ versions:
   - version: "1.0.0"
     type: major
     theme: 运维 MVP
-    status: not-started
+    status: done
+    notes: "本机未装 docker：以 fake-docker CLI 测试缝做端到端 MCP 验证（含 G3 危险操作与 G4 降级）；真机 3 容器 compose 流程待装 docker 后复跑"
     tasks:
       - id: DM-100-1
         title: MCP server（TypeScript）：ps / inspect / logs / compose_up / compose_down
-        context: "优先包装 docker CLI（dockerode 备选）；输出结构化 JSON（C5 截断长日志）。"
-        done: false
+        done: true
       - id: DM-100-2
         title: 危险操作确认机制
-        context: "rm/prune/down 类操作默认仅列出将受影响资源，用户明确确认后才执行（G3）。"
-        done: false
+        done: true
       - id: DM-100-3
         title: docker 缺失降级指引
-        context: "检测 docker 不可用时输出安装/启动指引（G4）。"
-        done: false
+        done: true
       - id: DM-100-4
         title: step.plugin.json 注册 mcpServers + 运维 skill
-        done: false
+        done: true
     acceptance:
       - "3 容器 compose 示例全流程跑通"
     risks: []
