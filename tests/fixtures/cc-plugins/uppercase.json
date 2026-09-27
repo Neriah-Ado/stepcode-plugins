@@ -1,0 +1,5 @@
+{
+  "name": "CC-Lint-Watcher",
+  "version": "0.6.0",
+  "commands": ["commands/watch.md"]
+}

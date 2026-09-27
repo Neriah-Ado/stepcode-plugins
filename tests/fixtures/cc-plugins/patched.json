@@ -1,0 +1,7 @@
+{
+  "name": "cc-commit-helper",
+  "version": "1.2.0",
+  "commands": ["commands/commit.md"],
+  "lspServers": { "tslint": { "command": "npx" } },
+  "entry": "bin/main.js"
+}

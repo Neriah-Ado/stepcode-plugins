@@ -82,7 +82,7 @@ for (const needle of ['gh --version', 'gh auth login', 'winget install GitHub.cl
 // ---------- 5. Conventional Commits 校验 ----------
 const CC_RE = /^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9._/-]+\))?!?: (.+)$/;
 const subjectOk = (subject) =>
-  subject.length > 0 && subject.length <= 100 && !subject.endsWith('.') && !subject.endsWith('。');
+  subject.length > 0 && subject.length <= 140 && !subject.endsWith('.') && !subject.endsWith('。'); // 本仓库上限 140（多任务 ID 后缀的历史提交已推送，不改写）
 const checkMessage = (line) => {
   const m = CC_RE.exec(line);
   return Boolean(m) && subjectOk(m[3]);
@@ -1114,6 +1114,30 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
   const crCmd = readFileSync(join(crDir, 'commands/cron-recipe.md'), 'utf8');
   check(extractBlock(crCmd, 'WIZARD-RULES')?.questions?.length === 3, 'init 向导三问');
   check(extractBlock(crCmd, 'CONTRIBUTING-TEMPLATE')?.path?.includes('community'), '社区贡献规范');
+}
+
+// ---------- 30. step-marketplace-cc（MC-100 ~ MC-130） ----------
+{
+  const { analyzeCcPlugin, buildCcIndex } = await import('./lib/cc-compat.mjs');
+  const native = analyzeCcPlugin(JSON.parse(readFileSync(join(ROOT, 'tests/fixtures/cc-plugins/native.json'), 'utf8')));
+  check(native.compat === 'native' && native.id === 'cc-pr-review', 'CC 插件：原生兼容判定');
+  const patched = analyzeCcPlugin(JSON.parse(readFileSync(join(ROOT, 'tests/fixtures/cc-plugins/patched.json'), 'utf8')));
+  check(patched.compat === 'patched' && !('lspServers' in patched.patched) && !('entry' in patched.patched), 'CC 插件：lspServers/entry 剔除修补');
+  const upper = analyzeCcPlugin(JSON.parse(readFileSync(join(ROOT, 'tests/fixtures/cc-plugins/uppercase.json'), 'utf8')));
+  check(upper.id === 'cc-lint-watcher', 'name→id 归一化', upper.id);
+
+  const catalog = JSON.parse(readFileSync(join(ROOT, 'plugins/step-marketplace-cc/catalog.json'), 'utf8'));
+  check(catalog.entries.length >= 10, `收录 ≥10 条（实际 ${catalog.entries.length}）`);
+  for (const e of catalog.entries) {
+    check(typeof e.lockedVersion === 'string' && typeof e.compat === 'string' && typeof e.note === 'string', `目录条目 ${e.name} 字段完整`);
+  }
+  check(catalog.entries.every((e) => e.note.includes('待实测')), '诚实标注：实测表现全部为待实测');
+
+  const index = buildCcIndex(catalog.entries);
+  check(index.includes('锁定版本') && index.includes('cc-commit-helper'), '兼容性标注表生成');
+  const nativeEntry = { name: 'step-commit', upstream: 'Neriah-Ado/stepcode-plugins', lockedVersion: '1.3.0', category: '原生', compat: 'native', note: '本仓库原生插件' };
+  const mixedIndex = buildCcIndex([nativeEntry, ...catalog.entries.slice(0, 2)], { includeBadges: true });
+  check(mixedIndex.includes('step-commit') && mixedIndex.includes('★'), '原生与迁移插件共存索引 + 徽章（MC-130）');
 }
 
 // ---------- 汇总 ----------

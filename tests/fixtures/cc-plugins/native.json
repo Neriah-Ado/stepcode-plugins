@@ -1,0 +1,6 @@
+{
+  "name": "cc-pr-review",
+  "description": "PR review helpers",
+  "version": "0.9.1",
+  "commands": ["commands/review.md"]
+}

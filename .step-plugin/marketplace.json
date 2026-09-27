@@ -51,6 +51,11 @@
       "name": "step-doc-gen",
       "description": "文档生成：/readme、/api-docs、中文排版规范、多语言 README、站点骨架、一致性守护",
       "source": "./plugins/step-doc-gen"
+    },
+    {
+      "name": "step-cron-recipes",
+      "description": "定时任务模板库：6 个场景模板 + init 向导 + 变量系统 + 社区贡献规范",
+      "source": "./plugins/step-cron-recipes"
     }
   ]
 }

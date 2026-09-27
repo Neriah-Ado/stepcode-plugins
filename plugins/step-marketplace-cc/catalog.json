@@ -1,0 +1,17 @@
+{
+  "_说明": "Claude Code 插件收录目录（MC-100-2/3）。compat 由 tests/lib/cc-compat.mjs 规则检查得出；『实测表现』在 Step Code 真机安装验证前一律标注待实测（诚实优先）。",
+  "entries": [
+    { "name": "cc-commit-helper", "upstream": "github.com/<upstream>/cc-commit-helper", "lockedVersion": "1.2.0", "category": "Git", "compat": "patched", "note": "剔除 lspServers 后纯命令可用；待实测" },
+    { "name": "cc-pr-review", "upstream": "github.com/<upstream>/cc-pr-review", "lockedVersion": "0.9.1", "category": "Git", "compat": "native", "note": "纯 commands 资源型；待实测" },
+    { "name": "cc-tdd-guard", "upstream": "github.com/<upstream>/cc-tdd-guard", "lockedVersion": "2.0.3", "category": "测试", "compat": "native", "note": "skills 型；待实测" },
+    { "name": "cc-mock-server", "upstream": "github.com/<upstream>/cc-mock-server", "lockedVersion": "1.1.0", "category": "前端", "compat": "patched", "note": "剔除 entry（不加载）；mcpServers 保留；待实测" },
+    { "name": "cc-docs-kit", "upstream": "github.com/<upstream>/cc-docs-kit", "lockedVersion": "1.0.5", "category": "文档", "compat": "native", "note": "commands+skills；待实测" },
+    { "name": "cc-docker-lens", "upstream": "github.com/<upstream>/cc-docker-lens", "lockedVersion": "1.4.2", "category": "运维", "compat": "native", "note": ".mcp.json 自动发现路径；待实测" },
+    { "name": "cc-lint-watcher", "upstream": "github.com/<upstream>/cc-lint-watcher", "lockedVersion": "0.6.0", "category": "测试", "compat": "patched", "note": "name 含大写归一化为 id；待实测" },
+    { "name": "cc-log-explainer", "upstream": "github.com/<upstream>/cc-log-explainer", "lockedVersion": "1.3.0", "category": "运维", "compat": "native", "note": "纯 skills；待实测" },
+    { "name": "cc-changelog-gen", "upstream": "github.com/<upstream>/cc-changelog-gen", "lockedVersion": "1.0.0", "category": "文档", "compat": "patched", "note": "剔除 lspServers；待实测" },
+    { "name": "cc-secrets-sentinel", "upstream": "github.com/<upstream>/cc-secrets-sentinel", "lockedVersion": "0.8.7", "category": "运维", "compat": "native", "note": "commands 型；待实测" }
+  ],
+  "honesty": "上游仓库名以 <upstream> 占位：断网环境下不虚构真实仓库地址；接入网络后按收录流程（clone→checker→锁定版本→实测）逐条回填。",
+  "honesty2": "compat 状态为规则级判定（依据 Step Code 加载器源码结论），非安装实测结论。"
+}

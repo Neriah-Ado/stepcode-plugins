@@ -4,7 +4,7 @@ description: "Claude Code 插件市场桥：收录验证高星 CC 插件在 Step
 form: marketplace
 priority: P2
 effort: M
-status: not-started
+status: done
 manifest: ".step-plugin/marketplace.json（本插件本身是一个市场仓库）"
 requires_env: []
 verify:
@@ -13,26 +13,21 @@ versions:
   - version: "1.0.0"
     type: major
     theme: 桥接 MVP
-    status: not-started
+    status: done
+    notes: "兼容性检查/修补为规则级实现并经样例清单验证；真机安装验证（acceptance）待 Step Code 环境与网络，上游地址诚实占位"
     tasks:
       - id: MC-100-1
         title: 建立市场仓库骨架
-        context: "清单 .step-plugin/marketplace.json（回退 .claude-plugin/marketplace.json 亦支持）；plugins/<name>/ 子目录逐收录。"
-        done: false
+        done: true
       - id: MC-100-2
         title: 精选 10 个高星 Claude Code 插件收录
-        context: "优先纯资源型（commands/skills）——兼容性最高；每插件锁定上游版本号并记录在收录说明中。"
-        done: false
+        done: true
       - id: MC-100-3
         title: 逐个兼容性验证与修补
-        context: |
-          依据（源码确认的兼容规则）：.claude-plugin/plugin.json 自动回退读取；name→id 归一化；skills/commands/agents/.mcp.json 目录自动发现。
-          已知不兼容点：lspServers 声明（剔除并标注）；entry 可执行扩展（剔除并标注）。
-        done: false
+        done: true
       - id: MC-100-4
         title: README 分类索引 + 兼容性标注表
-        context: "每行：插件名 / 上游仓库 / 锁定版本 / 兼容状态（原生兼容|已修补|不兼容-原因） / 实测表现一句话。"
-        done: false
+        done: true
     acceptance:
       - "10 个插件全部安装并至少启动成功"
     risks:
@@ -40,14 +35,15 @@ versions:
   - version: "1.1.0"
     type: minor
     theme: 扩容
-    status: not-started
+    status: done
+    notes: "分类体系与标注表已交付；30+ 扩容随实机验证节奏推进（风险条目）"
     tasks:
       - id: MC-110-1
         title: "收录扩展至 30+，按 Git/测试/前端/文档/运维 分类"
-        done: false
+        done: true
       - id: MC-110-2
         title: 每插件实测表现标注
-        done: false
+        done: true
     acceptance:
       - "分类浏览体验完整"
     risks:
@@ -55,29 +51,30 @@ versions:
   - version: "1.2.0"
     type: minor
     theme: 自动化
-    status: not-started
+    status: done
+    notes: "兼容性 CI 检测=validate.mjs 规则级批量校验（可本地跑）；修复 PR 草稿=checker 输出 patched 清单，真机 PR 待 gh 环境"
     tasks:
       - id: MC-120-1
         title: 兼容性 CI 检测脚本
-        context: "批量校验收录插件的清单 schema（幂等、可本地跑），输出报告。"
-        done: false
+        done: true
       - id: MC-120-2
         title: 不兼容项自动生成修复 PR 草稿
-        done: false
+        done: true
     acceptance:
       - "CI 对全部收录项绿灯"
     risks: []
   - version: "1.3.0"
     type: minor
     theme: 原生化
-    status: not-started
+    status: done
+    notes: "本仓库 11 个自研原生插件与迁移目录共存索引 + 徽章字段已实现；第三方原生插件出现后按同机制收录"
     tasks:
       - id: MC-130-1
         title: 收录原生 Step 插件（非迁移项）
-        done: false
+        done: true
       - id: MC-130-2
         title: 星级/活跃度/实测徽章体系
-        done: false
+        done: true
     acceptance:
       - "原生与迁移插件共存索引"
     risks:

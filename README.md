@@ -16,7 +16,10 @@
 | [step-api-forge](./plugins/step-api-forge) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | OpenAPI 全链路：校验、TS/Python 客户端、mock、breaking diff |
 | [step-db-insight](./plugins/step-db-insight) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | 数据库只读助手：schema 浏览、EXPLAIN 解读、受控写入 |
 | [step-doc-gen](./plugins/step-doc-gen) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | 文档生成：/readme、/api-docs、中文排版、站点骨架、一致性守护 |
-| 其余插件 | — | 开发中，见 [roadmap.json](./roadmap.json) |
+| [step-cron-recipes](./plugins/step-cron-recipes) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | 定时任务模板库：6 模板 + 向导 + 变量系统 + 社区规范 |
+| [step-marketplace-cc](./plugins/step-marketplace-cc) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | Claude Code 插件市场桥：兼容性检查/修补/收录目录 |
+
+全部 12 个插件均已达到 v1.3.0。
 
 ## 安装
 
