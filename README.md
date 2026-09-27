@@ -9,6 +9,7 @@
 | [step-commit](./plugins/step-commit) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | Git 提交工作流套件：`/commit` 规范提交、`/commit-push-pr` 提交并建 PR、`/changelog` 发布辅助、`/release-pr` 发布 PR |
 | [step-test-guard](./plugins/step-test-guard) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | 测试守护循环：`/test` 运行测试 → 失败归因 → 定点修复 → 重跑闭环 |
 | [step-token-meter](./plugins/step-token-meter) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | 本地 Token 用量统计：`/usage` 聚合与成本粗估、MCP 工具、HTML 报告，纯本地零网络 |
+| [step-docker-mate](./plugins/step-docker-mate) | ![v1.3.0](https://img.shields.io/badge/version-1.3.0-blue) | Docker/Compose 运维：MCP 查询/编排、崩溃归因、镜像瘦身，危险操作默认确认 |
 | 其余插件 | — | 开发中，见 [roadmap.json](./roadmap.json) |
 
 ## 安装

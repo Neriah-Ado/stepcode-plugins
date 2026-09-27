@@ -16,6 +16,11 @@
       "name": "step-token-meter",
       "description": "本地会话/Token 消耗统计：/usage 聚合、成本粗估、HTML 报告，MCP 工具 get_usage；纯本地零网络",
       "source": "./plugins/step-token-meter"
+    },
+    {
+      "name": "step-docker-mate",
+      "description": "Docker/Compose 容器运维：MCP 查询状态/日志/编排，崩溃归因与镜像瘦身，危险操作默认确认",
+      "source": "./plugins/step-docker-mate"
     }
   ]
 }

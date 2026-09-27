@@ -4,6 +4,15 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
+## [1.3.0] - 2026-09-27
+
+### Added
+- /docker-health 健康日报与远程 context 支持 (DM-130-1, DM-130-2)
+
+### Other Changes
+- 自举 /changelog 生成 step-docker-mate v1.3.0 条目并接入市场源 (DM-130)
+- 标记 step-docker-mate v1.3.0 完成并接入市场源
+
 ## [1.2.0] - 2026-09-27
 
 ### Added
