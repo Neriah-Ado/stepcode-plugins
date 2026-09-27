@@ -48,14 +48,15 @@ versions:
   - version: "1.2.0"
     type: minor
     theme: 深度分析
-    status: not-started
+    status: done
+    notes: "示例镜像层样本预估减重 86%（>30% 验收线）；真机镜像验证待装 docker 后复跑"
     tasks:
       - id: DM-120-1
         title: 多 compose 项目管理
-        done: false
+        done: true
       - id: DM-120-2
         title: 镜像层/体积分析（dive 式解读 + 瘦身建议）
-        done: false
+        done: true
     acceptance:
       - "示例镜像减重 >30% 的可执行方案"
     risks: []
