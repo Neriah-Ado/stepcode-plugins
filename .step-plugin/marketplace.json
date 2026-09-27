@@ -31,6 +31,11 @@
       "name": "step-fe-kit",
       "description": "前端开发套件：/dev 管理 dev server、视觉验证、/publish 联动 steppage 一键发布",
       "source": "./plugins/step-fe-kit"
+    },
+    {
+      "name": "step-sec-scan",
+      "description": "安全审计：/audit secret 扫描+依赖漏洞、降噪、基线与 SBOM、CI 卡点与修复 PR",
+      "source": "./plugins/step-sec-scan"
     }
   ]
 }
