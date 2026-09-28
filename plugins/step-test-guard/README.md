@@ -37,4 +37,4 @@ node tests/verify-test-guard-flow.mjs # 修复闭环 + 3 轮上限 + 零误改�
 
 ## License
 
-MIT
+[AGPL-3.0-only](../../LICENSE)

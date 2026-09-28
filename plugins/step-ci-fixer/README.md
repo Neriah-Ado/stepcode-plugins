@@ -31,4 +31,4 @@ node tests/validate.mjs   # 含 fake-gh 端到端与降级路径
 
 ## License
 
-MIT
+[AGPL-3.0-only](../../LICENSE)

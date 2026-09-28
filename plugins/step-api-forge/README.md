@@ -22,4 +22,4 @@ node tests/validate.mjs   # petstore 样例端到端（含 MCP 冒烟）
 
 ## License
 
-MIT
+[AGPL-3.0-only](../../LICENSE)

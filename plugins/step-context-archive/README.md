@@ -84,7 +84,7 @@ stamp 归档的自动写入与 `recall_by_stamp` 工具注册。两者共享同�
 ## 许可
 
 - **本 PR 提交的声明式内容**（`step.plugin.json` 清单、`commands/*.md` 命令文本、
-  `skills/context-archive/SKILL.md` 技能提示词）：随本集合以 [MIT](../../LICENSE) 分发。
+  `skills/context-archive/SKILL.md` 技能提示词）：随本集合以 [AGPL-3.0-only](../../LICENSE) 分发。
 - **参考实现**（TypeScript 代码版）：
   [uos1231234/step-context-archive](https://github.com/uos1231234/step-context-archive)，
   属独立项目，采用其自身许可

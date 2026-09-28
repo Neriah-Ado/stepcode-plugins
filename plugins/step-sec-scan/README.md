@@ -23,4 +23,4 @@ node tests/validate.mjs   # 含 secret 命中/降噪/基线/SBOM/卡点全链路
 
 ## License
 
-MIT
+[AGPL-3.0-only](../../LICENSE)

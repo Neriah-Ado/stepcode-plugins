@@ -26,4 +26,4 @@ node tests/validate.mjs   # 含 9 条对抗样本的只读守卫测试
 
 ## License
 
-MIT
+[AGPL-3.0-only](../../LICENSE)

@@ -53,4 +53,4 @@ node tests/validate.mjs
 
 ## License
 
-MIT
+[AGPL-3.0-only](../../LICENSE)

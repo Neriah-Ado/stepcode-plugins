@@ -19,4 +19,4 @@ Claude Code 插件市场桥（元项目）。把高星 CC 插件经规则级兼�
 
 ## License
 
-MIT
+[AGPL-3.0-only](../../LICENSE)
