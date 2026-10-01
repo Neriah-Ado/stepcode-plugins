@@ -54,13 +54,15 @@
 
 配套技能 `skills/context-archive/SKILL.md` 说明 `#STAMP` 语义、三点摘要协议与召回纪律。
 
-> **宿主加载状态（如实说明）**：截至 Step Code v0.1.1，插件安装目录
-> （`~/.stepcode/plugins/<name>/`）**尚未接入宿主的命令 / 技能加载器**——`/plugin install`
-> 当前只交付 `mcpServers` 与 `provision`，安装后的 `commands/*.md` 与 `skills/*/SKILL.md`
-> **不会**自动变成斜杠命令或技能（本地实测：安装后 `/archive` 零命中，`/reload` 与完全重启
-> 进程后仍零命中；源码侧 `core/resource-loader.ts` 只从扩展 API 取命令，未读取插件目录）。
-> 本插件的 Markdown 资源本身符合宿主清单规范（`node tests/validate.mjs` 全绿），但**需要宿主
-> 补齐该加载通道后才会生效**。该行为已反馈给上游维护者，详见本 PR 的评论。
+> **宿主加载状态（2026-09-30 更新）**：上游已修复——
+> [stepfun-ai/Step-Code `bda152e074`](https://github.com/stepfun-ai/Step-Code/commit/bda152e074)
+> 经 `resources_discover` 通道装载已安装插件的 `skills/` 与 `commands/`（会话内安装的插件
+> 在下一次资源重载时生效，项目插件根需项目 trust 门控）；
+> [`be4d5f4d81`](https://github.com/stepfun-ai/Step-Code/commit/be4d5f4d81)
+> 把清单内联 stdio MCP server 的工作目录锚定到插件根（相对 `args` 由此可解析）。
+> **在 ≥ 2026-09-30 的 Step Code 构建上**，本插件的 `/archive`、`/recall` 与技能会正常装载；
+> 更早的宿主（≤ v0.1.1）仍只交付 `mcpServers` 与 `provision`，Markdown 资源不会变成
+> 斜杠命令或技能（当时的实测与源码证据见 [PR #1 评论](https://github.com/Neriah-Ado/stepcode-plugins/pull/1#issuecomment-5848605757)）。
 
 ## 形态与范围（重要）
 

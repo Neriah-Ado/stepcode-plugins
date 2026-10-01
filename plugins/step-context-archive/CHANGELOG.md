@@ -4,7 +4,7 @@
 
 <!-- 版本节由 tests/bootstrap-changelog.mjs 从 git 历史自举生成 -->
 
-## [1.0.0] - 2026-09-27
+## [1.0.0] - 2026-10-01
 
 ### Added
 - 实现 /recall 命令与 context-archive 技能，补充 README 索引与 CHANGELOG (SCA-100-3)
@@ -15,6 +15,8 @@
 - #STAMP 索引行改项目相对路径并明确退化 id 例外 (SCA-100)
 
 ### Other Changes
+- 发布 step-context-archive v1.0.0，SCA-100-4 置 done (SCA-100-4)
+- license: switch MIT to AGPL-3.0-only
 - 自举 /changelog 刷新 step-context-archive 条目 (SCA-100)
 - 自举 /changelog 生成 step-context-archive CHANGELOG (SCA-100)
 - /archive 与 /recall 补充 validate 规则块 (SCA-100)

@@ -4,7 +4,7 @@ description: "长会话上下文归档与召回：任务块原文落盘 + #STAMP
 form: declarative
 priority: P1
 effort: S-M
-status: in-progress
+status: done
 manifest: step.plugin.json
 requires_env: []
 verify:
@@ -15,7 +15,7 @@ versions:
   - version: "1.0.0"
     type: major
     theme: 声明式上下文归档 MVP
-    status: in-progress
+    status: done
     tasks:
       - id: SCA-100-1
         title: 编写 step.plugin.json 清单
@@ -45,7 +45,13 @@ versions:
         context: |
           按 AGENTS.md G1：在两个真实项目中走完「长会话 → /archive → 继续工作 → /recall 取回细节」全链路，
           记录归档文件数量、索引行与原文一致性、以及是否出现摘要与原文冲突的情况。
-        done: false
+          验证证据（2026-09-29，贡献者 uos1231234 提交于 PR #1 评论，全量逐条可复算）：
+          ① Atlas Sync 长程任务（压缩接管自动触发，7 块 / 1067 KB，召回不读文件答出早期事实）；
+          ② effect-sse-httpapi-streaming（Effect-TS 子集，2240 文件 monorepo，165 块 / 1032.2 KB，
+          索引↔磁盘 165/165 全对齐：0 缺失、0 字节不符、0 首行不符、无摘要污染，聚合 sha256
+          a07a2736…402cd；零依赖校验脚本随评论给出，可独立复算）。诚实备注：②的 /archive → /recall
+          由人按同一协议手工执行（宿主当时未装载声明式命令），验证的是协议与产物格式，非宿主装载通道。
+        done: true
       - id: SCA-100-5
         title: 补全许可引用与宿主加载状态说明（文档）
         context: |
@@ -59,7 +65,7 @@ versions:
       - "召回内容与归档原文一致，无凭记忆复述"
       - "除 .stepcode/context-archive/ 外不产生其他文件副作用"
     risks:
-      - "宿主加载状态：截至 Step Code v0.1.1，插件安装目录未接入命令/技能加载器，本插件的 commands/skills 需宿主补齐后方才生效（已反馈上游）；MCP 型插件不受影响"
+      - "宿主加载状态：上游已于 2026-09-29/30 修复（bda152e074 经 resources_discover 装载插件 skills/commands，be4d5f4d81 把内联 stdio MCP server 锚定到插件根）——本插件 commands/skills 在 ≥ 2026-09-30 的宿主构建上生效（项目根需 trust）；更早版本宿主仍只交付 mcpServers/provision，且内联 MCP 相对 args 会解析到 step 进程目录"
       - "声明式实现依赖模型自觉执行，缺少代码级强制（无法在压缩前自动拦截）"
       - "摘要质量随模型波动；协议已声明「摘要仅供参考、以归档原文为准」作为对冲"
       - "归档目录若被纳入版本控制，需自行加入 .gitignore 或明确提交策略"

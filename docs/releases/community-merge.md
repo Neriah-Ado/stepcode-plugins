@@ -43,6 +43,34 @@
 漏提交崩溃（已由 `8d3dfef` 补交修复）；Step Code v0.1.1 宿主尚未加载已安装插件的
 `commands/` / `skills/`（已如实写入插件 README 与 risks，待官方核实）。
 
+### 2026-10-01 — step-context-archive v1.0.0 发布与宿主修复确认
+
+**SCA-100-4 置 done，插件随 v1.0.0 发布**（tag `step-context-archive-v1.0.0`）：
+
+- 贡献者于 2026-09-29 提交两个真实项目的全链路验证与**全量可复算数据**：
+  Atlas Sync 长程任务（压缩接管自动触发，7 块 / 1067 KB，召回不读文件答出早期事实）、
+  effect-sse-httpapi-streaming（Effect-TS 子集 2240 文件 monorepo，165 块 / 1032.2 KB，
+  索引↔磁盘 165/165 全对齐、聚合 sha256 可复算、零依赖校验脚本随评论给出）；
+  贡献者并诚实标注项目 2 的归档/召回为按协议手工执行——验证的是协议与产物格式，
+  不是宿主装载通道（详见 [v1.0.0 发布说明](./step-context-archive-v1.0.0.md)）；
+- roadmap / README / plugin.yaml 三处回填，validate §31 诚实状态守卫同步翻转为 done 态；
+- CHANGELOG 重新自举，**顺带修复 a461a6d（MIT → AGPL-3.0-only 许可切换）遗留的
+  自举漂移**——该提交动过插件 README 但未重新自举，推送后 CI 双平台红，本次一并修复。
+
+**宿主修复确认**：验证期间报告的两个宿主问题均已被上游 stepfun-ai/Step-Code 修复——
+`bda152e074`（2026-09-29）装载插件 `skills/`/`commands/`；
+`be4d5f4d81` + `0903f1f772`（2026-09-30）把内联 stdio MCP server 锚定到插件根并修复
+路径包含判定的 `..` 旁路，[issue #204](https://github.com/stepfun-ai/Step-Code/issues/204)
+注明后者"采用了贡献者提出的方案"。本集合 6 个 MCP 型插件
+（`{"command":"node","args":["server/index.mjs"]}` 写法）在修复前宿主上确实无法启动、
+修复后恢复。声明式插件与 MCP 插件自此在最新上游构建上均可用；更早版本宿主的限制
+继续如实写在各插件文档。
+
+**贡献者的持续上游工作**：其独立代码版扩展仓库在验证后提交了一批高质量审计修复
+（中止落盘、磁盘索引 `INDEX.md`、写盘失败的 `#UNARCHIVED` 行、半截文件自愈等，
+2026-09-29 ~ 10-01），并把自己的许可从 MIT 切换为 AGPL-3.0-only（`0e0ce9f`），
+与本集合 a461a6d 的口径对齐。
+
 ### English
 
 The first update after the wrap-up wave is not a version wave but a **community
@@ -78,7 +106,30 @@ The contributor's two upstream findings were verified and handled: the missing
 the report that Step Code v0.1.1 does not yet load installed plugins' `commands/`
 and `skills/` (documented honestly in the plugin README and `risks`).
 
+**2026-10-01 — step-context-archive v1.0.0 released, host fixes confirmed.**
+SCA-100-4 was marked done and the plugin tagged `step-context-archive-v1.0.0`:
+two real projects with fully reproducible data submitted by the contributor
+(Atlas Sync long-horizon task — auto compaction takeover, 7 blocks / 1067 KB,
+recall answered early facts without re-reading files; effect-sse-httpapi-streaming
+— Effect-TS subset, 2240-file monorepo, 165 blocks / 1032.2 KB, 165/165
+index↔disk alignment with a recomputable aggregate sha256 and a dependency-free
+verification script). The contributor honestly flagged that project 2's
+archive/recall loop ran manually against the same protocol, so the data verifies
+the protocol and artifact format, not the host loading path. roadmap / README /
+plugin.yaml were backfilled with validate §31's honesty guard flipped in lockstep,
+and the CHANGELOG was re-bootstrapped — repairing a bootstrap drift left by
+`a461a6d` (the MIT → AGPL-3.0-only license switch), which had kept CI red on both
+platforms. Both reported host gaps are now fixed upstream: `bda152e074` loads
+plugin `skills/`/`commands/`; `be4d5f4d81` + `0903f1f772` anchor inline stdio MCP
+servers to the plugin root (upstream's
+[issue #204](https://github.com/stepfun-ai/Step-Code/issues/204) credits the
+contributor's approach) — all six MCP-type plugins of this collection, unstartable
+on pre-fix hosts, work again. The contributor's standalone extension repo shipped
+a batch of high-quality audit fixes (abort-safe disk writes, an on-disk
+`INDEX.md`, `#UNARCHIVED` lines for failed writes, truncated-file self-heal) and
+aligned its license to AGPL-3.0-only with this collection.
+
 ---
 
-*门禁 / Gate: `node tests/validate.mjs` — 745 PASS / 0 FAIL；CI: `validate (ubuntu-latest)` ✅ + `validate (windows-latest)` ✅*
-*提交 / Commits: `c039372..ed357d7`（main 侧 11 个；范围总计 19 个 / 11 on main, 19 total）*
+*门禁 / Gate: `node tests/validate.mjs` — 751 PASS / 0 FAIL；CI: `validate (ubuntu-latest)` ✅ + `validate (windows-latest)` ✅*
+*提交 / Commits: 滚动追加；最新段落止于 step-context-archive v1.0.0 发布提交（2026-10-01）*

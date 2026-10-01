@@ -1181,12 +1181,14 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
     check(scaSkill.includes(needle), `SKILL.md 含「${needle}」`);
   }
 
-  // 诚实状态一致性（G1）：SCA-100-4（真实项目验证）未完成前不得标 done
-  check(/- id: SCA-100-4[\s\S]*?done: false/.test(scaYaml), 'plugin.yaml SCA-100-4 保持未完成（G1 诚实标注）');
-  check(scaYaml.includes('status: in-progress'), 'plugin.yaml 版本状态 in-progress');
+  // 诚实状态一致性（G1）：SCA-100-4 已在两个真实项目完成验证（2026-09-29，PR #1 评论附可复算数据），随 v1.0.0 发布回填
+  check(/- id: SCA-100-4[\s\S]*?done: true/.test(scaYaml), 'plugin.yaml SCA-100-4 已完成（≥2 真实项目验证，证据可复算）');
+  check(!scaYaml.includes('status: in-progress'), 'plugin.yaml 无残留 in-progress 状态');
+  check(scaYaml.includes('status: done'), 'plugin.yaml 版本/插件状态 done');
   const scaRoadmap = roadmap.plugins.find((p) => p.id === 'step-context-archive');
-  check(scaRoadmap?.status === 'in-progress', 'roadmap 状态与 plugin.yaml 一致');
-  check(scaRoadmap?.latest_version === null, 'roadmap latest_version 待 v1.0.0 发布后再回填');
+  check(scaRoadmap?.status === 'done', 'roadmap 状态与 plugin.yaml 一致');
+  check(scaRoadmap?.latest_version === '1.0.0', 'roadmap latest_version 已随 v1.0.0 回填');
+  check(readFileSync(join(ROOT, 'README.md'), 'utf8').includes('badge/version-1.0.0-blue) | 上下文归档与召回'), 'README 徽章已回填 v1.0.0');
 }
 
 // ---------- 汇总 ----------
