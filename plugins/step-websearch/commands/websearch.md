@@ -5,7 +5,7 @@ argument-hint: <query> [--engines ddg,searxng,…] [--n 10]
 
 # /websearch — 多引擎聚合搜索
 
-**凭据红线（C4）**：key 后端凭据只来自环境变量，代码与输出零硬编码；未配置时该后端跳过并提示 export 引导（G4）。零 key 引擎保证零配置可用。
+**凭据红线（C4）**：key 后端凭据只来自环境变量，代码与输出零硬编码；未配置时该后端跳过并提示 export 引导（G4）。零 key 引擎（DuckDuckGo）预期开箱即用。
 
 <!-- WEBSEARCH-RULES-START -->
 ```json
