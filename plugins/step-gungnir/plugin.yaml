@@ -1,0 +1,29 @@
+id: step-gungnir
+name: Step Gungnir
+description: "证据导引型目标锁定：/ultragoal 锁定目标与证据判据、/goal-audit 审计证据链防虚假完成（移植自 dsh-gungnir）"
+form: declarative
+priority: P2
+effort: S
+status: done
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "「完成」必须由证据判据（命令退出码/产物存在且正确）支撑，无证据禁止宣称完成"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 防虚假完成
+    status: done
+    notes: "移植自 dsh 生态 dsh-gungnir（Jonah-Wu23，★6）：/ultragoal 目标锁定与证据判定保留，自适应循环降级为与 /cron、/test-guard 的组合使用（声明式形态边界）"
+    tasks:
+      - id: GN-100-1
+        title: 实现 commands/ultragoal.md（目标锁定与判据）
+        done: true
+      - id: GN-100-2
+        title: 实现 commands/goal-audit.md（证据链审计）
+        done: true
+    acceptance:
+      - "判据清单在动工前经用户确认"
+      - "审计只认证据，宣称完成必须有逐条判据满足记录"
+    risks:
+      - "证据判据覆盖不到的目标（如开放性研究）只做部分判定并明示"

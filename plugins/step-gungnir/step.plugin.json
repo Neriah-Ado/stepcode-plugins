@@ -1,0 +1,10 @@
+{
+  "id": "step-gungnir",
+  "name": "Step Gungnir",
+  "description": "证据导引型目标锁定：/ultragoal 把目标翻译为可判定的证据判据清单（动工前确认），推进中逐条对据；/goal-audit 审计证据链——无证据禁止宣称完成，防虚假完成上报。移植自 dsh-gungnir。",
+  "version": "1.0.0",
+  "commands": [
+    "commands/ultragoal.md",
+    "commands/goal-audit.md"
+  ]
+}
