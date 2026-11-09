@@ -27,3 +27,53 @@ versions:
       - "审计只认证据，宣称完成必须有逐条判据满足记录"
     risks:
       - "证据判据覆盖不到的目标（如开放性研究）只做部分判定并明示"
+  - version: "1.1.0"
+    type: minor
+    theme: 证据与审计
+    status: done
+    tasks:
+      - id: GN-110-1
+        title: "goal.json 状态变更 history[]（上限 100 条滚动，含 ts/from/to/证据摘要）"
+        done: true
+    acceptance: ["状态流转全程可审计"]
+    risks: []
+  - version: "1.2.0"
+    type: minor
+    theme: 降级路径补全
+    status: done
+    tasks:
+      - id: GN-120-1
+        title: goal.json 损坏时从最近判据清单重建的指引
+        done: true
+    acceptance: ["损坏态不裸报错"]
+    risks: []
+  - version: "1.3.0"
+    type: minor
+    theme: 性能与 Token 经济
+    status: done
+    tasks:
+      - id: GN-130-1
+        title: 判据分组批量对据（同组一次性核验，减少重复重跑）
+        done: true
+    acceptance: ["对据开销有界"]
+    risks: []
+  - version: "1.4.0"
+    type: minor
+    theme: 安全加固
+    status: done
+    tasks:
+      - id: GN-140-1
+        title: 重跑命令防护（拒绝组合命令 ;&&| 原样展示并拆分确认）
+        done: true
+    acceptance: ["命令注入面收口"]
+    risks: []
+  - version: "1.5.0"
+    type: minor
+    theme: 生态联动
+    status: done
+    tasks:
+      - id: GN-150-1
+        title: 完成报告可经 /notify 推送（需确认）
+        done: true
+    acceptance: ["联动走既有确认链"]
+    risks: []

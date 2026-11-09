@@ -10,11 +10,12 @@ argument-hint: <议题> [--roles N 或角色名列表]
 <!-- ROUNDTABLE-RULES-START -->
 ```json
 {
-  "roles": "默认 3-4 位：安全/性能/维护性/用户价值（或 --roles 指定，可从 .stepcode/roundtable/roles.json 读自定义角色）；每位专家有明确立场与关注清单",
+  "roles": "默认 3-4 位：安全/性能/维护性/用户价值（或 --roles 指定，可从 .stepcode/roundtable/roles.json 读自定义角色，上限 6 位；roles.json 缺失/损坏时回退默认四角色并给重建指引）；每位专家有明确立场与关注清单",
   "independence": "第一轮：逐位独立输出意见（结论 + 依据 + 顾虑），互不引用；无宿主子代理机制时为会话内推演，须在输出顶部声明「单会话推演，独立性弱于真子代理」",
   "converge": "第二轮：各位可见彼此意见，更新立场；输出共识清单（全员同意）与分歧清单（谁主张什么、依据是什么）",
   "decision": "分歧项逐条列「选项 A/B + 各自依据 + 影响面」交用户拍板；用户未拍板前不得宣称结论",
-  "output_cap": "每位专家意见 ≤ 8 行；总输出超长时落盘 docs/roundtable/<日期>-<HHmm>.md 给路径（C5）"
+  "output_cap": "每位专家意见 ≤ 8 行（硬上限）；总输出超长时落盘 docs/roundtable/<日期>-<HHmm>.md 给路径（C5）；输出末尾附审计节：角色清单/轮次/共识数/分歧数",
+  "arbitrate_save": "用户拍板后，经用户同意可调用 /mem-save 把结论沉淀为记忆条目（走其既有 diff 确认链，本插件不直接写盘）"
 }
 ```
 <!-- ROUNDTABLE-RULES-END -->

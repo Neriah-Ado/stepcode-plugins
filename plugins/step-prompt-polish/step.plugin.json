@@ -2,7 +2,7 @@
   "id": "step-prompt-polish",
   "name": "Step Prompt Polish",
   "description": "提示词润色：/polish 把草稿润色为结构化任务简报（角色/输入/约束/验收/边界），模糊处提问澄清不编造；/polish-template 把常用指令提取为 {{变量}} 模板（写盘先 diff）。移植自 dsh-prompt-polish。",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "commands": [
     "commands/polish.md",
     "commands/polish-template.md"

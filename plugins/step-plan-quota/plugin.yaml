@@ -30,3 +30,53 @@ versions:
       - "额度字段无法解析时摘录响应并声明，不猜"
     risks:
       - "各厂商额度响应格式差异大，模糊匹配可能覆盖不全（已按常见键匹配并诚实声明）"
+  - version: "1.1.0"
+    type: minor
+    theme: 证据与审计
+    status: done
+    tasks:
+      - id: PQ-110-1
+        title: 输出附字段映射口径（命中键与解析依据）
+        done: true
+    acceptance: ["额度数字可复核到响应字段"]
+    risks: []
+  - version: "1.2.0"
+    type: minor
+    theme: 降级路径补全
+    status: done
+    tasks:
+      - id: PQ-120-1
+        title: 错误细分（超时/401/403/429）各给针对性指引
+        done: true
+    acceptance: ["四类错误不再笼统报失败"]
+    risks: []
+  - version: "1.3.0"
+    type: minor
+    theme: 性能与 Token 经济
+    status: done
+    tasks:
+      - id: PQ-130-1
+        title: 字段匹配 first-match-wins 即停，减少解析开销
+        done: true
+    acceptance: ["匹配逻辑有明确终止点"]
+    risks: []
+  - version: "1.4.0"
+    type: minor
+    theme: 安全加固
+    status: done
+    tasks:
+      - id: PQ-140-1
+        title: "PLAN_QUOTA_URL 仅接受 http/https，输出路径脱敏"
+        done: true
+    acceptance: ["非法 scheme 被拒"]
+    risks: []
+  - version: "1.5.0"
+    type: minor
+    theme: 生态联动
+    status: done
+    tasks:
+      - id: PQ-150-1
+        title: "额度快照落盘 docs/plan-quota/（/cron 趋势记录）"
+        done: true
+    acceptance: ["快照可用于趋势对比"]
+    risks: []

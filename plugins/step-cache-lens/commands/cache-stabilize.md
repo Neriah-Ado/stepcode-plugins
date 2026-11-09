@@ -18,7 +18,7 @@ argument-hint: [会话文件或 AGENTS.md 路径]
     "历史改写": "修正用追加消息，不改写既有轮次",
     "路径漂移": "把 cwd 等易变环境信息移出系统前缀（对齐 dsh-cache-stabilizer 同款手法）"
   },
-  "output": "指标表（证据与 /cache-audit 同源）→ 逐段排布诊断 → diff 草稿（逐条标「需确认后人工应用」与预期收益）；绝不直接写入用户配置（G3）"
+  "output": "指标表（证据与 /cache-audit 同源）→ 逐段排布诊断 → diff 草稿（逐条标「需确认后人工应用」与预期收益）；指标快照可落盘 docs/cache-lens/metrics-<日期>-<HHmm>.json 供跨轮对比（落盘前确认，G3）；绝不直接写入用户配置（G3）"
 }
 ```
 <!-- CACHE-STABILIZE-RULES-END -->

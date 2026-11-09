@@ -2,7 +2,7 @@
   "id": "step-notify",
   "name": "Step Notify",
   "description": "多渠道消息推送：/notify 向 Bark/Server酱/企业微信/钉钉/Telegram/飞书/ntfy/自定义 webhook 推送，默认 dry-run、真实发送先确认（G3）；/notify-channels 校验渠道配置。端点与密钥只走环境变量。",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "commands": [
     "commands/notify.md",
     "commands/notify-channels.md"

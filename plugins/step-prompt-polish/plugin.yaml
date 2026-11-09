@@ -27,3 +27,53 @@ versions:
       - "模板提取后可用真实值渲染验证"
     risks:
       - "模板风格因人而异，只保证结构完整不保证文风"
+  - version: "1.1.0"
+    type: minor
+    theme: 证据与审计
+    status: done
+    tasks:
+      - id: PP-110-1
+        title: polish 输出差异统计（新增条数/澄清条数）
+        done: true
+    acceptance: ["润色幅度可量化"]
+    risks: []
+  - version: "1.2.0"
+    type: minor
+    theme: 降级路径补全
+    status: done
+    tasks:
+      - id: PP-120-1
+        title: 模板文件损坏/字段缺失的修复指引
+        done: true
+    acceptance: ["损坏模板不阻塞 --list"]
+    risks: []
+  - version: "1.3.0"
+    type: minor
+    theme: 性能与 Token 经济
+    status: done
+    tasks:
+      - id: PP-130-1
+        title: 渲染失败快速退出，缺失变量一次给全
+        done: true
+    acceptance: ["失败无部分产物"]
+    risks: []
+  - version: "1.4.0"
+    type: minor
+    theme: 安全加固
+    status: done
+    tasks:
+      - id: PP-140-1
+        title: 模板 example 字段占位化（不得含真实路径/凭据）
+        done: true
+    acceptance: ["落盘模板零敏感信息"]
+    risks: []
+  - version: "1.5.0"
+    type: minor
+    theme: 生态联动
+    status: done
+    tasks:
+      - id: PP-150-1
+        title: 承接 step-cache-lens 稳定化建议成稿联动
+        done: true
+    acceptance: ["建议稿可走 /polish 成结构化简报"]
+    risks: []

@@ -28,3 +28,53 @@ versions:
       - "检索结果逐条给充分性标注，不足时不下结论"
     risks:
       - "无全文索引引擎，大条目库（>5000 条）检索为线性扫描，超限时建议分库"
+  - version: "1.1.0"
+    type: minor
+    theme: 证据与审计
+    status: done
+    tasks:
+      - id: EN-110-1
+        title: mem-search 输出检索统计（扫描条数/命中数/排序档位）
+        done: true
+    acceptance: ["检索成本可观测"]
+    risks: []
+  - version: "1.2.0"
+    type: minor
+    theme: 降级路径补全
+    status: done
+    tasks:
+      - id: EN-120-1
+        title: 库文件损坏行隔离与 step-graph-memory 互备指引
+        done: true
+    acceptance: ["损坏行不阻塞整体检索"]
+    risks: []
+  - version: "1.3.0"
+    type: minor
+    theme: 性能与 Token 经济
+    status: done
+    tasks:
+      - id: EN-130-1
+        title: "分库与扫描窗口：>5000 条默认只扫最近 1000 条，--full 显式全量"
+        done: true
+    acceptance: ["默认扫描量有界"]
+    risks: []
+  - version: "1.4.0"
+    type: minor
+    theme: 安全加固
+    status: done
+    tasks:
+      - id: EN-140-1
+        title: evidence 指针路径越界检查（仅项目相对路径）
+        done: true
+    acceptance: ["越界指针被拒"]
+    risks: []
+  - version: "1.5.0"
+    type: minor
+    theme: 生态联动
+    status: done
+    tasks:
+      - id: EN-150-1
+        title: 条目 id 稳定化（可被 step-graph-memory 边引用）
+        done: true
+    acceptance: ["id 跨会话稳定可解析"]
+    risks: []

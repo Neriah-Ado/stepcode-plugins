@@ -27,3 +27,53 @@ versions:
       - "对抗性再搜索至少一轮（主动找反例）"
     risks:
       - "免费引擎的检索质量限制核查深度，结论置信度如实标注"
+  - version: "1.1.0"
+    type: minor
+    theme: 证据与审计
+    status: done
+    tasks:
+      - id: FC-110-1
+        title: 核查统计（每点来源数/引擎数/反例轮数）
+        done: true
+    acceptance: ["核查深度可量化"]
+    risks: []
+  - version: "1.2.0"
+    type: minor
+    theme: 降级路径补全
+    status: done
+    tasks:
+      - id: FC-120-1
+        title: 检索全失效时逐点判 unverifiable 并声明
+        done: true
+    acceptance: ["检索不可用不出结论"]
+    risks: []
+  - version: "1.3.0"
+    type: minor
+    theme: 性能与 Token 经济
+    status: done
+    tasks:
+      - id: FC-130-1
+        title: "--n 上限 10，核查点数上限 50（超出分批）"
+        done: true
+    acceptance: ["核查规模有界"]
+    risks: []
+  - version: "1.4.0"
+    type: minor
+    theme: 安全加固
+    status: done
+    tasks:
+      - id: FC-140-1
+        title: 来源链接仅接受 http/https
+        done: true
+    acceptance: ["非可信 scheme 来源被拒"]
+    risks: []
+  - version: "1.5.0"
+    type: minor
+    theme: 生态联动
+    status: done
+    tasks:
+      - id: FC-150-1
+        title: 核查结论可经 /mem-save 沉淀为事实条目
+        done: true
+    acceptance: ["沉淀走既有确认链"]
+    risks: []

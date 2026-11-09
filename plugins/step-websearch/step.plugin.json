@@ -2,7 +2,7 @@
   "id": "step-websearch",
   "name": "Step Web Search",
   "description": "多引擎聚合搜索：/websearch 零配置引擎（DuckDuckGo）开箱即用，SearXNG/key 后端经环境变量激活，并发 fan-out + URL 去重，失败不阻塞；/search-brief 把多引擎结果归纳为带来源、标注矛盾的简报。凭据零硬编码。",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "commands": [
     "commands/websearch.md",
     "commands/search-brief.md"

@@ -2,7 +2,7 @@
   "id": "step-roundtable",
   "name": "Step Roundtable",
   "description": "多专家圆桌评审：/roundtable 按角色模板组建专家团，首轮意见互相隔离，汇聚后输出共识与分歧清单，分歧交用户拍板；/rt-roles 维护角色模板（写盘先 diff）。移植自 dsh-plugin-roundtable。",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "commands": [
     "commands/roundtable.md",
     "commands/rt-roles.md"

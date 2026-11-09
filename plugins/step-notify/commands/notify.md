@@ -16,7 +16,10 @@ argument-hint: <文本> [--channel bark|serverchan|wecom|dingtalk|telegram|feish
   "payload": "按渠道官方字段组装（title/text/markdown 视渠道支持）；密钥与完整端点在展示与输出中脱敏（只显示尾 4 位）",
   "confirm": "流程 = 组装 → 展示脱敏 payload → 用户确认 → 发送（超时 10s）→ 报告结果码；拒绝则不发送",
   "dry_run": "默认 --dry-run：只组装与展示，零网络请求",
-  "on_error": "渠道未配置 → 输出该渠道 export 引导后终止（G4）；请求失败 → 给状态码与排查建议（URL 可达性/令牌有效性），不重试轰炸"
+  "limits": "payload 上限 4KB（超出截断并提醒）；webhook/ntfy URL 仅接受 http/https（非法 scheme 拒绝）；NOTIFY_WEBHOOK_HEADERS 上限 2KB",
+  "audit": "真实发送成功后，经用户同意可将审计记录（时间/渠道/结果码/负载摘要，脱敏）追加到 docs/notify/audit-<日期>.jsonl（落盘前确认，G3）",
+  "on_error": "渠道未配置 → 输出该渠道 export 引导后终止（G4）；请求失败细分归因：401→令牌、403→权限、429→限流（冷却后手动重试）、超时→可达性，不自动重试轰炸",
+  "gungnir_link": "step-gungnir 目标全绿后可经用户确认调用本命令推送完成报告（通知内容为判据摘要，走本命令既有确认链）"
 }
 ```
 <!-- NOTIFY-RULES-END -->

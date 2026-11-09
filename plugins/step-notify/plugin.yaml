@@ -28,3 +28,53 @@ versions:
       - "默认 dry-run；真实发送必须确认"
     risks:
       - "各渠道 API 变动可能导致负载格式失效（按官方文档字段，失效时提示核对文档）"
+  - version: "1.1.0"
+    type: minor
+    theme: 证据与审计
+    status: done
+    tasks:
+      - id: NT-110-1
+        title: 发送审计记录落盘 docs/notify/audit-*.jsonl（脱敏，需确认）
+        done: true
+    acceptance: ["外发历史可回查且零敏感信息"]
+    risks: []
+  - version: "1.2.0"
+    type: minor
+    theme: 降级路径补全
+    status: done
+    tasks:
+      - id: NT-120-1
+        title: 错误细分（401/403/429/超时）各给针对性指引
+        done: true
+    acceptance: ["四类错误有归因与下一步"]
+    risks: []
+  - version: "1.3.0"
+    type: minor
+    theme: 性能与 Token 经济
+    status: done
+    tasks:
+      - id: NT-130-1
+        title: payload 大小上限 4KB，超出截断提醒
+        done: true
+    acceptance: ["不发送超大负载"]
+    risks: []
+  - version: "1.4.0"
+    type: minor
+    theme: 安全加固
+    status: done
+    tasks:
+      - id: NT-140-1
+        title: "webhook/ntfy URL scheme 校验；headers 大小上限 2KB"
+        done: true
+    acceptance: ["非法 scheme/超大 headers 被拒"]
+    risks: []
+  - version: "1.5.0"
+    type: minor
+    theme: 生态联动
+    status: done
+    tasks:
+      - id: NT-150-1
+        title: step-gungnir 完成报告可选推送（需确认）
+        done: true
+    acceptance: ["联动走既有确认链"]
+    risks: []

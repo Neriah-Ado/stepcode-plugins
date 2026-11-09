@@ -2,7 +2,7 @@
   "id": "step-plan-quota",
   "name": "Step Plan Quota",
   "description": "订阅额度与峰谷计价：/plan-quota 按 env 配置端点只读查询 Coding Plan 订阅额度（进度条 + 触顶预估）；/price-peak 峰谷窗口判定、窗口表校验与切换前提醒规则。凭据只走环境变量，响应不落盘。",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "commands": [
     "commands/plan-quota.md",
     "commands/price-peak.md"

@@ -2,7 +2,7 @@
   "id": "step-cache-lens",
   "name": "Step Cache Lens",
   "description": "提示词缓存体检：/cache-audit 逐轮定位缓存重建（cache miss）与前缀变更嫌疑；/cache-stabilize 审计 system/工具/指令/历史四段排布并给稳定化 diff 草稿（待确认）。纯本地零网络。",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "commands": [
     "commands/cache-audit.md",
     "commands/cache-stabilize.md"
