@@ -1,0 +1,29 @@
+id: step-marketplace-dsh
+name: Step Marketplace DSH Bridge
+description: "DeepSeek Harness（DSH）插件生态桥：收录主流 dsh 插件、逐条标注 Step Code 下的可移植性与移植状态，元项目"
+form: marketplace
+priority: P2
+effort: S
+status: done
+manifest: "catalog.json（收录目录即交付物；本插件为元项目，无 step.plugin.json）"
+requires_env: []
+verify:
+  - "收录条目 upstream 指向真实 dsh 仓库，lockedVersion 与实际发布版本一致"
+  - "移植状态诚实：未移植项不得标注为可用"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: dsh 生态收录
+    status: done
+    notes: "收录 6 个 dsh 插件（版本以 2026-11-09 本地安装包核对）；可移植性按 C1/C2 规则级判定，真机表现待实测（诚实优先）"
+    tasks:
+      - id: SD-100-1
+        title: 建立 catalog.json 收录目录（6 个 dsh 插件）
+        done: true
+      - id: SD-100-2
+        title: 逐条可移植性标注（ported/not-portable）与移植位置映射
+        done: true
+    acceptance:
+      - "目录条目字段完整且 upstream 可回溯"
+    risks:
+      - "dsh 生态版本迭代快，lockedVersion 用锁定对冲"

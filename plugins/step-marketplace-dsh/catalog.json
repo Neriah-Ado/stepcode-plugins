@@ -1,0 +1,12 @@
+{
+  "_说明": "DeepSeek Harness 插件收录目录（SD-100-1/2）。可移植性按 AGENTS.md C1/C2 规则级判定：dsh 插件为 cordis bundle 形态，Step Code 无对应加载器，移植=声明式同功能重写。『实测表现』在真机验证前一律标注待实测（诚实优先）。",
+  "entries": [
+    { "name": "dsh-cache-miss", "upstream": "github.com/wefio/dsh-cache-miss", "lockedVersion": "0.1.8", "category": "缓存可观测", "compat": "ported", "port": "step-cache-lens /cache-audit", "note": "UI 单行告警映射为命令报告；待实测" },
+    { "name": "dsh-cache-stabilizer", "upstream": "github.com/dongsheng123132/dsh-cache-stabilizer", "lockedVersion": "0.1.1", "category": "缓存可观测", "compat": "ported", "port": "step-cache-lens /cache-stabilize", "note": "前缀稳定化审计为声明式映射；待实测" },
+    { "name": "graph-memory", "upstream": "github.com/adoresever/graph-memory", "lockedVersion": "1.6.0-beta.16", "category": "记忆与上下文", "compat": "ported", "port": "step-graph-memory", "note": "sqlite/向量检索降级为 JSON 存储 + 度中心性（声明式形态边界）；待实测" },
+    { "name": "dsh-cost-meter", "upstream": "github.com/Han-1413141/dsh-cost-meter", "lockedVersion": "1.8.35", "category": "费用与额度", "compat": "ported", "port": "step-plan-quota（订阅额度/峰谷提醒子集）", "note": "用量统计已由 step-token-meter 覆盖，不重复建设；待实测" },
+    { "name": "dsh-plugin-hub", "upstream": "github.com/dshplugin/dsh-plugin-hub", "lockedVersion": "1.4.7", "category": "插件市场", "compat": "ported", "port": "本插件（收录目录形态）", "note": "市场桥与 step-marketplace-cc 同构；待实测" },
+    { "name": "dsh-whale-widget", "upstream": "github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget", "lockedVersion": "0.3.2", "category": "界面与体验", "compat": "not-portable", "port": null, "note": "余额挂件依赖 dsh 宿主 Web UI；Step Code 插件形态无 UI 扩展点（C1/C2），不移植" }
+  ],
+  "honesty": "compat 为规则级判定：ported = 已在本仓库落地同功能声明式移植；not-portable = 依赖 dsh 宿主 UI/加载器，Step Code 无法承载。版本以 2026-11-09 本地安装包核对。"
+}
