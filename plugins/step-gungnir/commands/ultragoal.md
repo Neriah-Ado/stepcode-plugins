@@ -10,7 +10,7 @@ argument-hint: <目标描述> [--from 判据文件]
 <!-- ULTRAGOAL-RULES-START -->
 ```json
 {
-  "criteria": "把目标翻译为可判定判据：命令退出码（如 npm test 退出 0）/ 产物存在且内容正确（抽查点）/ 覆盖范围声明；每条判据附验证命令或检查方法",
+  "criteria": "把目标翻译为可判定判据：命令退出码（如 npm test 退出 0）/ 产物存在且内容正确（抽查点）/ 覆盖范围声明；每条判据附验证命令或检查方法；判据总条数上限 50（超出建议拆分目标），单判据 evidence[] 上限 10 条（滚动淘汰最旧），goal.json 本体有界",
   "confirm": "先展示判据清单与 .stepcode/gungnir/goal.json 的完整 diff，用户确认后才写盘生效（G3）；此后完成口径以该文件为唯一事实",
   "loop": "推进中每完成一块工作即对据更新状态（更新 goal.json 同样先 diff 后确认）；每次状态流转追加 history 记录 {ts, from, to, evidenceDigest}（上限 100 条，滚动淘汰最旧）；全部 satisfied 才可宣称完成，部分满足只报进度百分比与未满足项",
   "grouping": "判据分组批量对据：同类判据（同验证方式）一次核验，减少重复重跑开销",

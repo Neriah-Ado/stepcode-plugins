@@ -10,7 +10,7 @@ argument-hint: <主题或实体名> [--depth N]
 <!-- MEM-RECALL-RULES-START -->
 ```json
 {
-  "query": "实体名精确匹配优先，其次模糊子串；--depth 控制沿边扩展层数（默认 2，上限 4）",
+  "query": "实体名精确匹配优先，其次模糊子串；--depth 控制沿边扩展层数（默认 2，上限 4）；扩展节点/证据边合计上限 20，超出只输出排序前 20、明细落盘 docs/graph-memory/recall-<日期>-<HHmm>.md 后给路径（C5）",
   "rank": "排序分 = 度中心性（邻居数）× 时间衰减（last_seen 越近权重越高）；不做向量检索（声明式形态不内置 embedding，见插件边界）",
   "answer": "先给结论要点，再列证据：节点卡片（name/type/desc）+ 相关边（relation + evidence 指针 + 按指针从归档取回的原文摘引）；en: 前缀指针按 step-engram 条目 id 到该库取回内容；输出末尾附召回审计（命中层级数/扩展节点数）",
   "on_missing": "图谱无命中 → 明说「图谱中未记录」，建议先 /mem-graph 构建或 /archive 归档；禁止编造"

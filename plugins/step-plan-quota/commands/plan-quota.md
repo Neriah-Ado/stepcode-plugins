@@ -10,11 +10,11 @@ argument-hint: [--provider 名称]
 <!-- PLAN-QUOTA-RULES-START -->
 ```json
 {
-  "config": "PLAN_QUOTA_URL（额度端点，仅 http/https，非法 scheme 拒绝）+ PLAN_QUOTA_TOKEN（Bearer）；可选 PLAN_QUOTA_HEADERS 附加头（JSON）",
+  "config": "PLAN_QUOTA_URL（额度端点；URL 解析后 scheme——大小写不敏感、去首尾空白——必须为 http/https，否则拒绝）+ PLAN_QUOTA_TOKEN（Bearer）；可选 PLAN_QUOTA_HEADERS 附加头（JSON）",
   "request": "用户主动发起的只读 GET，超时 10s，无后台轮询；错误细分给针对性指引：超时→端点可达性/代理、401→令牌有效性、403→权限范围、429→限流（冷却后手动重试，不自动重试）",
   "parse": "响应字段名不统一 → 按 used/limit/total/remaining 等常见键模糊匹配，first-match-wins 即停；匹配不到时原样摘录响应片段并声明无法解析（不猜）；输出附字段映射口径（命中键与解析依据）供复核",
   "estimate": "输出已用/总额度进度条 + 触顶预估（近 7 日日均消耗 → 预计 X 天后触顶，按 1% 粒度展示窗口）",
-  "no_store": "令牌与原始响应不写入任何文件（C4/C5），输出只给解析后数字与字段口径说明；额度快照经确认后可落盘 docs/plan-quota/snapshots-<日期>.jsonl（仅解析后数字，供 /cron 趋势记录）；输出中本机路径一律脱敏"
+  "no_store": "令牌与原始响应不写入任何文件（C4/C5），输出只给解析后数字与字段口径说明；额度快照经确认后可落盘 docs/plan-quota/snapshots-<日期>.jsonl（仅解析后数字，供 /cron 趋势记录；单文件超过 500 条滚动到新文件并提示归档；/cron 无头模式不落快照，仅在交互确认后落盘）；输出中本机路径一律脱敏"
 }
 ```
 <!-- PLAN-QUOTA-RULES-END -->

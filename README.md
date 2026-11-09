@@ -38,17 +38,17 @@
 | [step-todo-flow](./plugins/step-todo-flow) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | TODO 工作流：TODO.md 增删改查（写盘先 diff）、需求拆分带验收标准 | `/todo` · `/todo-plan` |
 | [step-mock-data](./plugins/step-mock-data) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 测试数据：按 schema 生成虚构数据、真实样例格式保持脱敏 | `/mock-data` · `/mask-data` |
 | [step-repo-map](./plugins/step-repo-map) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 仓库认知：目录树+职责+热点导图、新人上手路径（标注验证状态） | `/repo-map` · `/onboard` |
-| [step-cache-lens](./plugins/step-cache-lens) | ![v1.0.0](https://img.shields.io/badge/version-1.5.0-blue) | 提示词缓存体检：逐轮定位缓存重建与嫌疑前缀变更、稳定化审计与 diff 草稿（移植自 dsh-cache-miss / dsh-cache-stabilizer） | `/cache-audit` · `/cache-stabilize` |
-| [step-graph-memory](./plugins/step-graph-memory) | ![v1.0.0](https://img.shields.io/badge/version-1.5.0-blue) | 跨会话图谱记忆：实体-关系-证据边图谱（写盘先 diff）、带原文证据的主题召回（移植自 graph-memory） | `/mem-graph` · `/mem-recall` |
-| [step-plan-quota](./plugins/step-plan-quota) | ![v1.0.0](https://img.shields.io/badge/version-1.5.0-blue) | 订阅额度与峰谷计价：只读额度查询（凭据走环境变量）、峰谷窗口与切换提醒（移植自 dsh-cost-meter 差异化子集） | `/plan-quota` · `/price-peak` |
+| [step-cache-lens](./plugins/step-cache-lens) | ![v1.5.0](https://img.shields.io/badge/version-1.5.0-blue) | 提示词缓存体检：逐轮定位缓存重建与嫌疑前缀变更、稳定化审计与 diff 草稿（移植自 dsh-cache-miss / dsh-cache-stabilizer） | `/cache-audit` · `/cache-stabilize` |
+| [step-graph-memory](./plugins/step-graph-memory) | ![v1.5.0](https://img.shields.io/badge/version-1.5.0-blue) | 跨会话图谱记忆：实体-关系-证据边图谱（写盘先 diff）、带原文证据的主题召回（移植自 graph-memory） | `/mem-graph` · `/mem-recall` |
+| [step-plan-quota](./plugins/step-plan-quota) | ![v1.5.0](https://img.shields.io/badge/version-1.5.0-blue) | 订阅额度与峰谷计价：只读额度查询（凭据走环境变量）、峰谷窗口与切换提醒（移植自 dsh-cost-meter 差异化子集） | `/plan-quota` · `/price-peak` |
 | [step-marketplace-dsh](./plugins/step-marketplace-dsh) | ![v1.1.0](https://img.shields.io/badge/version-1.1.0-blue) | DSH 插件生态桥：收录主流 dsh 插件并标注可移植性（ported/not-portable/unported） | 收录目录 · `catalog.json` |
-| [step-engram](./plugins/step-engram) | ![v1.0.0](https://img.shields.io/badge/version-1.5.0-blue) | 本地长期记忆条目库：带证据指针的条目、混合检索+证据门+SM-2 复习（移植自 dsh-engram） | `/mem-save` · `/mem-search` |
-| [step-roundtable](./plugins/step-roundtable) | ![v1.0.0](https://img.shields.io/badge/version-1.5.0-blue) | 多专家圆桌评审：首轮隔离防锚定、分歧交用户拍板（移植自 dsh-plugin-roundtable） | `/roundtable` · `/rt-roles` |
-| [step-prompt-polish](./plugins/step-prompt-polish) | ![v1.0.0](https://img.shields.io/badge/version-1.5.0-blue) | 提示词润色：结构化任务简报（澄清不编造）、变量模板提取（移植自 dsh-prompt-polish） | `/polish` · `/polish-template` |
-| [step-websearch](./plugins/step-websearch) | ![v1.0.0](https://img.shields.io/badge/version-1.5.0-blue) | 多引擎聚合搜索：零 key 引擎开箱即用、key 后端环境变量激活（移植自 dsh-websearch） | `/websearch` · `/search-brief` |
-| [step-notify](./plugins/step-notify) | ![v1.0.0](https://img.shields.io/badge/version-1.5.0-blue) | 多渠道消息推送：八渠道、默认 dry-run、外发先确认（移植自 chicheng-push） | `/notify` · `/notify-channels` |
-| [step-gungnir](./plugins/step-gungnir) | ![v1.0.0](https://img.shields.io/badge/version-1.5.0-blue) | 证据导引型目标锁定：判据动工前确认、证据链审计防虚假完成（移植自 dsh-gungnir） | `/ultragoal` · `/goal-audit` |
-| [step-fact-check](./plugins/step-fact-check) | ![v1.0.0](https://img.shields.io/badge/version-1.5.0-blue) | 事实核查：原子事实点拆分、交叉验证+对抗性再搜索逐句溯源（移植自 dsh-fact-check） | `/claim-split` · `/fact-check` |
+| [step-engram](./plugins/step-engram) | ![v1.5.0](https://img.shields.io/badge/version-1.5.0-blue) | 本地长期记忆条目库：带证据指针的条目、混合检索+证据门+SM-2 复习（移植自 dsh-engram） | `/mem-save` · `/mem-search` |
+| [step-roundtable](./plugins/step-roundtable) | ![v1.5.0](https://img.shields.io/badge/version-1.5.0-blue) | 多专家圆桌评审：首轮隔离防锚定、分歧交用户拍板（移植自 dsh-plugin-roundtable） | `/roundtable` · `/rt-roles` |
+| [step-prompt-polish](./plugins/step-prompt-polish) | ![v1.5.0](https://img.shields.io/badge/version-1.5.0-blue) | 提示词润色：结构化任务简报（澄清不编造）、变量模板提取（移植自 dsh-prompt-polish） | `/polish` · `/polish-template` |
+| [step-websearch](./plugins/step-websearch) | ![v1.5.0](https://img.shields.io/badge/version-1.5.0-blue) | 多引擎聚合搜索：零 key 引擎开箱即用、key 后端环境变量激活（移植自 dsh-websearch） | `/websearch` · `/search-brief` |
+| [step-notify](./plugins/step-notify) | ![v1.5.0](https://img.shields.io/badge/version-1.5.0-blue) | 多渠道消息推送：八渠道、默认 dry-run、外发先确认（移植自 chicheng-push） | `/notify` · `/notify-channels` |
+| [step-gungnir](./plugins/step-gungnir) | ![v1.5.0](https://img.shields.io/badge/version-1.5.0-blue) | 证据导引型目标锁定：判据动工前确认、证据链审计防虚假完成（移植自 dsh-gungnir） | `/ultragoal` · `/goal-audit` |
+| [step-fact-check](./plugins/step-fact-check) | ![v1.5.0](https://img.shields.io/badge/version-1.5.0-blue) | 事实核查：原子事实点拆分、交叉验证+对抗性再搜索逐句溯源（移植自 dsh-fact-check） | `/claim-split` · `/fact-check` |
 
 ## 安装
 
