@@ -1,0 +1,30 @@
+id: step-notify
+name: Step Notify
+description: "多渠道消息推送：/notify 向 Bark/Server酱/企微/钉钉/Telegram/飞书/ntfy/webhook 推送（外发先确认）、/notify-channels 校验渠道配置（移植自 chicheng-push）"
+form: declarative
+priority: P2
+effort: S
+status: done
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "渠道端点与密钥只走环境变量，代码与输出零硬编码；未配置输出 export 引导"
+  - "一切外发必须先展示脱敏 payload 并获用户确认（G3）；--dry-run 零请求"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 多渠道推送
+    status: done
+    notes: "移植自 dsh 生态 chicheng-push（534119219，★7）：渠道矩阵保留常用子集，宿主 hooks 通知器形态降级为命令式外发（声明式形态边界）；G3 外发确认为本仓库附加红线"
+    tasks:
+      - id: NT-100-1
+        title: 实现 commands/notify.md（多渠道推送）
+        done: true
+      - id: NT-100-2
+        title: 实现 commands/notify-channels.md（渠道配置校验）
+        done: true
+    acceptance:
+      - "未配置渠道时输出对应 export 引导而非裸报错"
+      - "默认 dry-run；真实发送必须确认"
+    risks:
+      - "各渠道 API 变动可能导致负载格式失效（按官方文档字段，失效时提示核对文档）"
