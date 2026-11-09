@@ -1,0 +1,30 @@
+id: step-cache-lens
+name: Step Cache Lens
+description: "提示词缓存体检：/cache-audit 定位每轮首个请求的缓存重建（cache miss）、/cache-stabilize 前缀稳定化审计与改造草稿（移植自 dsh-cache-miss / dsh-cache-stabilizer）"
+form: declarative
+priority: P1
+effort: S-M
+status: done
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "缓存重建判定只基于本地会话记录的 cache_read/cache_write 字段，零网络"
+  - "稳定化只输出 diff 草稿，绝不直接改写用户配置"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 缓存可观测与稳定化
+    status: done
+    notes: "移植自 dsh 生态 dsh-cache-miss（wefio）与 dsh-cache-stabilizer（dongsheng123132）：宿主内联告警改为命令报告；会话记录沿用 ~/.stepcode/projects 容错解析口径"
+    tasks:
+      - id: CL-100-1
+        title: 实现 commands/cache-audit.md（缓存重建检测）
+        done: true
+      - id: CL-100-2
+        title: 实现 commands/cache-stabilize.md（前缀稳定化审计）
+        done: true
+    acceptance:
+      - "对含 cache_write 陡增的会话样本能逐轮定位重建点并给出嫌疑前缀变更"
+      - "无会话记录时输出采集指引而非报错"
+    risks:
+      - "Step Code 会话记录若未导出 cache 字段，降级为手工标记法并列明局限"
