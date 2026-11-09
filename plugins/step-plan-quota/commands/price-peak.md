@@ -12,7 +12,7 @@ argument-hint: [--config 窗口表 | --now]
 {
   "schema": "config/price-windows.json：[{name, tz, windows: [{peak: \"09:00-21:00\", priceIn, priceOut}]}]，支持多时区",
   "now": "--now 输出当前时段（peak/off-peak）、两档单价与距下次切换的剩余分钟数",
-  "alert": "切换前提醒规则：默认提前 10 分钟，可选弹窗/通知/会话内提示三型（对齐 dsh-cost-meter 提醒语义的声明式映射）；接入 /cron 时按窗口生成每日提醒计划",
+  "alert": "切换前提醒规则：默认提前 10 分钟，输出会话内提示与 /cron 每日提醒计划（宿主弹窗/系统通知通道不在声明式形态可交付范围，对齐 dsh-cost-meter 提醒语义时如实降级）",
   "honesty": "厂商真实时段由用户按账单页自行维护；输出单价仅用于成本粗估，不作为计费依据"
 }
 ```

@@ -15,7 +15,7 @@ versions:
     type: major
     theme: 跨会话记忆图谱
     status: done
-    notes: "移植自 dsh 生态 graph-memory（adoresever/graph-memory v1.6.0-beta.16）：sqlite/向量检索/社区发现降级为纯 JSON 存储 + 度中心性（声明式形态边界，诚实标注）"
+    notes: "移植自 dsh 生态 graph-memory（adoresever/graph-memory v1.6.0-beta.16）：sqlite/向量检索/社区发现降级为纯 JSON 存储 + 度中心性（声明式形态边界，诚实标注）；上下文接管/历史裁剪不覆盖；evidence 为指针不存原文"
     tasks:
       - id: GM-100-1
         title: 实现 commands/mem-graph.md（图谱构建与合并）

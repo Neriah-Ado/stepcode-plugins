@@ -17,7 +17,7 @@ versions:
     type: major
     theme: 订阅额度与峰谷窗口
     status: done
-    notes: "移植自 dsh 生态 dsh-cost-meter（Han-1413141）的差异化子集：订阅额度查询 + 峰谷计价提醒；用量统计已由 step-token-meter 覆盖，不重复建设；13 家厂商 API 不内置，以通用端点约定覆盖"
+    notes: "移植自 dsh 生态 dsh-cost-meter（Han-1413141）的差异化子集：订阅额度查询 + 峰谷计价提醒；用量统计已由 step-token-meter 覆盖，不重复建设；各厂商专用凭据集成不内置，以通用端点约定覆盖，自定义 Provider 余额由通用端点承接"
     tasks:
       - id: PQ-100-1
         title: 实现 commands/plan-quota.md（订阅额度只读查询）

@@ -16,7 +16,7 @@ argument-hint: [会话文件或目录] [--last N 轮]
     "suspect": "重建点前后对比 system/工具 schema/AGENTS.md/历史开头的差异，列出最可疑的前缀变更（新增删改工具、换模型或供应商、改写历史开头）"
   },
   "notice_style": "对齐 dsh-cache-miss 的单行告警语义：每轮一行「轮次 | 状态(hit/rebuild) | cache_read/write | 嫌疑变更」，重建轮标注 !",
-  "output": "逐轮单行表 + 重建点摘要 + 嫌疑变更清单；超过 200 轮只输出统计摘要，明细落盘 docs/cache-lens/cache-audit-<日期>.md 后给路径（C5）"
+  "output": "逐轮单行表 + 重建点摘要 + 嫌疑变更清单；超过 200 轮只输出统计摘要，明细落盘 docs/cache-lens/cache-audit-<日期>-<HHmm>.md 后给路径（文件名带时分，同日重跑不覆盖旧报告；C5）"
 }
 ```
 <!-- CACHE-AUDIT-RULES-END -->

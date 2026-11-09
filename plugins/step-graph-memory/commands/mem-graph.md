@@ -11,7 +11,7 @@ argument-hint: [范围：本会话 | docs/context-archive | 指定文件]
 ```json
 {
   "store": ".stepcode/graph-memory/graph.json：nodes=[{id,type,name,desc,last_seen}]，edges=[{from,relation,to,evidence,stamp}]；纯 JSON 零依赖，不用 sqlite/向量库",
-  "extract": "实体 = 模块/文件/组件/外部服务/关键决策；关系 = 依赖/修改/决策了/阻塞/替代；每条边必须带 evidence（来源归档行或会话摘引）",
+  "extract": "实体 = 模块/文件/组件/外部服务/关键决策；关系 = 依赖/修改/决策了/阻塞/替代；每条边必须带 evidence 指针（归档 stamp 或 文件路径:行号）——图谱不存会话原文摘引，原文留在归档，召回时按指针取回",
   "merge": "同 id 实体合并属性并更新 last_seen；重复边去重；与现有图冲突时保留双方并标 conflict，不静默取舍",
   "confirm": "输出新增/更新/冲突统计 + 完整 diff，用户确认后才写盘（先写临时文件再原子替换）；拒绝时丢弃草稿不落盘"
 }
