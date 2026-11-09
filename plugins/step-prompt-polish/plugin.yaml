@@ -1,0 +1,29 @@
+id: step-prompt-polish
+name: Step Prompt Polish
+description: "提示词润色：/polish 把草稿润色成结构化任务简报（模糊处提问澄清）、/polish-template 把常用指令提取为变量模板（移植自 dsh-prompt-polish）"
+form: declarative
+priority: P2
+effort: S
+status: done
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "润色只加约束与结构，不替用户编造需求；模糊处必须提问澄清"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 结构化任务简报
+    status: done
+    notes: "移植自 dsh 生态 dsh-prompt-polish（benrong2048-boop，★11，上游核心为 MIT 的 prompt-optimizer 移植）：模板族与迭代优化保留，版本链降级为模板文件 + git 历史（声明式形态边界）"
+    tasks:
+      - id: PP-100-1
+        title: 实现 commands/polish.md（润色为结构化简报）
+        done: true
+      - id: PP-100-2
+        title: 实现 commands/polish-template.md（变量模板提取）
+        done: true
+    acceptance:
+      - "润色输出保留原意，新增内容全部来自澄清问答或显式约定"
+      - "模板提取后可用真实值渲染验证"
+    risks:
+      - "模板风格因人而异，只保证结构完整不保证文风"
