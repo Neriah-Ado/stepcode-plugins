@@ -1,0 +1,30 @@
+id: step-engram
+name: Step Engram
+description: "本地长期记忆条目库：/mem-save 写入带证据指针的记忆条目、/mem-search 关键词+近因+频次混合检索（证据门+SM-2 间隔复习，移植自 dsh-engram）"
+form: declarative
+priority: P1
+effort: S-M
+status: done
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "记忆条目落盘先 diff 后确认，绝不覆盖既有条目，只做追加与去重"
+  - "检索命中必须过证据门：证据不足时明说，禁止编造结论"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 条目式长期记忆
+    status: done
+    notes: "移植自 dsh 生态 dsh-engram（kenz1117，★66）：SQLite FTS5+向量混合检索降级为「关键词+近因+频次」文件检索（声明式形态边界），证据门强制充分性判断与 SM-2 间隔复习保留；与 step-graph-memory 边界：图谱存实体关系，本插件存证据条目"
+    tasks:
+      - id: EN-100-1
+        title: 实现 commands/mem-save.md（记忆条目写入）
+        done: true
+      - id: EN-100-2
+        title: 实现 commands/mem-search.md（混合检索+证据门+复习）
+        done: true
+    acceptance:
+      - "条目幂等去重，写盘先 diff 后确认"
+      - "检索结果逐条给充分性标注，不足时不下结论"
+    risks:
+      - "无全文索引引擎，大条目库（>5000 条）检索为线性扫描，超限时建议分库"

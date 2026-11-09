@@ -1,0 +1,10 @@
+{
+  "id": "step-engram",
+  "name": "Step Engram",
+  "description": "本地长期记忆条目库：/mem-save 把要点沉淀为带证据指针的条目（写盘先 diff）；/mem-search 关键词+近因+频次混合检索，逐条给证据充分性标注，到期复习置顶。与 step-graph-memory 互补：图谱存实体关系，本插件存条目。零网络零依赖。",
+  "version": "1.0.0",
+  "commands": [
+    "commands/mem-save.md",
+    "commands/mem-search.md"
+  ]
+}
