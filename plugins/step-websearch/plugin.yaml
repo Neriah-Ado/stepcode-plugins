@@ -1,0 +1,30 @@
+id: step-websearch
+name: Step Web Search
+description: "多引擎聚合搜索：/websearch 零 key 引擎开箱即用、key 后端环境变量激活、并发 fan-out 去重；/search-brief 归纳带来源简报（移植自 dsh-websearch）"
+form: declarative
+priority: P2
+effort: S
+status: done
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "全部凭据走环境变量，代码与输出零硬编码；零 key 引擎（DuckDuckGo/SearXNG）开箱即用"
+  - "部分引擎失败不阻塞整体；结果截断防上下文膨胀（C5）"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 多引擎聚合
+    status: done
+    notes: "移植自 dsh 生态 dsh-websearch（240xu，★9）：11 引擎矩阵保留常用子集（零 key 兜底 + key 后端），MCP 进程形态降级为命令内 curl/fetch 指引（声明式形态边界）；并发 fan-out 与 URL 去重语义保留"
+    tasks:
+      - id: WB-100-1
+        title: 实现 commands/websearch.md（多引擎聚合）
+        done: true
+      - id: WB-100-2
+        title: 实现 commands/search-brief.md（来源简报）
+        done: true
+    acceptance:
+      - "零配置即可用（零 key 引擎）；配置 key 后自动激活对应后端"
+      - "结果逐条带来源链接，引擎失败显式标注不静默"
+    risks:
+      - "搜索引擎反爬策略变化可能导致零 key 引擎失效（降级链路已声明）"
