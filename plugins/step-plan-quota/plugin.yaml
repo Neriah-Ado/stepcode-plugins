@@ -1,0 +1,32 @@
+id: step-plan-quota
+name: Step Plan Quota
+description: "订阅额度与峰谷计价：/plan-quota 只读查询 Coding Plan 额度并估触顶时间、/price-peak 峰谷窗口判定与切换前提醒（移植自 dsh-cost-meter 差异化子集）"
+form: declarative
+priority: P2
+effort: S
+status: done
+manifest: step.plugin.json
+requires_env:
+  - PLAN_QUOTA_URL
+  - PLAN_QUOTA_TOKEN
+verify:
+  - "额度查询为用户主动发起的只读 GET，无后台轮询；凭据与原始响应零落盘"
+  - "峰谷窗口表由用户本地维护，插件不内置厂商真实时段"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 订阅额度与峰谷窗口
+    status: done
+    notes: "移植自 dsh 生态 dsh-cost-meter（Han-1413141）的差异化子集：订阅额度查询 + 峰谷计价提醒；用量统计已由 step-token-meter 覆盖，不重复建设；13 家厂商 API 不内置，以通用端点约定覆盖"
+    tasks:
+      - id: PQ-100-1
+        title: 实现 commands/plan-quota.md（订阅额度只读查询）
+        done: true
+      - id: PQ-100-2
+        title: 实现 commands/price-peak.md（峰谷窗口与提醒规则）
+        done: true
+    acceptance:
+      - "未配置凭据时输出 export 引导而非裸报错"
+      - "额度字段无法解析时摘录响应并声明，不猜"
+    risks:
+      - "各厂商额度响应格式差异大，模糊匹配可能覆盖不全（已按常见键匹配并诚实声明）"
