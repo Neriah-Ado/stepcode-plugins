@@ -1,0 +1,29 @@
+id: step-roundtable
+name: Step Roundtable
+description: "多专家圆桌评审：/roundtable 组建专家团独立评审议题、汇聚分歧交用户拍板、/rt-roles 维护角色模板（移植自 dsh-plugin-roundtable）"
+form: declarative
+priority: P1
+effort: S
+status: done
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "专家首轮意见互不可见，防止锚定；分歧必须交用户拍板，不得自动合并"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 多视角决策
+    status: done
+    notes: "移植自 dsh 生态 dsh-plugin-roundtable（9931666，★15）：持久子代理/跨厂商续聊降级为单会话多视角推演（声明式形态边界，如实声明），拓扑图不移植；首轮隔离与分歧上交用户拍板保留"
+    tasks:
+      - id: RT-100-1
+        title: 实现 commands/roundtable.md（圆桌评审）
+        done: true
+      - id: RT-100-2
+        title: 实现 commands/rt-roles.md（角色模板维护）
+        done: true
+    acceptance:
+      - "每位专家意见独立成型后才汇聚，无锚定"
+      - "分歧清单交用户拍板，不自动合并结论"
+    risks:
+      - "无宿主子代理机制时为会话内推演，独立性弱于真子代理（已声明）"
