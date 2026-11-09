@@ -1,12 +1,25 @@
 {
-  "_说明": "DeepSeek Harness 插件收录目录（SD-100-1/2）。可移植性按 AGENTS.md C1/C2 规则级判定：dsh 插件为 cordis bundle 形态，Step Code 无对应加载器，移植=声明式同功能重写。『实测表现』在真机验证前一律标注待实测（诚实优先）。",
+  "_说明": "DeepSeek Harness 插件收录目录（SD-100-1/2，v1.1.0 扩容 SD-110-1/2）。可移植性按 AGENTS.md C1/C2 规则级判定：dsh 插件为 cordis bundle 形态，Step Code 无对应加载器，移植=声明式同功能重写。compat 三态：ported=已在本仓库落地移植；not-portable=依赖 dsh 宿主 UI/加载器/扩展机制，Step Code 无法承载；unported=可移植但尚未移植。『实测表现』在真机验证前一律标注待实测（诚实优先）。星标为 2026-11-09 查询值。",
   "entries": [
+    { "name": "dsh-engram", "upstream": "github.com/kenz1117/dsh-engram", "lockedVersion": "-", "category": "记忆与上下文", "compat": "ported", "port": "step-engram", "note": "★66；SQLite FTS5+向量检索降级为文件检索（声明式形态边界）；待实测" },
+    { "name": "dsh-plugin-roundtable", "upstream": "github.com/9931666/dsh-plugin-roundtable", "lockedVersion": "-", "category": "会话与消息", "compat": "ported", "port": "step-roundtable", "note": "★15；持久子代理降级为会话内多视角推演，拓扑图不移植；待实测" },
+    { "name": "dsh-prompt-polish", "upstream": "github.com/benrong2048-boop/dsh-prompt-polish", "lockedVersion": "-", "category": "提示词", "compat": "ported", "port": "step-prompt-polish", "note": "★11；上游核心为 MIT 的 prompt-optimizer 移植；版本链降级为 git 历史；待实测" },
+    { "name": "dsh-websearch", "upstream": "github.com/240xu/dsh-websearch", "lockedVersion": "-", "category": "工具能力", "compat": "ported", "port": "step-websearch", "note": "★9；MCP 进程形态降级为命令式请求指引，零 key 兜底保留；待实测" },
+    { "name": "chicheng-push", "upstream": "github.com/534119219/chicheng-push", "lockedVersion": "-", "category": "通知", "compat": "ported", "port": "step-notify", "note": "★7；宿主 hooks 通知器降级为命令式外发，G3 外发确认为附加红线；待实测" },
+    { "name": "dsh-gungnir", "upstream": "github.com/Jonah-Wu23/dsh-gungnir", "lockedVersion": "-", "category": "工作流", "compat": "ported", "port": "step-gungnir", "note": "★6；自适应循环降级为与 /cron、step-test-guard 组合；待实测" },
+    { "name": "dsh-fact-check", "upstream": "github.com/7starsseeker/dsh-fact-check", "lockedVersion": "-", "category": "工具能力", "compat": "ported", "port": "step-fact-check", "note": "★5；检索联动 step-websearch，对抗性再搜索保留；待实测" },
     { "name": "dsh-cache-miss", "upstream": "github.com/wefio/dsh-cache-miss", "lockedVersion": "0.1.8", "category": "缓存可观测", "compat": "ported", "port": "step-cache-lens /cache-audit", "note": "UI 单行告警映射为命令报告；待实测" },
     { "name": "dsh-cache-stabilizer", "upstream": "github.com/dongsheng123132/dsh-cache-stabilizer", "lockedVersion": "0.1.1", "category": "缓存可观测", "compat": "ported", "port": "step-cache-lens /cache-stabilize", "note": "前缀稳定化审计为声明式映射；待实测" },
     { "name": "graph-memory", "upstream": "github.com/adoresever/graph-memory", "lockedVersion": "1.6.0-beta.16", "category": "记忆与上下文", "compat": "ported", "port": "step-graph-memory", "note": "sqlite/向量检索降级为 JSON 存储 + 度中心性（声明式形态边界）；待实测" },
     { "name": "dsh-cost-meter", "upstream": "github.com/Han-1413141/dsh-cost-meter", "lockedVersion": "1.8.35", "category": "费用与额度", "compat": "ported", "port": "step-plan-quota（订阅额度/峰谷提醒子集）", "note": "用量统计已由 step-token-meter 覆盖，不重复建设；待实测" },
     { "name": "dsh-plugin-hub", "upstream": "github.com/dshplugin/dsh-plugin-hub", "lockedVersion": "1.4.7", "category": "插件市场", "compat": "ported", "port": "本插件（收录目录形态）", "note": "市场桥与 step-marketplace-cc 同构；待实测" },
-    { "name": "dsh-whale-widget", "upstream": "github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget", "lockedVersion": "0.3.2", "category": "界面与体验", "compat": "not-portable", "port": null, "note": "余额挂件依赖 dsh 宿主 Web UI；Step Code 插件形态无 UI 扩展点（C1/C2），不移植" }
+    { "name": "dsh-browser-control", "upstream": "github.com/angelky7/dsh-browser-control", "lockedVersion": "-", "category": "浏览器", "compat": "not-portable", "port": null, "note": "★62；依赖 Chrome 扩展 + 本机 loopback 桥（9777 端口），Step Code 无扩展机制，无法承载" },
+    { "name": "dsh-proactive", "upstream": "github.com/john-walks-slow/dsh-proactive", "lockedVersion": "-", "category": "会话与消息", "compat": "not-portable", "port": null, "note": "★15；依赖宿主 session-resume 与 web 面板；定时部分可用 /cron 变通" },
+    { "name": "dsh-find-plugin", "upstream": "github.com/<查询dsh-find-plugin>", "lockedVersion": "-", "category": "插件市场", "compat": "not-portable", "port": null, "note": "★229；搜索目标绑定 dsh 生态，跨生态搜索器无对应场景" },
+    { "name": "dsh-hdc-bridge", "upstream": "github.com/1na-ko/dsh-hdc-bridge", "lockedVersion": "-", "category": "垂直领域", "compat": "unported", "port": null, "note": "★22；可移植未移植：HarmonyOS hdc 闭环，视用户需求排期" },
+    { "name": "dsh-desktop-sidecar", "upstream": "github.com/111xjyuan/dsh-desktop-sidecar", "lockedVersion": "-", "category": "桌面自动化", "compat": "unported", "port": null, "note": "★3；可移植未移植：Windows UIA+OCR 需原生依赖，声明式形态成本高" },
+    { "name": "dsh-math-olympiad", "upstream": "github.com/988hj7tczd-oss/dsh-math-olympiad", "lockedVersion": "-", "category": "技能", "compat": "unported", "port": null, "note": "★3；可移植未移植：竞赛数学解题技能，纯声明式可搬" },
+    { "name": "dsh-verify", "upstream": "github.com/<查询dsh-verify>", "lockedVersion": "-", "category": "测试", "compat": "unported", "port": null, "note": "★2；可移植未移植：Playwright 浏览器验收，与 step-fe-kit 视觉验证划界后考虑" }
   ],
-  "honesty": "compat 为规则级判定：ported = 已在本仓库落地同功能声明式移植；not-portable = 依赖 dsh 宿主 UI/加载器，Step Code 无法承载。版本以 2026-11-09 本地安装包核对。"
+  "honesty": "compat 为规则级判定：ported = 已在本仓库落地同功能声明式移植；not-portable = 依赖 dsh 宿主 UI/加载器/扩展机制，Step Code 无法承载；unported = 可移植但尚未移植（收录备排期）。第一批条目版本以 2026-11-09 本地安装包核对；第二批条目（v1.1.0 扩容）版本号未逐一锁定，标 \"-\"，上游以 repo 为准。"
 }

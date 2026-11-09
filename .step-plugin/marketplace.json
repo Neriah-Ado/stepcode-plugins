@@ -126,6 +126,41 @@
       "name": "step-plan-quota",
       "description": "订阅额度与峰谷计价：/plan-quota 只读额度查询（凭据走环境变量）、/price-peak 峰谷窗口与切换提醒（移植自 dsh-cost-meter 差异化子集）",
       "source": "./plugins/step-plan-quota"
+    },
+    {
+      "name": "step-engram",
+      "description": "本地长期记忆条目库：/mem-save 带证据指针的条目（写盘先 diff）、/mem-search 混合检索+证据门+SM-2 复习（移植自 dsh-engram）",
+      "source": "./plugins/step-engram"
+    },
+    {
+      "name": "step-roundtable",
+      "description": "多专家圆桌评审：/roundtable 首轮隔离防锚定、分歧交用户拍板、/rt-roles 角色模板（移植自 dsh-plugin-roundtable）",
+      "source": "./plugins/step-roundtable"
+    },
+    {
+      "name": "step-prompt-polish",
+      "description": "提示词润色：/polish 结构化任务简报（澄清不编造）、/polish-template 变量模板提取（移植自 dsh-prompt-polish）",
+      "source": "./plugins/step-prompt-polish"
+    },
+    {
+      "name": "step-websearch",
+      "description": "多引擎聚合搜索：/websearch 零 key 引擎开箱即用+key 后端环境变量激活、/search-brief 带来源简报（移植自 dsh-websearch）",
+      "source": "./plugins/step-websearch"
+    },
+    {
+      "name": "step-notify",
+      "description": "多渠道消息推送：/notify 八渠道（默认 dry-run、外发先确认）、/notify-channels 配置校验（移植自 chicheng-push）",
+      "source": "./plugins/step-notify"
+    },
+    {
+      "name": "step-gungnir",
+      "description": "证据导引型目标锁定：/ultragoal 判据清单动工前确认、/goal-audit 证据链审计防虚假完成（移植自 dsh-gungnir）",
+      "source": "./plugins/step-gungnir"
+    },
+    {
+      "name": "step-fact-check",
+      "description": "事实核查：/claim-split 原子事实点拆分、/fact-check 交叉验证+对抗性再搜索逐句溯源（移植自 dsh-fact-check）",
+      "source": "./plugins/step-fact-check"
     }
   ]
 }

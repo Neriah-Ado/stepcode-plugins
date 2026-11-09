@@ -27,3 +27,19 @@ versions:
       - "目录条目字段完整且 upstream 可回溯"
     risks:
       - "dsh 生态版本迭代快，lockedVersion 用锁定对冲"
+  - version: "1.1.0"
+    type: minor
+    theme: 扩容与三态标注
+    status: done
+    notes: "基于 awesome-dsh-plugin 清单研究扩容至 19 条；compat 引入三态（ported/not-portable/unported），第二批条目星标与形态经网络核查，未锁定版本诚实标 \"-\""
+    tasks:
+      - id: SD-110-1
+        title: "收录扩容至 19 条（新增 7 ported / 3 not-portable / 3 unported）"
+        done: true
+      - id: SD-110-2
+        title: compat 三态语义与 honesty 说明更新
+        done: true
+    acceptance:
+      - "每条 compat 判定有依据，ported 条目指向真实移植位置"
+    risks:
+      - "未锁定版本条目随上游演进漂移（以 repo 为准并标注）"

@@ -3,13 +3,13 @@
 [![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue.svg)](./LICENSE)
 [![Step Code](https://img.shields.io/badge/Step%20Code-plugin%20collection-111111.svg)](https://github.com/stepfun-ai/Step-Code)
 
-为 [Step Code](https://github.com/stepfun-ai/Step-Code)（阶跃星辰终端 AI Agent）提供 27 个可组合的插件：从提交、测试、CI 到容器、数据库、安全、文档、许可合规、仓库认知与 dsh 生态功能移植。
+为 [Step Code](https://github.com/stepfun-ai/Step-Code)（阶跃星辰终端 AI Agent）提供 34 个可组合的插件：从提交、测试、CI 到容器、数据库、安全、文档、许可合规、仓库认知与 dsh 生态功能移植。
 
 > **语言策略**：对外文档统一使用简体中文，不提供 `README.en.md`。插件命令、技能提示词与目标用户均以中文为主；发布说明单独采用「中文 + English」双语，避免维护两套容易漂移的并列 README。英文读者可通过发布说明的 English 段与各插件的命令/工具表获取关键信息。
 
 ## 简介
 
-全部插件为声明式形态：`step.plugin.json` 清单 + `commands/` `skills/` Markdown 资源；需要进程能力的插件附带零依赖 MCP server（stdio JSON-RPC）。12 个首发插件均已达到 v1.3.0，其中 step-db-insight / step-api-forge / step-docker-mate / step-ci-fixer / step-sec-scan 已发布 v1.3.1 安全修复。社区贡献的 [step-context-archive](./plugins/step-context-archive)（PR #1）已发布 v1.0.0。第二批 10 个新插件（shell 安全预检、env 管理、日志透视、正则实验台、许可合规、无障碍审计、monorepo 视角、TODO 工作流、测试数据、仓库地图）已发布 v1.0.0，均为纯声明式、零网络。dsh 移植批次 4 个新插件（提示词缓存体检、图谱记忆、订阅额度与峰谷计价、dsh 生态收录桥）已发布 v1.0.0，把 DeepSeek Harness（DSH）插件生态的同功能能力按本仓库声明式规范落地，映射与不移植项见[发布说明](./docs/releases/dsh-ports-v1.0.0.md)。
+全部插件为声明式形态：`step.plugin.json` 清单 + `commands/` `skills/` Markdown 资源；需要进程能力的插件附带零依赖 MCP server（stdio JSON-RPC）。12 个首发插件均已达到 v1.3.0，其中 step-db-insight / step-api-forge / step-docker-mate / step-ci-fixer / step-sec-scan 已发布 v1.3.1 安全修复。社区贡献的 [step-context-archive](./plugins/step-context-archive)（PR #1）已发布 v1.0.0。第二批 10 个新插件（shell 安全预检、env 管理、日志透视、正则实验台、许可合规、无障碍审计、monorepo 视角、TODO 工作流、测试数据、仓库地图）已发布 v1.0.0，均为纯声明式、零网络。dsh 移植批次 4 个新插件（提示词缓存体检、图谱记忆、订阅额度与峰谷计价、dsh 生态收录桥）已发布 v1.0.0，把 DeepSeek Harness（DSH）插件生态的同功能能力按本仓库声明式规范落地，映射与不移植项见[发布说明](./docs/releases/dsh-ports-v1.0.0.md)。第二批 dsh 移植 7 个新插件（记忆条目库、圆桌评审、提示词润色、多引擎搜索、多渠道推送、目标锁定、事实核查，按上游 Star 择优）已发布 v1.0.0，见[发布说明](./docs/releases/dsh-ports2-v1.0.0.md)。
 
 ## 插件索引
 
@@ -41,7 +41,14 @@
 | [step-cache-lens](./plugins/step-cache-lens) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 提示词缓存体检：逐轮定位缓存重建与嫌疑前缀变更、稳定化审计与 diff 草稿（移植自 dsh-cache-miss / dsh-cache-stabilizer） | `/cache-audit` · `/cache-stabilize` |
 | [step-graph-memory](./plugins/step-graph-memory) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 跨会话图谱记忆：实体-关系-证据边图谱（写盘先 diff）、带原文证据的主题召回（移植自 graph-memory） | `/mem-graph` · `/mem-recall` |
 | [step-plan-quota](./plugins/step-plan-quota) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 订阅额度与峰谷计价：只读额度查询（凭据走环境变量）、峰谷窗口与切换提醒（移植自 dsh-cost-meter 差异化子集） | `/plan-quota` · `/price-peak` |
-| [step-marketplace-dsh](./plugins/step-marketplace-dsh) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | DSH 插件生态桥：收录主流 dsh 插件并标注可移植性与移植状态 | 收录目录 · `catalog.json` |
+| [step-marketplace-dsh](./plugins/step-marketplace-dsh) | ![v1.1.0](https://img.shields.io/badge/version-1.1.0-blue) | DSH 插件生态桥：收录主流 dsh 插件并标注可移植性（ported/not-portable/unported） | 收录目录 · `catalog.json` |
+| [step-engram](./plugins/step-engram) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 本地长期记忆条目库：带证据指针的条目、混合检索+证据门+SM-2 复习（移植自 dsh-engram） | `/mem-save` · `/mem-search` |
+| [step-roundtable](./plugins/step-roundtable) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 多专家圆桌评审：首轮隔离防锚定、分歧交用户拍板（移植自 dsh-plugin-roundtable） | `/roundtable` · `/rt-roles` |
+| [step-prompt-polish](./plugins/step-prompt-polish) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 提示词润色：结构化任务简报（澄清不编造）、变量模板提取（移植自 dsh-prompt-polish） | `/polish` · `/polish-template` |
+| [step-websearch](./plugins/step-websearch) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 多引擎聚合搜索：零 key 引擎开箱即用、key 后端环境变量激活（移植自 dsh-websearch） | `/websearch` · `/search-brief` |
+| [step-notify](./plugins/step-notify) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 多渠道消息推送：八渠道、默认 dry-run、外发先确认（移植自 chicheng-push） | `/notify` · `/notify-channels` |
+| [step-gungnir](./plugins/step-gungnir) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 证据导引型目标锁定：判据动工前确认、证据链审计防虚假完成（移植自 dsh-gungnir） | `/ultragoal` · `/goal-audit` |
+| [step-fact-check](./plugins/step-fact-check) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 事实核查：原子事实点拆分、交叉验证+对抗性再搜索逐句溯源（移植自 dsh-fact-check） | `/claim-split` · `/fact-check` |
 
 ## 安装
 
@@ -87,6 +94,7 @@ node tests/validate.mjs
 | 社区贡献与维护 | 自 PR #1 合并起 / From PR #1 Merge Onward（滚动更新） | [发布说明](./docs/releases/community-merge.md) |
 | 第二批插件 v1.0.0 | 10 个新插件批量发布 / Second Batch: 10 New Plugins | [发布说明](./docs/releases/batch2-v1.0.0.md) |
 | dsh 移植批次 v1.0.0 | 4 个新插件 + 生态映射 / DSH Ecosystem Ports: 4 New Plugins | [发布说明](./docs/releases/dsh-ports-v1.0.0.md) |
+| 第二批 dsh 移植 v1.0.0 | 7 个新插件 + 收录扩容 / DSH Ports II: 7 New Plugins | [发布说明](./docs/releases/dsh-ports2-v1.0.0.md) |
 
 ## 文档约定
 

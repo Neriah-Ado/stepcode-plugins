@@ -11,7 +11,7 @@ dsh 生态（cordis bundle 形态）与 Step Code（声明式 step.plugin.json�
 | 入口 | 说明 |
 | --- | --- |
 | `catalog.json` | 收录目录：name / upstream / lockedVersion / category / compat / port / note |
-| compat 语义 | `ported` = 已在本仓库落地同功能声明式移植；`not-portable` = 依赖 dsh 宿主 UI/加载器 |
+| compat 语义 | `ported` = 已在本仓库落地同功能声明式移植；`not-portable` = 依赖 dsh 宿主 UI/加载器/扩展机制；`unported` = 可移植但尚未移植（备排期） |
 
 ## 安装
 
