@@ -8,7 +8,7 @@ status: done
 manifest: step.plugin.json
 requires_env: []
 verify:
-  - "全部凭据走环境变量，代码与输出零硬编码；零 key 引擎（DuckDuckGo/SearXNG）开箱即用"
+  - "全部凭据走环境变量，代码与输出零硬编码；DuckDuckGo 为唯一零配置引擎，保证开箱即用"
   - "部分引擎失败不阻塞整体；结果截断防上下文膨胀（C5）"
 versions:
   - version: "1.0.0"
@@ -24,7 +24,7 @@ versions:
         title: 实现 commands/search-brief.md（来源简报）
         done: true
     acceptance:
-      - "零配置即可用（零 key 引擎）；配置 key 后自动激活对应后端"
+      - "零配置即可用（DuckDuckGo）；配置 SEARXNG_BASE_URL 或 key 环境变量后自动激活对应后端"
       - "结果逐条带来源链接，引擎失败显式标注不静默"
     risks:
       - "搜索引擎反爬策略变化可能导致零 key 引擎失效（降级链路已声明）"
