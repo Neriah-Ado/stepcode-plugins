@@ -10,9 +10,9 @@ argument-hint: <query> [--tags 标签] [--n 条数]
 <!-- MEM-SEARCH-RULES-START -->
 ```json
 {
-  "retrieve": "线性扫描 entries.jsonl：关键词命中（含标签）为主，近因（ts 衰减）与频次（命中次数）为辅排序；--tags 过滤；--n 默认 5 上限 20",
+  "retrieve": "线性扫描 entries.jsonl：关键词命中（含标签）为主，近因（ts 衰减）与频次（条目 hits 字段）为辅排序；每次被命中的条目 hits +1（写回需 diff 确认）；--tags 过滤；--n 默认 5 上限 20",
   "evidence_gate": "每条命中输出：content 摘要 + 充分性标注（充分/不足）+ evidence 指针；指针可解析时附一句原文摘引（读归档/文件，不存于条目）",
-  "review": "条目带 review 元数据（SM-2：interval/ef/due）；到期（due ≤ 今天）条目置顶并提示复习；复习后按回忆质量更新 interval（照 dsh-engram 间隔复习语义）",
+  "review": "条目带 review 元数据（SM-2：interval/ef/due）；到期（due ≤ 今天）条目置顶并提示复习；复习时先遮住 content 让用户凭线索回忆，再揭示原文并请用户按 0-5 评分回忆质量，按 SM-2 算法更新 interval/ef/due（更新写回需 diff 确认；照 dsh-engram 间隔复习语义）",
   "on_missing": "零命中 → 明说「记忆库中未记录」，建议 /mem-save 沉淀；禁止编造"
 }
 ```

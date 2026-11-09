@@ -10,7 +10,7 @@ argument-hint: <要点内容> [标签，逗号分隔]
 <!-- MEM-SAVE-RULES-START -->
 ```json
 {
-  "store": ".stepcode/engram/entries.jsonl，一行一条 JSON：{id, ts, content, tags[], evidence}；id 为 12 位时间戳+随机后缀",
+  "store": ".stepcode/engram/entries.jsonl，一行一条 JSON：{id, ts, content, tags[], evidence, hits, review}；id 为 12 位时间戳+随机后缀；首次写入初始化 hits:0 与 review:{interval:0, ef:2.5, due:ts}（供 /mem-search 的频次排序与 SM-2 复习使用）",
   "content": "用户确认要记的要点（一句到三句），含结论与适用条件；不复制大段原文",
   "evidence": "指针：归档 stamp 或 文件路径:行号 或 会话轮次引用；无出处时标 source:unverified 并在 diff 中提示用户",
   "dedupe": "与既有条目按内容相似 + 同标签判重：重复时更新 evidence/last_seen 而非新增；diff 中展示合并决定",

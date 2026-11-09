@@ -11,8 +11,8 @@ argument-hint: <目标描述> [--from 判据文件]
 ```json
 {
   "criteria": "把目标翻译为可判定判据：命令退出码（如 npm test 退出 0）/ 产物存在且内容正确（抽查点）/ 覆盖范围声明；每条判据附验证命令或检查方法",
-  "confirm": "判据清单以 diff 形式写入 .stepcode/gungnir/goal.json（含目标/判据/状态 pending），用户确认后生效；此后完成口径以该文件为唯一事实",
-  "loop": "推进中每完成一块工作即对据更新状态；全部 satisfied 才可宣称完成，部分满足只报进度百分比与未满足项",
+  "confirm": "先展示判据清单与 .stepcode/gungnir/goal.json 的完整 diff，用户确认后才写盘生效（G3）；此后完成口径以该文件为唯一事实",
+  "loop": "推进中每完成一块工作即对据更新状态（更新 goal.json 同样先 diff 后确认）；全部 satisfied 才可宣称完成，部分满足只报进度百分比与未满足项",
   "open_ended": "开放性目标（无法完全判定）只列可判定子集并声明覆盖边界，未覆盖部分标注 human-judged",
   "with_tools": "测试类判据可联动 step-test-guard 的 /test 执行；定时对据可配 /cron"
 }
@@ -22,7 +22,7 @@ argument-hint: <目标描述> [--from 判据文件]
 ## 流程
 
 1. 解析目标，产出判据清单（每条含验证方法）。
-2. 展示清单 → diff 写入 goal.json → 用户确认。
+2. 展示清单与 goal.json diff → 用户确认 → 写盘生效。
 3. 推进中逐条对据；宣进不宣成，直到全绿。
 4. 全部 satisfied 时输出完成报告（逐条证据）。
 
