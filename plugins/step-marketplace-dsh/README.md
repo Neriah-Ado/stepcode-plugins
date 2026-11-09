@@ -19,7 +19,7 @@ dsh 生态（cordis bundle 形态）与 Step Code（声明式 step.plugin.json�
 /plugin marketplace add Neriah-Ado/stepcode-plugins
 ```
 
-本插件为元项目（收录目录），无需 `/plugin install`；移植清单见[发布说明](../../docs/releases/dsh-ports-v1.0.0.md)。
+本插件为元项目（收录目录），无需 `/plugin install`；移植清单见[发布说明](../../docs/releases/dsh-ports-v1.0.0.md)与[第二批发布说明](../../docs/releases/dsh-ports2-v1.0.0.md)。
 
 ## 验证
 

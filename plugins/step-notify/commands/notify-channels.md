@@ -13,7 +13,7 @@ argument-hint: [--probe 渠道名]
   "check": "逐渠道核对环境变量齐套性（见 /notify 渠道表）：齐套/缺失/格式可疑（如 webhook 非合法 URL）三态；零网络，密钥不回显（只报变量名与状态）",
   "probe": "--probe <渠道>：确认后发最小测试请求（如 ping 文本），10s 超时，报告可达性与结果码；失败给排查建议（网络/代理/令牌）",
   "sample": "输出缺失渠道的 export 引导样例（值用占位符，不含真实凭据）",
-  "no_store": "校验结果可落盘 docs/notify/channels-<日期>.md（脱敏后），需确认（G3）"
+  "report_file": "校验结果如需保留可落盘 docs/notify/channels-<日期>.md（脱敏后），需确认（G3）；默认不落盘"
 }
 ```
 <!-- NOTIFY-CHANNELS-RULES-END -->

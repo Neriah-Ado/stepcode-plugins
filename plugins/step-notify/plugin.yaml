@@ -15,7 +15,7 @@ versions:
     type: major
     theme: 多渠道推送
     status: done
-    notes: "移植自 dsh 生态 chicheng-push（534119219，★7）：渠道矩阵保留常用子集，宿主 hooks 通知器形态降级为命令式外发（声明式形态边界）；G3 外发确认为本仓库附加红线"
+    notes: "移植自 dsh 生态 chicheng-push（534119219，★7）：渠道矩阵保留常用子集，宿主 hooks 通知器与 /push/api/send HTTP 服务形态降级为命令式外发（声明式形态边界）；G3 外发确认为本仓库附加红线"
     tasks:
       - id: NT-100-1
         title: 实现 commands/notify.md（多渠道推送）

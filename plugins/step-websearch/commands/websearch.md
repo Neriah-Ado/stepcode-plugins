@@ -12,7 +12,7 @@ argument-hint: <query> [--engines ddg,searxng,…] [--n 10]
 {
   "engines": {
     "zero_key": "duckduckgo（html 端点）、searxng（公共实例）——默认启用",
-    "key_backends": "brave（BRAVE_API_KEY）、serpapi（SERPAPI_KEY）、exa（EXA_API_KEY）等——环境变量存在才激活，缺失时跳过并提示",
+    "key_backends": "brave（BRAVE_API_KEY）、serper（SERPER_API_KEY）、exa（EXA_API_KEY）——环境变量存在才激活，缺失时跳过并提示",
     "custom": "自建 SearXNG 经环境变量 SEARXNG_BASE_URL 接入"
   },
   "fan_out": "多引擎并发请求（每引擎超时 10s），失败显式标注「引擎 X 失败」不静默、不阻塞其他引擎",
