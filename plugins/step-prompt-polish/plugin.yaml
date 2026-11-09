@@ -14,7 +14,7 @@ versions:
     type: major
     theme: 结构化任务简报
     status: done
-    notes: "移植自 dsh 生态 dsh-prompt-polish（benrong2048-boop，★11，上游核心为 MIT 的 prompt-optimizer 移植）：模板族与迭代优化保留，版本链降级为模板文件 + git 历史（声明式形态边界）"
+    notes: "移植自 dsh 生态 dsh-prompt-polish（benrong2048-boop，★11，上游核心为 MIT 的 prompt-optimizer 移植）：三模板族与迭代修订模式未逐一定制（统一为五要素结构简报），token 成本上报不移植，版本链降级为模板文件 + git 历史（声明式形态边界）"
     tasks:
       - id: PP-100-1
         title: 实现 commands/polish.md（润色为结构化简报）

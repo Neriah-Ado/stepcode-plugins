@@ -8,7 +8,7 @@ status: done
 manifest: step.plugin.json
 requires_env: []
 verify:
-  - "全部凭据走环境变量，代码与输出零硬编码；DuckDuckGo 为唯一零配置引擎，保证开箱即用"
+  - "全部凭据走环境变量，代码与输出零硬编码；DuckDuckGo 为唯一零配置引擎，预期开箱即用（引擎反爬策略变化时显式标注失效并降级）"
   - "部分引擎失败不阻塞整体；结果截断防上下文膨胀（C5）"
 versions:
   - version: "1.0.0"

@@ -11,7 +11,7 @@ argument-hint: <query> [--engines ddg,searxng,…] [--n 10]
 ```json
 {
   "engines": {
-    "zero_key": "duckduckgo（html 端点）——唯一零配置引擎，保证开箱即用；searxng 需经 SEARXNG_BASE_URL 指定自建或明确选择的实例后启用",
+    "zero_key": "duckduckgo（html 端点）——唯一零配置引擎，预期开箱即用（引擎反爬策略变化时显式标注失效并降级到可用引擎）；searxng 需经 SEARXNG_BASE_URL 指定自建或明确选择的实例后启用",
     "key_backends": "brave（BRAVE_API_KEY）、serper（SERPER_API_KEY）、exa（EXA_API_KEY）——环境变量存在才激活，缺失时跳过并提示",
     "custom": "自建 SearXNG 经环境变量 SEARXNG_BASE_URL 接入"
   },
