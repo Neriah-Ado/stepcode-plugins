@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | v1.1.0 | 证据与审计 | 各插件输出审计统计/快照/审计行，报告可独立复核（如 websearch 引擎健康遥测、notify 发送审计 jsonl、gungnir 状态流转 history[]） |
 | v1.2.0 | 降级路径补全（G4） | 依赖缺失/损坏逐插件给针对性指引：字段缺失两态、库文件损坏隔离、roles.json/goal.json 损坏回退、检索全失效归因 |
-| v1.3.0 | 性能与 Token 经济（C5） | 扫描量全部有界：cache-audit 默认 50 轮、engram >5000 条只扫近 1000 条、websearch 整体超时预算 30s、notify payload ≤4KB、gungnir history 滚动 100 条、fact-check 核查点 ≤50 |
+| v1.3.0 | 性能与 Token 经济（C5） | 扫描量全部有界：cache-audit 默认 50 轮、engram >5000 条只扫近 1000 条、websearch 整体超时预算 30s、notify payload ≤4KB、gungnir 判据分组批量对据（history 100 条滚动见 v1.1.0）、fact-check 核查点 ≤50 |
 | v1.4.0 | 安全加固（G3/C4） | URL scheme 白名单（http/https）、evidence 指针路径越界检查（拒绝 .. 与绝对路径）、重跑命令拒绝组合形式、default-deny、输出路径脱敏、模板 example 占位化 |
 | v1.5.0 | 生态联动 | 跨插件互链（graph-memory ↔ engram、gungnir → notify、roundtable/fact-check → mem-save、cache-lens → prompt-polish）与 /cron 退出码约定（0/1/2） |
 

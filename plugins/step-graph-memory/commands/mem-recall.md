@@ -5,7 +5,7 @@ argument-hint: <主题或实体名> [--depth N]
 
 # /mem-recall — 图谱召回
 
-**只读召回**：本命令绝不写任何文件；答案必须基于图谱 evidence 与关联原文，检索不到就明说，禁止编造。
+**只读召回**：本命令不写图谱存储（graph.json）等任何数据文件，仅 C5 长输出可落盘 docs/ 报告；答案必须基于图谱 evidence 与关联原文，检索不到就明说，禁止编造。
 
 <!-- MEM-RECALL-RULES-START -->
 ```json
