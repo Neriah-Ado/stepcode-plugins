@@ -29,7 +29,8 @@ node tests/validate.mjs
 ## 边界与限制
 
 - 判据必须可判定（命令可跑、文件可查）；开放性目标只做部分判定并明示覆盖范围。
-- 判据文件落盘 `.stepcode/gungnir/goal.json`，写盘先 diff 后确认（G3）。
+- 判据文件落盘 `.stepcode/gungnir/goal.json`，写盘先 diff 后确认（G3）；状态流转 history[] 滚动 100 条可审计；判据 ≤50 条、单判据证据 ≤10 条，本体有界。
+- 全绿完成报告可经确认调 step-notify `/notify` 推送（未安装则跳过并说明）。
 - 自适应循环降级为与 `/cron`、step-test-guard 的组合使用（声明式形态边界，上游内置循环驱动）。
 
 ## 许可证

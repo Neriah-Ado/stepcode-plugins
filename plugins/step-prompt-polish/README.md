@@ -33,7 +33,7 @@ node tests/validate.mjs
 - 上游 token 成本如实上报不移植（声明式形态拿不到 provider 计费数据）；本插件不做任何成本声称。
 - 版本链降级为模板文件 + git 历史（声明式形态边界，上游为本地版本链）。
 - 模板只保证结构完整，不保证文风。
-- 模板写盘先 diff 后确认（G3）。
+- 模板写盘先 diff 后确认（G3）；name/description/example 一律占位化，零敏感信息落盘；可承接 step-cache-lens `/cache-stabilize` 的改造建议草稿成稿。
 
 ## 许可证
 
