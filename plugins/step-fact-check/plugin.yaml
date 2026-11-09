@@ -1,0 +1,29 @@
+id: step-fact-check
+name: Step Fact Check
+description: "事实核查：/claim-split 把主张拆为原子事实点、/fact-check 交叉检索验证逐句溯源（移植自 dsh-fact-check）"
+form: declarative
+priority: P2
+effort: S
+status: done
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "结论必须逐句可溯源；检索不到反证也检索不到正证时判「无法核实」而非默认为真"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 对抗性事实核查
+    status: done
+    notes: "移植自 dsh 生态 dsh-fact-check（7starsseeker，★5）：拆分-交叉验证-溯源三段保留，国内外搜索生态并行降级为与 step-websearch 联动的多引擎检索（声明式形态边界）；对抗性再搜索保留"
+    tasks:
+      - id: FC-100-1
+        title: 实现 commands/claim-split.md（原子事实点拆分）
+        done: true
+      - id: FC-100-2
+        title: 实现 commands/fact-check.md（交叉验证与溯源）
+        done: true
+    acceptance:
+      - "每个事实点独立给出核实结论与来源，不与相邻点混判"
+      - "对抗性再搜索至少一轮（主动找反例）"
+    risks:
+      - "免费引擎的检索质量限制核查深度，结论置信度如实标注"

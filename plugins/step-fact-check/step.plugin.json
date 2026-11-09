@@ -1,0 +1,10 @@
+{
+  "id": "step-fact-check",
+  "name": "Step Fact Check",
+  "description": "事实核查：/claim-split 把文档或主张拆为可独立核查的原子事实点；/fact-check 多引擎交叉验证 + 对抗性再搜索（主动找反例），结论先行、逐句溯源、矛盾标注。移植自 dsh-fact-check。",
+  "version": "1.0.0",
+  "commands": [
+    "commands/claim-split.md",
+    "commands/fact-check.md"
+  ]
+}
