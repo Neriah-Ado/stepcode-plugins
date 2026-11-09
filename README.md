@@ -3,13 +3,13 @@
 [![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue.svg)](./LICENSE)
 [![Step Code](https://img.shields.io/badge/Step%20Code-plugin%20collection-111111.svg)](https://github.com/stepfun-ai/Step-Code)
 
-为 [Step Code](https://github.com/stepfun-ai/Step-Code)（阶跃星辰终端 AI Agent）提供 23 个可组合的插件：从提交、测试、CI 到容器、数据库、安全、文档、许可合规与仓库认知。
+为 [Step Code](https://github.com/stepfun-ai/Step-Code)（阶跃星辰终端 AI Agent）提供 27 个可组合的插件：从提交、测试、CI 到容器、数据库、安全、文档、许可合规、仓库认知与 dsh 生态功能移植。
 
 > **语言策略**：对外文档统一使用简体中文，不提供 `README.en.md`。插件命令、技能提示词与目标用户均以中文为主；发布说明单独采用「中文 + English」双语，避免维护两套容易漂移的并列 README。英文读者可通过发布说明的 English 段与各插件的命令/工具表获取关键信息。
 
 ## 简介
 
-全部插件为声明式形态：`step.plugin.json` 清单 + `commands/` `skills/` Markdown 资源；需要进程能力的插件附带零依赖 MCP server（stdio JSON-RPC）。12 个首发插件均已达到 v1.3.0，其中 step-db-insight / step-api-forge / step-docker-mate / step-ci-fixer / step-sec-scan 已发布 v1.3.1 安全修复。社区贡献的 [step-context-archive](./plugins/step-context-archive)（PR #1）已发布 v1.0.0。第二批 10 个新插件（shell 安全预检、env 管理、日志透视、正则实验台、许可合规、无障碍审计、monorepo 视角、TODO 工作流、测试数据、仓库地图）已发布 v1.0.0，均为纯声明式、零网络。
+全部插件为声明式形态：`step.plugin.json` 清单 + `commands/` `skills/` Markdown 资源；需要进程能力的插件附带零依赖 MCP server（stdio JSON-RPC）。12 个首发插件均已达到 v1.3.0，其中 step-db-insight / step-api-forge / step-docker-mate / step-ci-fixer / step-sec-scan 已发布 v1.3.1 安全修复。社区贡献的 [step-context-archive](./plugins/step-context-archive)（PR #1）已发布 v1.0.0。第二批 10 个新插件（shell 安全预检、env 管理、日志透视、正则实验台、许可合规、无障碍审计、monorepo 视角、TODO 工作流、测试数据、仓库地图）已发布 v1.0.0，均为纯声明式、零网络。dsh 移植批次 4 个新插件（提示词缓存体检、图谱记忆、订阅额度与峰谷计价、dsh 生态收录桥）已发布 v1.0.0，把 DeepSeek Harness（DSH）插件生态的同功能能力按本仓库声明式规范落地，映射与不移植项见[发布说明](./docs/releases/dsh-ports-v1.0.0.md)。
 
 ## 插件索引
 
@@ -38,6 +38,10 @@
 | [step-todo-flow](./plugins/step-todo-flow) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | TODO 工作流：TODO.md 增删改查（写盘先 diff）、需求拆分带验收标准 | `/todo` · `/todo-plan` |
 | [step-mock-data](./plugins/step-mock-data) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 测试数据：按 schema 生成虚构数据、真实样例格式保持脱敏 | `/mock-data` · `/mask-data` |
 | [step-repo-map](./plugins/step-repo-map) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 仓库认知：目录树+职责+热点导图、新人上手路径（标注验证状态） | `/repo-map` · `/onboard` |
+| [step-cache-lens](./plugins/step-cache-lens) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 提示词缓存体检：逐轮定位缓存重建与嫌疑前缀变更、稳定化审计与 diff 草稿（移植自 dsh-cache-miss / dsh-cache-stabilizer） | `/cache-audit` · `/cache-stabilize` |
+| [step-graph-memory](./plugins/step-graph-memory) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 跨会话图谱记忆：实体-关系-证据边图谱（写盘先 diff）、带原文证据的主题召回（移植自 graph-memory） | `/mem-graph` · `/mem-recall` |
+| [step-plan-quota](./plugins/step-plan-quota) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | 订阅额度与峰谷计价：只读额度查询（凭据走环境变量）、峰谷窗口与切换提醒（移植自 dsh-cost-meter 差异化子集） | `/plan-quota` · `/price-peak` |
+| [step-marketplace-dsh](./plugins/step-marketplace-dsh) | ![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue) | DSH 插件生态桥：收录主流 dsh 插件并标注可移植性与移植状态 | 收录目录 · `catalog.json` |
 
 ## 安装
 
@@ -82,6 +86,7 @@ node tests/validate.mjs
 | step-context-archive v1.0.0 | 首个社区贡献插件发布 / First Community Plugin Release | [发布说明](./docs/releases/step-context-archive-v1.0.0.md) |
 | 社区贡献与维护 | 自 PR #1 合并起 / From PR #1 Merge Onward（滚动更新） | [发布说明](./docs/releases/community-merge.md) |
 | 第二批插件 v1.0.0 | 10 个新插件批量发布 / Second Batch: 10 New Plugins | [发布说明](./docs/releases/batch2-v1.0.0.md) |
+| dsh 移植批次 v1.0.0 | 4 个新插件 + 生态映射 / DSH Ecosystem Ports: 4 New Plugins | [发布说明](./docs/releases/dsh-ports-v1.0.0.md) |
 
 ## 文档约定
 

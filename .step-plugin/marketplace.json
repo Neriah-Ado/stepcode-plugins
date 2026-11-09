@@ -111,6 +111,21 @@
       "name": "step-repo-map",
       "description": "仓库认知：/repo-map 目录树+职责+热点导图、/onboard 新人上手路径（标注验证状态）",
       "source": "./plugins/step-repo-map"
+    },
+    {
+      "name": "step-cache-lens",
+      "description": "提示词缓存体检：/cache-audit 逐轮定位缓存重建与嫌疑前缀变更、/cache-stabilize 稳定化审计与 diff 草稿（移植自 dsh-cache-miss / dsh-cache-stabilizer）",
+      "source": "./plugins/step-cache-lens"
+    },
+    {
+      "name": "step-graph-memory",
+      "description": "跨会话图谱记忆：/mem-graph 实体-关系-证据边图谱（写盘先 diff）、/mem-recall 带原文证据的主题召回（移植自 graph-memory）",
+      "source": "./plugins/step-graph-memory"
+    },
+    {
+      "name": "step-plan-quota",
+      "description": "订阅额度与峰谷计价：/plan-quota 只读额度查询（凭据走环境变量）、/price-peak 峰谷窗口与切换提醒（移植自 dsh-cost-meter 差异化子集）",
+      "source": "./plugins/step-plan-quota"
     }
   ]
 }

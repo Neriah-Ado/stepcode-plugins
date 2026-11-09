@@ -50,6 +50,10 @@
     { "id": "step-workspace", "abbr": "WS", "priority": "P1", "form": "declarative", "effort": "S", "spec": "plugins/step-workspace/plugin.yaml", "status": "done", "latest_version": "1.0.0" },
     { "id": "step-todo-flow", "abbr": "TF", "priority": "P2", "form": "declarative", "effort": "S", "spec": "plugins/step-todo-flow/plugin.yaml", "status": "done", "latest_version": "1.0.0" },
     { "id": "step-mock-data", "abbr": "MD", "priority": "P2", "form": "declarative", "effort": "S", "spec": "plugins/step-mock-data/plugin.yaml", "status": "done", "latest_version": "1.0.0" },
-    { "id": "step-repo-map", "abbr": "RM", "priority": "P1", "form": "declarative", "effort": "S", "spec": "plugins/step-repo-map/plugin.yaml", "status": "done", "latest_version": "1.0.0" }
+    { "id": "step-repo-map", "abbr": "RM", "priority": "P1", "form": "declarative", "effort": "S", "spec": "plugins/step-repo-map/plugin.yaml", "status": "done", "latest_version": "1.0.0" },
+    { "id": "step-cache-lens", "abbr": "CL", "priority": "P1", "form": "declarative", "effort": "S-M", "spec": "plugins/step-cache-lens/plugin.yaml", "status": "done", "latest_version": "1.0.0" },
+    { "id": "step-graph-memory", "abbr": "GM", "priority": "P1", "form": "declarative", "effort": "S-M", "spec": "plugins/step-graph-memory/plugin.yaml", "status": "done", "latest_version": "1.0.0" },
+    { "id": "step-plan-quota", "abbr": "PQ", "priority": "P2", "form": "declarative", "effort": "S", "spec": "plugins/step-plan-quota/plugin.yaml", "status": "done", "latest_version": "1.0.0" },
+    { "id": "step-marketplace-dsh", "abbr": "SD", "priority": "P2", "form": "marketplace", "effort": "S", "spec": "plugins/step-marketplace-dsh/plugin.yaml", "status": "done", "latest_version": "1.0.0" }
   ]
 }
