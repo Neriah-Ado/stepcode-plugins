@@ -1,0 +1,30 @@
+id: step-graph-memory
+name: Step Graph Memory
+description: "跨会话图谱记忆：/mem-graph 把任务与决策沉淀为实体-关系图谱（JSON 存储，写盘先 diff）、/mem-recall 按主题带证据召回（移植自 graph-memory）"
+form: declarative
+priority: P1
+effort: S-M
+status: done
+manifest: step.plugin.json
+requires_env: []
+verify:
+  - "图谱写入先 diff 后确认，绝不覆盖既有边，只做合并"
+  - "召回只读，答案基于 evidence 原文，检索不到禁止编造"
+versions:
+  - version: "1.0.0"
+    type: major
+    theme: 跨会话记忆图谱
+    status: done
+    notes: "移植自 dsh 生态 graph-memory（adoresever/graph-memory v1.6.0-beta.16）：sqlite/向量检索/社区发现降级为纯 JSON 存储 + 度中心性（声明式形态边界，诚实标注）"
+    tasks:
+      - id: GM-100-1
+        title: 实现 commands/mem-graph.md（图谱构建与合并）
+        done: true
+      - id: GM-100-2
+        title: 实现 commands/mem-recall.md（图谱召回）
+        done: true
+    acceptance:
+      - "每条边都带 evidence 来源；重复构建幂等合并"
+      - "召回排序稳定且给出证据摘引"
+    risks:
+      - "大图谱（>2000 节点）全量读入成本高，超限时建议分域建图"

@@ -1,0 +1,10 @@
+{
+  "id": "step-graph-memory",
+  "name": "Step Graph Memory",
+  "description": "跨会话图谱记忆：/mem-graph 把已完成任务与决策抽取为实体-关系图谱（纯 JSON 存储，写盘先 diff 后确认）；/mem-recall 按主题召回，度中心性 × 时间衰减排序，答案附 evidence 原文摘引。零网络零依赖。",
+  "version": "1.0.0",
+  "commands": [
+    "commands/mem-graph.md",
+    "commands/mem-recall.md"
+  ]
+}
