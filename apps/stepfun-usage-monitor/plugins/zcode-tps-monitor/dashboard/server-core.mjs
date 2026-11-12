@@ -71,7 +71,11 @@ export function renderIndex() {
   } catch (err) {
     injected = JSON.stringify({ error: err.message });
   }
-  return indexTemplate.replace("<!--TPS_CONFIG-->", `<script>window.__TPS_CONFIG__ = ${injected};</script>`);
+  // 防存储型 XSS:JSON.stringify 不转义 </script>,恶意配置(如 fontUrl)可闭合
+  // 脚本标签注入;把 < 转成 \u003c(JS 引擎解码回 <,无损)。替换用函数而非字符串,
+  // 避免配置里的 $&/$' 被 String.replace 当作特殊模式解释。
+  const safe = injected.replace(/</g, "\\u003c");
+  return indexTemplate.replace("<!--TPS_CONFIG-->", () => `<script>window.__TPS_CONFIG__ = ${safe};</script>`);
 }
 
 // 退出时清理 PID 文件(仅当内容确实是本进程,避免误删他人)
@@ -184,10 +188,16 @@ export function createDashboardServer(opts = {}) {
   // history-append;系统指标按 5s 节奏推(CPU 采样在服务端缓存);无数据时只有
   // 心跳注释行。断线重连(EventSource 自动重连)后先补一次全量快照,再回到增量。
   const sseClients = new Set();
+  // 本机任意进程可开 SSE:上限防连接风暴耗尽内存/CPU(每连接触发全量快照)。
+  const SSE_MAX_CLIENTS = 32;
+  // 停滞客户端写缓冲超此值即断开(对齐 Go 网关满缓冲丢帧):不可静默丢帧,
+  // 因为 lastHistAt 是全局游标,丢帧会永久丢历史;断开后 EventSource 2s 重连补快照。
+  const SSE_MAX_BUFFER = 1 << 20;
   let lastHistAt = 0;   // 已推送的最新 history 时间戳(增量游标)
   let lastSysAt = 0;    // 上次推送系统指标的时刻
   let sysCache = null;
   let sysCacheAt = 0;
+  let sysInflight = null; // single-flight:并发请求共享一次 CPU 采样
   let collectorTimer = null;
   // V2.5.0 展示层:每源增量游标 + 数据源列表指纹(agents 事件只在列表变化时推送)
   const perHistAt = new Map();
@@ -195,6 +205,10 @@ export function createDashboardServer(opts = {}) {
 
   function sseWrite(res, chunk) {
     try {
+      if (res.writableLength > SSE_MAX_BUFFER) {
+        dropClient(res);
+        return;
+      }
       res.write(chunk);
       lastRequestAt = Date.now(); // SSE 连接视为活跃,避免空闲自退误杀
     } catch {
@@ -214,12 +228,23 @@ export function createDashboardServer(opts = {}) {
     for (const res of [...sseClients]) sseWrite(res, chunk);
   }
 
-  // CPU 采样含 250ms 睡眠:在推送窗口内缓存,SSE 与 REST 共用同一份
+  // CPU 采样含 250ms 睡眠:在推送窗口内缓存,SSE 与 REST 共用同一份。
+  // single-flight:缓存过期瞬间的并发请求(重连快照+REST+tick)共享一次采样,
+  // 避免 K 个请求各睡 250ms;失败时清 inflight 让下次重试,不缓存错误。
   async function cachedSystemMetrics(ttlMs = SSE_SYS_INTERVAL_MS) {
     if (sysCache && Date.now() - sysCacheAt < ttlMs) return sysCache;
-    sysCache = await systemMetrics();
-    sysCacheAt = Date.now();
-    return sysCache;
+    if (sysInflight) return sysInflight;
+    sysInflight = (async () => {
+      try {
+        const metrics = await systemMetrics();
+        sysCache = metrics;
+        sysCacheAt = Date.now();
+        return metrics;
+      } finally {
+        sysInflight = null;
+      }
+    })();
+    return sysInflight;
   }
 
   // 连接建立/重连时的全量快照:一次事件带齐 token 全量与系统指标;
@@ -252,8 +277,7 @@ export function createDashboardServer(opts = {}) {
 
   // 每源视图(仅多源时计算):各源解析自己的当前会话,供分组卡片与对比视图使用。
   // 单源返回 null —— 快照/token 事件与 V2.4.0 逐字节一致,不背多源结构。
-  function perProviderViews() {
-    const ids = readProviders();
+  function perProviderViews(ids = readProviders()) {
     if (ids.length <= 1) return null;
     const out = {};
     for (const id of ids) {
@@ -274,8 +298,8 @@ export function createDashboardServer(opts = {}) {
     return out;
   }
 
-  function agentsPayload() {
-    return { enabled: readProviders(), agents: agentStatus() };
+  function agentsPayload(ids = readProviders()) {
+    return { enabled: ids, agents: agentStatus() };
   }
 
   // 向单个连接补推一帧 agents 事件(连接建立时用),并以此刷新列表指纹基线
@@ -286,10 +310,14 @@ export function createDashboardServer(opts = {}) {
 
   async function collectTick() {
     if (!sseClients.size) return;
+    // 每 tick 读一次配置复用:readProviders 每次同步读盘解析,一个 tick 内
+    // 多处使用同一份(配置变更本就 ≤1s 生效)。切勿提升为模块级缓存——
+    // REST/连接路径需即时生效。
+    const providers = readProviders();
     // agents 事件:启用的数据源列表变化时推送(多 → 单也要推,前端据此隐藏切换条)
-    const fp = readProviders().join(",");
+    const fp = providers.join(",");
     if (lastAgentsFp !== null && fp !== lastAgentsFp) {
-      broadcast("agents", agentsPayload());
+      broadcast("agents", agentsPayload(providers));
     }
     lastAgentsFp = fp;
 
@@ -300,8 +328,8 @@ export function createDashboardServer(opts = {}) {
       const newest = r.history.length ? r.history[r.history.length - 1].completedAt : 0;
       let perProvider = null;
       let perNew = false;
-      if (readProviders().length > 1) {
-        const views = perProviderViews();
+      if (providers.length > 1) {
+        const views = perProviderViews(providers);
         perProvider = {};
         for (const [id, v] of Object.entries(views)) {
           const hist = Array.isArray(v.history) ? v.history : [];
@@ -455,6 +483,10 @@ export function createDashboardServer(opts = {}) {
     if (req.url.startsWith("/api/events")) {
       if (req.method !== "GET") {
         sendJson(res, 405, { error: "仅支持 GET" });
+        return;
+      }
+      if (sseClients.size >= SSE_MAX_CLIENTS) {
+        sendJson(res, 503, { error: "SSE 连接数已达上限,请稍后重试" });
         return;
       }
       res.writeHead(200, {
