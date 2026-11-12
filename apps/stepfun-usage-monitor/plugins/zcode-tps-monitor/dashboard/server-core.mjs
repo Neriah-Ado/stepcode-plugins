@@ -298,8 +298,23 @@ export function createDashboardServer(opts = {}) {
     return out;
   }
 
+  // agentStatus 探测各源(含 getUsage 计数)开销不小,重连风暴下被放大:
+  // 2s TTL 缓存探测结果。enabled 列表仍每次现读,保证切换数据源即时生效。
+  let agentStatusCache = null;
+  let agentStatusAt = 0;
+  function cachedAgentStatus() {
+    if (agentStatusCache && Date.now() - agentStatusAt < 2000) return agentStatusCache;
+    try {
+      agentStatusCache = agentStatus();
+    } catch {
+      agentStatusCache = [];
+    }
+    agentStatusAt = Date.now();
+    return agentStatusCache;
+  }
+
   function agentsPayload(ids = readProviders()) {
-    return { enabled: ids, agents: agentStatus() };
+    return { enabled: ids, agents: cachedAgentStatus() };
   }
 
   // 向单个连接补推一帧 agents 事件(连接建立时用),并以此刷新列表指纹基线
@@ -510,8 +525,8 @@ export function createDashboardServer(opts = {}) {
     }
     if (req.url.startsWith("/api/metrics")) {
       try {
-        const s = await snapshot();
-        s.system = await cachedSystemMetrics(); // CPU 采样窗口内缓存,免去每次 250ms 睡眠
+        const system = await cachedSystemMetrics();
+        const s = await snapshot(process.env, { system }); // 注入缓存,免 snapshot 内部重复采样
         sendJson(res, 200, s);
       } catch (err) {
         sendJson(res, 500, { error: err.message });

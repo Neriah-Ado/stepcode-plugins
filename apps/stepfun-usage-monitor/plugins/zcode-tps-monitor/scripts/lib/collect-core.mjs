@@ -112,7 +112,7 @@ export async function systemMetrics() {
 
 // ---------- 快照与采样 ----------
 
-export async function snapshot(env = process.env) {
+export async function snapshot(env = process.env, { system } = {}) {
   const url = resolveUrl(env);
   let m, mode;
   if (url) {
@@ -127,7 +127,9 @@ export async function snapshot(env = process.env) {
     m = demoStep();
     mode = "demo";
   }
-  return { time: new Date().toISOString(), mode, ...m, system: await systemMetrics() };
+  // 允许调用方注入已缓存的 system 指标,避免大屏 REST 路径在 snapshot 内部
+  // 自采一次(250ms)后又被 cachedSystemMetrics 覆盖造成的双重采样。
+  return { time: new Date().toISOString(), mode, ...m, system: system ?? (await systemMetrics()) };
 }
 
 export async function watch(seconds, env = process.env) {
