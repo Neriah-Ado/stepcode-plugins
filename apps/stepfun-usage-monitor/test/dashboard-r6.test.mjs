@@ -80,3 +80,25 @@ test("SSE:连接数达上限后新连接 503,释放后恢复", async () => {
     await app.close();
   }
 });
+
+test("安全头:HTML/JSON 响应带 nosniff/no-referrer/DENY（R19）", async () => {
+  const app = createDashboardServer({ port: 0, idleExitMin: 0, writePidFile: false });
+  const { port } = await app.start();
+  try {
+    const get = (p) => new Promise((resolve, reject) => {
+      http.get({ host: "127.0.0.1", port, path: p }, (res) => {
+        res.resume();
+        res.on("end", () => resolve(res.headers));
+      }).on("error", reject);
+    });
+    const html = await get("/");
+    assert.equal(html["x-content-type-options"], "nosniff");
+    assert.equal(html["x-frame-options"], "DENY");
+    assert.equal(html["referrer-policy"], "no-referrer");
+    const json = await get("/api/config");
+    assert.equal(json["x-content-type-options"], "nosniff");
+    assert.equal(json["x-frame-options"], "DENY");
+  } finally {
+    await app.close();
+  }
+});

@@ -106,6 +106,19 @@ func TestStaticHandlerNoDirectoryListing(t *testing.T) {
 	if root.Code != http.StatusOK {
 		t.Fatalf("root should serve index, got %d", root.Code)
 	}
+	// Security headers (R19): nosniff / no-referrer / DENY + strict CSP.
+	if root.Header().Get("X-Content-Type-Options") != "nosniff" {
+		t.Fatal("missing nosniff header")
+	}
+	if root.Header().Get("X-Frame-Options") != "DENY" {
+		t.Fatal("missing X-Frame-Options header")
+	}
+	if root.Header().Get("Referrer-Policy") != "no-referrer" {
+		t.Fatal("missing Referrer-Policy header")
+	}
+	if root.Header().Get("Content-Security-Policy") == "" {
+		t.Fatal("missing CSP header")
+	}
 
 	// Subdirectory must not list.
 	sub := httptest.NewRecorder()

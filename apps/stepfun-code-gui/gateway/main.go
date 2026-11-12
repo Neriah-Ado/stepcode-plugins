@@ -520,6 +520,7 @@ func serveEvents(w http.ResponseWriter, r *http.Request, store *Store, hub *Hub)
 	w.Header().Set("Cache-Control", "no-cache, no-store")
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no")
+	setSecurityHeaders(w)
 
 	// Subscribe BEFORE building the snapshot: frames broadcast in between land
 	// in the channel buffer and are replayed after the initial frame. Any that
@@ -587,6 +588,10 @@ func staticHandler(webDir string) http.Handler {
 	base := filepath.Clean(webDir)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
+		setSecurityHeaders(w)
+		// The panel is all external scripts/styles (no inline), so a strict CSP
+		// is pure defence-in-depth against any future stored-XSS sink.
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'")
 		// Assets are served without a token; never expose a directory listing.
 		// The root still resolves to index.html via the FileServer. Clean the
 		// URL with path (always slash-based) so the root check is portable.
@@ -606,19 +611,30 @@ func staticHandler(webDir string) http.Handler {
 	})
 }
 
+// setSecurityHeaders adds low-cost, zero-regression hardening shared by every
+// response: nosniff blocks MIME sniffing, no-referrer keeps the query token out
+// of Referer, and DENY prevents the panel being framed (clickjacking).
+func setSecurityHeaders(w http.ResponseWriter) {
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Referrer-Policy", "no-referrer")
+	w.Header().Set("X-Frame-Options", "DENY")
+}
+
 // writeJSON emits a no-store JSON response.
 func writeJSON(w http.ResponseWriter, payload any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
+	setSecurityHeaders(w)
 	_ = json.NewEncoder(w).Encode(payload)
 }
 
 // authorized accepts the token from the X-Orchestra-Token header on any method,
 // and from the query string on read-only GET/HEAD requests only. The initial
 // page load and EventSource cannot set headers, so they need the query form;
-// mutations must use the header, which means a token leaked through a URL
-// (history, Referer, process argv) grants reads at most — never the ability to
-// inject a message or edit credentials. Comparison is always constant-time.
+// mutations must use the header. The query form is read-only, but a leaked token
+// VALUE can still be replayed in the header for writes — which is why the token
+// travels in the URL fragment (never sent to a server, never in Referer) and is
+// stripped from the address bar on load. Comparison is always constant-time.
 func authorized(r *http.Request, token string) bool {
 	if token == "" {
 		return true

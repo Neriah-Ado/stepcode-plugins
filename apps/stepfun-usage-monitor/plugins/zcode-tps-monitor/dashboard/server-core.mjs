@@ -88,8 +88,16 @@ export function cleanupPidFile() {
   } catch {}
 }
 
+// 低成本零回归安全头:nosniff 防 MIME 嗅探,no-referrer 防查询 token 经 Referer
+// 泄露,DENY 防点击劫持(本面板无 token 仅同源校验,禁框价值尤高)。
+const SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "no-referrer",
+  "X-Frame-Options": "DENY",
+};
+
 function sendJson(res, status, obj) {
-  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...SECURITY_HEADERS });
   res.end(JSON.stringify(obj));
 }
 
@@ -426,7 +434,7 @@ export function createDashboardServer(opts = {}) {
       return;
     }
     if (req.url === "/" || req.url.startsWith("/index")) {
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", ...SECURITY_HEADERS });
       res.end(renderIndex());
       return;
     }
@@ -509,6 +517,7 @@ export function createDashboardServer(opts = {}) {
         "Cache-Control": "no-cache, no-store",
         Connection: "keep-alive",
         "X-Accel-Buffering": "no", // 反代场景禁用缓冲
+        ...SECURITY_HEADERS,
       });
       res.write(sseRetry(2000)); // 断线后 2s 重连(EventSource 默认约 3s)
       res.on("close", () => dropClient(res));
