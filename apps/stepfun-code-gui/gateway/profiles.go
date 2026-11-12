@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +16,14 @@ const (
 	profilesFileName = "profiles.json"
 	// Bump when the on-disk shape changes so migrations have a branch point.
 	profileSchemaVersion = 1
+	// Bounds so a token-holding local client cannot grow the roster (and every
+	// future snapshot/rewrite) without limit. Edits and legacy over-cap files
+	// are exempt; only new inserts are refused.
+	maxProfiles            = 64
+	maxProfileNameBytes    = 128
+	maxProfileProviderBytes = 64
+	maxProfileKeyBytes     = 512
+	maxProfileBaseURLBytes = 2048
 )
 
 // errProfileInvalid marks a validation failure so the HTTP layer can answer 400
@@ -81,6 +90,9 @@ func (s *profileStore) load() {
 	var parsed profileFile
 	if err := json.Unmarshal(payload, &parsed); err != nil {
 		log.Printf("profiles: %s is not valid JSON, starting empty: %v", s.path, err)
+		// Preserve the unreadable file for recovery; the next persist would
+		// otherwise overwrite it and destroy the credentials permanently.
+		_ = os.Rename(s.path, s.path+".corrupt")
 		return
 	}
 
@@ -143,18 +155,16 @@ func (s *profileStore) persistLocked() error {
 func (s *profileStore) Upsert(profile storedProfile) (storedProfile, error) {
 	// Last line of defence: the HTTP layer validates too, but the store must not
 	// accept a record it cannot render.
-	if strings.TrimSpace(profile.Name) == "" {
-		return profile, fmt.Errorf("%w: name is required", errProfileInvalid)
-	}
-	if strings.TrimSpace(profile.Provider) == "" {
-		return profile, fmt.Errorf("%w: provider is required", errProfileInvalid)
+	if err := validateProfileFields(profile); err != nil {
+		return profile, err
 	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	// An edit that omits the key keeps the stored credential, so the browser is
-	// never asked to round-trip a secret it was never given.
+	// never asked to round-trip a secret it was never given. The same applies to
+	// the endpoint override: a rename must not silently clear BaseURL.
 	if profile.ID != "" && profile.APIKey == "" {
 		for _, existing := range s.file.Profiles {
 			if existing.ID != profile.ID {
@@ -163,6 +173,9 @@ func (s *profileStore) Upsert(profile storedProfile) (storedProfile, error) {
 			profile.APIKey = existing.APIKey
 			if profile.Provider == "" {
 				profile.Provider = existing.Provider
+			}
+			if profile.BaseURL == "" {
+				profile.BaseURL = existing.BaseURL
 			}
 			if profile.AddedAt == 0 {
 				profile.AddedAt = existing.AddedAt
@@ -181,19 +194,85 @@ func (s *profileStore) Upsert(profile storedProfile) (storedProfile, error) {
 	replaced := false
 	for index := range s.file.Profiles {
 		if s.file.Profiles[index].ID == profile.ID {
-			s.file.Profiles[index] = profile
 			replaced = true
 			break
 		}
 	}
-	if !replaced {
+	if !replaced && len(s.file.Profiles) >= maxProfiles {
+		return profile, fmt.Errorf("%w: too many profiles (max %d)", errProfileInvalid, maxProfiles)
+	}
+
+	prev := s.snapshotLocked()
+	if replaced {
+		for index := range s.file.Profiles {
+			if s.file.Profiles[index].ID == profile.ID {
+				s.file.Profiles[index] = profile
+				break
+			}
+		}
+	} else {
 		s.file.Profiles = append(s.file.Profiles, profile)
 	}
 
 	if err := s.persistLocked(); err != nil {
+		// Roll back so memory never advertises a record the disk does not hold.
+		s.file = prev
 		return profile, err
 	}
 	return profile, nil
+}
+
+// validateProfileFields rejects records the store cannot safely render or push.
+// Length caps use generous limits (real provider keys reach ~160 chars) so they
+// guard against abuse without breaking legitimate credentials.
+func validateProfileFields(profile storedProfile) error {
+	if strings.TrimSpace(profile.Name) == "" {
+		return fmt.Errorf("%w: name is required", errProfileInvalid)
+	}
+	if strings.TrimSpace(profile.Provider) == "" {
+		return fmt.Errorf("%w: provider is required", errProfileInvalid)
+	}
+	if len(profile.Name) > maxProfileNameBytes {
+		return fmt.Errorf("%w: name too long", errProfileInvalid)
+	}
+	if len(profile.Provider) > maxProfileProviderBytes {
+		return fmt.Errorf("%w: provider too long", errProfileInvalid)
+	}
+	if len(profile.APIKey) > maxProfileKeyBytes {
+		return fmt.Errorf("%w: api key too long", errProfileInvalid)
+	}
+	if len(profile.BaseURL) > maxProfileBaseURLBytes {
+		return fmt.Errorf("%w: baseUrl too long", errProfileInvalid)
+	}
+	if err := validateBaseURL(profile.BaseURL); err != nil {
+		return fmt.Errorf("%w: %v", errProfileInvalid, err)
+	}
+	return nil
+}
+
+// validateBaseURL allows an empty value (means "use the provider default") but
+// otherwise requires an http(s) URL with a host, so an activated credential is
+// never pushed at a file:// or scheme-less endpoint. Localhost is permitted —
+// local proxies are a legitimate use.
+func validateBaseURL(raw string) error {
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	parsed, err := url.Parse(raw)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+		return errors.New("baseUrl must be an http(s) URL")
+	}
+	return nil
+}
+
+// snapshotLocked copies the current file state so a failed persist can be rolled
+// back. The roster is capped, so this copy is cheap.
+func (s *profileStore) snapshotLocked() profileFile {
+	return profileFile{
+		Version:  s.file.Version,
+		ActiveID: s.file.ActiveID,
+		Profiles: append([]storedProfile(nil), s.file.Profiles...),
+	}
 }
 
 // Remove deletes a profile and clears it as active if it was.
@@ -201,6 +280,7 @@ func (s *profileStore) Remove(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	prev := s.snapshotLocked()
 	kept := make([]storedProfile, 0, len(s.file.Profiles))
 	for _, profile := range s.file.Profiles {
 		if profile.ID != id {
@@ -212,7 +292,11 @@ func (s *profileStore) Remove(id string) error {
 	if s.file.ActiveID == id {
 		s.file.ActiveID = ""
 	}
-	return s.persistLocked()
+	if err := s.persistLocked(); err != nil {
+		s.file = prev
+		return err
+	}
+	return nil
 }
 
 // Activate marks a profile active and returns it so the caller can push the
@@ -226,9 +310,11 @@ func (s *profileStore) Activate(id string) (storedProfile, bool, error) {
 			continue
 		}
 
+		prev := s.snapshotLocked()
 		s.file.ActiveID = id
 		s.lastError = ""
 		if err := s.persistLocked(); err != nil {
+			s.file = prev
 			return profile, true, err
 		}
 		return profile, true, nil

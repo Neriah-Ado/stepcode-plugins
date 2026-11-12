@@ -392,6 +392,12 @@ func newRouter(store *Store, hub *Hub, actions *actionWriter, token, webDir stri
 			http.Error(w, "profile has no api key", http.StatusBadRequest)
 			return
 		}
+		// Legacy on-disk records predate BaseURL validation; refuse to push a
+		// credential at a non-http(s) endpoint.
+		if err := validateBaseURL(profile.BaseURL); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
 		// Deliver first, persist second. The other order would leave the file
 		// claiming a switch the host never applied whenever the channel is down.
