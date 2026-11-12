@@ -224,6 +224,8 @@ function createMainWindow() {
 }
 
 function showMainWindow() {
+  // 退出竞态:before-quit 已置 dash=null,此时 second-instance/activate 不得重建窗口
+  if (!dash) return;
   if (!mainWin || mainWin.isDestroyed()) {
     createMainWindow();
     return;
@@ -302,6 +304,13 @@ function createOverlayWindow() {
     // 否则收起后高度回不去(每次悬停都会污染记忆值)。
     state = mergeBounds(state, "overlay", { ...b, width: state.overlay.width, height: state.overlay.height });
     saveState(state);
+  });
+  // 无边框窗仍可被 Alt+F4/外部关闭:拦截为隐藏(同主窗口),否则 closed 只置空
+  // 引用,采集循环会持续空跑且 state.overlay.visible 失真。
+  win.on("close", (e) => {
+    if (quitting) return;
+    e.preventDefault();
+    hideOverlay();
   });
   win.on("closed", () => {
     if (overlayWin === win) overlayWin = null;
@@ -629,6 +638,12 @@ if (!app.requestSingleInstanceLock()) {
   app.on("before-quit", () => {
     quitting = true;
     stopCollector();
+    // Cmd+Q/系统注销不经托盘 quitApp:结算主窗口最近边界(防抖定时器可能未触发)
+    // 并落盘,避免丢失最近一次拖动/缩放的位置。
+    if (mainWin && !mainWin.isDestroyed() && !mainWin.isMaximized()) {
+      state = mergeBounds(state, "main", mainWin.getBounds());
+    }
+    saveState(state);
     if (dash) {
       try {
         dash.close();

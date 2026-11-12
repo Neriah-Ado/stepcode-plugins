@@ -8,9 +8,14 @@
 
 // node:sqlite 在 Node <22.5 不存在、≥22.5 为实验特性:静态 import 会在模块求值期
 // 触发 ExperimentalWarning,而钩子进程需要在更早的阶段接管 warning 通道——
-// 因此与 scripts/token-rate.mjs 一样:先静默警告,再动态导入。
+// 因此与 scripts/token-rate.mjs 一样:先接管警告,再动态导入。只静音
+// ExperimentalWarning,保留其它警告(MaxListeners/Deprecation)的默认输出,
+// 避免本模块被导入 Electron 主进程时静音宿主的全部诊断警告。
 process.removeAllListeners("warning");
-process.on("warning", () => {});
+process.on("warning", (w) => {
+  if (w && w.name === "ExperimentalWarning") return;
+  console.warn(w && w.stack ? w.stack : w);
+});
 
 const { DatabaseSync } = await import("node:sqlite");
 import fs from "node:fs";
