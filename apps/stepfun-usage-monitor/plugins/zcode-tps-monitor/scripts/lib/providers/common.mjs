@@ -178,7 +178,8 @@ function sessionAggregate(rated, all) {
  * records 新→旧;allRecords 为会话累计口径,默认等同 records。
  */
 export function buildRateView(records, opts = {}) {
-  const items = records.slice(0, RATE_ENV.hist).slice(0, RATE_ENV.window).map(toViewItem);
+  // 实际只用 min(hist,window) 条:单次 slice 即可,避免双重 slice 的多余中间数组。
+  const items = records.slice(0, Math.min(RATE_ENV.hist, RATE_ENV.window)).map(toViewItem);
   const rated = items.filter((i) => i.tokPerSec != null);
   // 头条优先取最近一条有效记录,避免在途/缺字段行顶掉头条
   const latest = rated[0] ?? items[0] ?? null;
@@ -322,8 +323,10 @@ function readRange(file, start, end) {
     const len = end - start;
     if (len <= 0) return "";
     const buf = Buffer.allocUnsafe(len);
-    fs.readSync(fd, buf, 0, len, start);
-    return buf.toString("utf8");
+    //  honoring 实际读取字节数:文件在 stat 与 read 之间收缩时,readSync 可能
+    //  读不满 len,allocUnsafe 的尾段是未初始化内存,绝不能进入解析。
+    const bytesRead = fs.readSync(fd, buf, 0, len, start);
+    return buf.toString("utf8", 0, bytesRead);
   } finally {
     fs.closeSync(fd);
   }

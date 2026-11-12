@@ -151,8 +151,9 @@ export function openUsageDb(dbPath = resolveDbPath()) {
   function query(sessionId) {
     const { sid, scoped } = resolveSession(sessionId);
     const { mainOnly } = resolveScope(sid);
-    // 曲线历史(大窗口)与统计(小窗口)分别查询,刷新/重开不丢
-    const items = windowRows(mainOnly, sid, HIST).slice(0, N).map(toItem);
+    // 曲线历史与统计共用窗口:实际只用 min(HIST,N) 条,直接按此 limit 读取,
+    // 避免读 HIST 行再 slice(0,N) 丢弃多余行(默认 N=5/HIST=60 时省 12× 读取)。
+    const items = windowRows(mainOnly, sid, Math.min(HIST, N)).map(toItem);
     const rated = items.filter((i) => i.tokPerSec != null);
     // 展示用 latest 优先取最近一条"有效"记录,避免在途/缺字段行顶掉头条
     const latest = rated[0] ?? items[0] ?? null;

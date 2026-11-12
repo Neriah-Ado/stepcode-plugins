@@ -71,7 +71,20 @@ export function readConfigStrict() {
 
 export function writeConfig(cfg) {
   fs.mkdirSync(path.dirname(CONFIG_FILE), { recursive: true });
-  fs.writeFileSync(CONFIG_FILE, `${JSON.stringify(cfg, null, 2)}\n`, "utf8");
+  const payload = `${JSON.stringify(cfg, null, 2)}\n`;
+  // 原子写:先写同目录临时文件再 rename,崩溃不会留下半截 JSON 致配置丢失。
+  const tmp = `${CONFIG_FILE}.${process.pid}.tmp`;
+  try {
+    fs.writeFileSync(tmp, payload, "utf8");
+    fs.renameSync(tmp, CONFIG_FILE);
+  } catch {
+    // 原子写受阻(Windows 杀软扫描致 EPERM/EBUSY 等):回退直写,配置仍须落盘
+    fs.writeFileSync(CONFIG_FILE, payload, "utf8");
+  } finally {
+    try {
+      fs.unlinkSync(tmp);
+    } catch {}
+  }
 }
 
 /** 当前生效外观(含默认值填充;非法字段被丢弃后回落默认)。 */
