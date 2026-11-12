@@ -67,6 +67,9 @@ function cachedAgentStatus() {
 const { loadState, saveState, mergeBounds } = await import(
   pathToFileURL(path.join(HERE, "lib", "state-store.mjs")).href
 );
+const { isSafeExternalUrl, escapeHtml } = await import(
+  pathToFileURL(path.join(HERE, "lib", "security.mjs")).href
+);
 const { createOverlayCollector } = await import(
   pathToFileURL(path.join(HERE, "lib", "collect-loop.mjs")).href
 );
@@ -131,8 +134,9 @@ function trayIcon() {
 // ---------- 主窗口 ----------
 
 function showLoadError(win, err) {
+  const message = escapeHtml(err && err.message ? err.message : err);
   const html = `<!DOCTYPE html><meta charset="utf-8"><body style="font:14px system-ui;padding:24px;color:#cbd5e1;background:#0b1020">
-<h3>大屏服务加载失败</h3><p>${String(err && err.message ? err.message : err)}</p>
+<h3>大屏服务加载失败</h3><p>${message}</p>
 <p>可先以浏览器方式使用:运行 <code>node plugins/zcode-tps-monitor/dashboard/server.mjs</code></p></body>`;
   win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`).catch(() => {});
 }
@@ -156,7 +160,7 @@ function createMainWindow() {
       preload: PRELOAD,
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      sandbox: true,
     },
   });
   win.once("ready-to-show", () => win.show());
@@ -167,6 +171,17 @@ function createMainWindow() {
     broadcast("tps:always-on-top-changed", state.main.alwaysOnTop);
     broadcast("tps:overlay-visible-changed", state.overlay.visible);
     broadcast("tps:click-through-changed", state.overlay.clickThrough);
+  });
+
+  // 本地页面无需任何敏感权限:一律拒绝(摄像头/麦克风/定位/通知等)
+  win.webContents.session.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
+  // 主窗口只允许停留在内嵌大屏同源;页内跳转/重定向离站一律拦截,
+  // 否则 preload 桥(含 setConfig)会被注入到导航后的任意页面
+  const dashOrigin = new URL(dash.url).origin;
+  win.webContents.on("will-navigate", (event, url) => {
+    let origin = "";
+    try { origin = new URL(url).origin; } catch {}
+    if (origin !== dashOrigin) event.preventDefault();
   });
 
   // 尺寸/位置记忆:停手后再落盘,避免拖动过程刷几十次文件
@@ -193,9 +208,10 @@ function createMainWindow() {
   win.on("closed", () => {
     if (mainWin === win) mainWin = null;
   });
-  // 大屏里的外链(仓库地址等)走系统浏览器,不在应用内开新窗
+  // 大屏里的外链(仓库地址等)走系统浏览器,不在应用内开新窗。
+  // 仅放行 http(s):渲染层若被注入,file://自定义协议经 openExternal 可致命令执行。
   win.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    if (isSafeExternalUrl(url)) shell.openExternal(url);
     return { action: "deny" };
   });
   mainWin = win;
@@ -263,15 +279,19 @@ function createOverlayWindow() {
       preload: PRELOAD,
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      sandbox: true,
       backgroundThrottling: false,
     },
   });
   // 悬浮层级:压在普通置顶窗口之上,但不用 screen-saver 级(会盖住输入法/通知)
   win.setAlwaysOnTop(true, "floating");
   win.loadFile(OVERLAY_PAGE).catch((err) => console.error("[overlay] 页面加载失败", err));
+  win.webContents.session.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
   win.on("moved", () => {
-    state = mergeBounds(state, "overlay", win.getBounds());
+    const b = win.getBounds();
+    // 只持久化位置:悬停展开时窗口高度是 150,不能覆盖记忆的收起高度,
+    // 否则收起后高度回不去(每次悬停都会污染记忆值)。
+    state = mergeBounds(state, "overlay", { ...b, width: state.overlay.width, height: state.overlay.height });
     saveState(state);
   });
   win.on("closed", () => {
