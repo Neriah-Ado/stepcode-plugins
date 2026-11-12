@@ -17,12 +17,14 @@ const MAX_TEXT = 20000;
 const MAX_ENTRIES_SCANNED = 4000;
 
 /**
- * Rough character ceiling for one serialized history line. The gateway reads
- * JSONL frames with a hard per-line cap; 400 messages x 20k characters could
- * reach ~8 MB and kill the reader, so the replay is trimmed from the oldest
- * end to stay comfortably inside that budget.
+ * Byte ceiling for one serialized history line. The gateway reads JSONL frames
+ * with a hard 4 MiB per-line cap; 400 messages x 20k characters could exceed it
+ * and kill the reader, so the replay is trimmed from the oldest end. Measured in
+ * UTF-8 bytes (not UTF-16 code units): CJK text is ~3 bytes/char, so a char-based
+ * budget would let a 1.5M-char Chinese history serialize past 4 MiB and be
+ * silently dropped. 3.5 MB leaves headroom for JSON structure and escaping.
  */
-const MAX_HISTORY_CHARS = 1_500_000;
+const MAX_HISTORY_BYTES = 3_500_000;
 
 /**
  * Coalescing window for streamed deltas. A delta carries only the increment,
@@ -139,8 +141,8 @@ export function createConversation(options: ConversationOptions): Conversation {
 		let total = 0;
 		let start = 0;
 		for (let position = messages.length - 1; position >= 0; position -= 1) {
-			total += messages[position].text.length + 64;
-			if (total > MAX_HISTORY_CHARS) {
+			total += Buffer.byteLength(messages[position].text, "utf8") + 64;
+			if (total > MAX_HISTORY_BYTES) {
 				start = position + 1;
 				break;
 			}
@@ -152,7 +154,7 @@ export function createConversation(options: ConversationOptions): Conversation {
 			process.stderr.write(
 				"[step-orchestra] newest history message exceeds the replay budget; clipping it\n"
 			);
-			return [{ ...newest, text: clip(newest.text.slice(0, MAX_HISTORY_CHARS)) }];
+			return [{ ...newest, text: clip(newest.text) }];
 		}
 
 		process.stderr.write(

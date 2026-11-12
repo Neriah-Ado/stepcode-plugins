@@ -94,9 +94,13 @@ export default function stepOrchestra(pi: StepExtensionAPI): void {
 	// per tool call matters. A short trailing window keeps the panel live while
 	// bounding the stdin/SSE/DOM pipeline to one frame per tool per window.
 	const UPDATE_COALESCE_MS = 60;
+	// Pure trailing coalescing never flushes while events keep arriving <60ms
+	// apart (a steady progress stream), freezing the panel. Force a flush once
+	// a tool has been coalescing this long so live progress always lands.
+	const UPDATE_MAX_WAIT_MS = 120;
 	const pendingUpdates = new Map<
 		string,
-		{ message: ToolUpdateMessage; timer: ReturnType<typeof setTimeout> }
+		{ message: ToolUpdateMessage; timer: ReturnType<typeof setTimeout>; firstAt: number }
 	>();
 
 	function flushToolUpdate(toolCallId: string): void {
@@ -107,14 +111,23 @@ export default function stepOrchestra(pi: StepExtensionAPI): void {
 	}
 
 	function emitToolUpdate(message: ToolUpdateMessage): void {
+		const now = Date.now();
 		const pending = pendingUpdates.get(message.toolCallId);
-		if (pending) clearTimeout(pending.timer);
+		if (pending) {
+			if (now - pending.firstAt >= UPDATE_MAX_WAIT_MS) {
+				clearTimeout(pending.timer);
+				pendingUpdates.delete(message.toolCallId);
+				emit(message);
+				return;
+			}
+			clearTimeout(pending.timer);
+		}
 
 		const timer = setTimeout(() => flushToolUpdate(message.toolCallId), UPDATE_COALESCE_MS);
 		// Never hold the host process open just to flush a progress frame.
 		(timer as unknown as { unref?: () => void }).unref?.();
 
-		pendingUpdates.set(message.toolCallId, { message, timer });
+		pendingUpdates.set(message.toolCallId, { message, timer, firstAt: pending ? pending.firstAt : now });
 	}
 
 	// The conversation mirror needs `ctx.isIdle()` to pick a delivery mode, but
@@ -192,6 +205,9 @@ export default function stepOrchestra(pi: StepExtensionAPI): void {
 		// A new session starts its throughput history over.
 		tracker.reset();
 		sessionOutput = 0;
+		// Drop any in-flight call bookkeeping from the previous session: a
+		// cancelled tool never fires tool_result, so its entry would orphan.
+		tracked.clear();
 
 		// Replay prior turns so a freshly opened panel is not blank. A throwing
 		// host accessor must not break the session_start dispatch.

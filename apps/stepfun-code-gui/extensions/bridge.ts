@@ -37,6 +37,13 @@ const GATEWAY_DIR = resolve(PACKAGE_ROOT, "gateway");
 const AUTOBUILD_DISABLED = /^(0|false|off)$/i.test(process.env.STEP_ORCHESTRA_AUTOBUILD ?? "");
 /** Rebuild attempts are rate-limited so a broken toolchain cannot spawn `go` in a loop. */
 const AUTOBUILD_COOLDOWN_MS = 30_000;
+/** Frames queued while the one-shot build runs; bounded so a stalled build cannot
+ * accumulate the whole session (a 1.5 MB history frame alone is large). Oldest
+ * dropped first — the restart replay compensates for lost first-paint frames. */
+const MAX_PENDING = 2000;
+/** A single stdout line is never legitimately this long; cap the partial-line
+ * buffer so a misbehaving gateway emitting no newlines cannot grow it without bound. */
+const MAX_STDOUT_PARTIAL = 1_048_576;
 
 /** The gateway prints exactly one such line on startup. The token sits in the
  * URL fragment so it never travels to a server or leaks through Referer. */
@@ -147,6 +154,7 @@ export class Bridge {
 		// frames keeps the panel's first paint complete once the build lands.
 		if (this.building) {
 			this.pending.push(line);
+			if (this.pending.length > MAX_PENDING) this.pending.shift();
 			return;
 		}
 
@@ -194,6 +202,7 @@ export class Bridge {
 	/** Tell the gateway to exit, then drop the handle. */
 	dispose(): void {
 		this.disposed = true;
+		this.pending.length = 0;
 		const child = this.child;
 		this.child = null;
 		if (this.buildChild) {
@@ -309,6 +318,9 @@ export class Bridge {
 		}
 
 		this.pendingStdout += chunk;
+		// A partial line this large is never legitimate; drop it rather than let
+		// repeated += grow the buffer (and copy it) without bound.
+		if (this.pendingStdout.length > MAX_STDOUT_PARTIAL) this.pendingStdout = "";
 		const lines = this.pendingStdout.split("\n");
 		// Keep the trailing partial line for the next chunk.
 		this.pendingStdout = lines.pop() ?? "";

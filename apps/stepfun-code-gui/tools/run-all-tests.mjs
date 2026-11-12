@@ -47,6 +47,10 @@ const steps = [
 		run: () => spawnSync(NODE, [resolve(HERE, "test-progress.mjs")], { encoding: "utf8" }),
 	},
 	{
+		name: "argument redaction",
+		run: () => spawnSync(NODE, [resolve(HERE, "test-redact.mjs")], { encoding: "utf8" }),
+	},
+	{
 		name: "stacking-order guard",
 		run: () => spawnSync(NODE, [resolve(HERE, "check-layers.mjs")], { encoding: "utf8" }),
 	},

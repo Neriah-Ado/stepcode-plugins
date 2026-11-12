@@ -15,12 +15,36 @@
  * match a standalone key name.
  */
 const STRONG_TOKEN =
-	/token|secret|passw|credential|authorization|cookie|bearer|apikey|signature/i;
+	/token|secret|passw|credential|authorization|cookie|bearer|apikey|signature|privatekey|sshkey|signingkey|secretkey|accesskey/i;
 const WEAK_EXACT = /^(key|auth|pwd|passwd)$/i;
 
+/**
+ * Token *counts* are telemetry, not secrets. The substring rule above would
+ * otherwise mask maxTokens/totalTokens/tokenSpend as "***" and erase the very
+ * numbers the panel renders. Matched on the normalized (lowercased) key.
+ */
+const TOKEN_TELEMETRY = new Set([
+	"tokens", "maxtokens", "totaltokens", "tokenspend", "tokenizer", "tokencount",
+	"inputtokens", "outputtokens", "reasoningtokens", "prompttokens", "completiontokens",
+	"cachereadinputtokens", "numtokens", "totaltok",
+]);
+
 function isSensitiveKey(raw: string): boolean {
-	const normalized = raw.replace(/[^a-z0-9]+/gi, "");
+	const normalized = raw.replace(/[^a-z0-9]+/gi, "").toLowerCase();
+	if (TOKEN_TELEMETRY.has(normalized)) return false;
 	return STRONG_TOKEN.test(normalized) || WEAK_EXACT.test(normalized);
+}
+
+/**
+ * Secrets carried inside otherwise-innocent values (a bash `command`, a `url`):
+ * key-based redaction never sees these. Anchored provider prefixes keep false
+ * positives low — a bare /token/ would scrub prose. Applied to every string.
+ */
+const SECRET_VALUE =
+	/\b(?:sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}|Bearer\s+[A-Za-z0-9._~+/=-]{16,})/g;
+
+function scrubValue(value: string): string {
+	return value.replace(SECRET_VALUE, "***");
 }
 
 /** Per-string ceiling, in characters. */
@@ -41,7 +65,7 @@ function walk(value: unknown, depth: number): unknown {
 
 	switch (typeof value) {
 		case "string":
-			return clip(value);
+			return clip(scrubValue(value));
 		case "number":
 		case "boolean":
 			return value;
