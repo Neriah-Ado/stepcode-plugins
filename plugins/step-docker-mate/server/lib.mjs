@@ -105,6 +105,8 @@ export function logs(container, { tail = 200, ctx } = {}) {
 // 不限制基目录(宿主授权跨目录正当用法,C8 信任边界在宿主进程)。
 function assertComposeFile(file) {
   if (typeof file !== 'string' || !file.trim()) return { ok: false, reason: 'file 必须是非空字符串' };
+  // 首尾空白可绕过 UNC/参数注入检查(Windows 不剥前导空白),直接拒绝。
+  if (file !== file.trim()) return { ok: false, reason: 'file 不得含首尾空白' };
   if (/^-/.test(file)) return { ok: false, reason: 'file 不得以 - 开头（防参数注入）' };
   if (/[\r\n]/.test(file)) return { ok: false, reason: 'file 不得含换行符' };
   if (/^\\\\/.test(file) || /^\/\//.test(file)) return { ok: false, reason: '拒绝 UNC/设备路径（防 NTLM 凭据泄露）' };

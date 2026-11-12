@@ -24,3 +24,8 @@ test("composeUp:默认 dry-run（合法相对路径不触达 docker）", () => {
   const r = composeUp("compose.yaml");
   assert.equal(r.dryRun, true);
 });
+
+test("composeUp:拒绝首尾空白绕过 UNC 检查（R22）", () => {
+  assert.equal(composeUp("  //attacker/share/dc.yml", { confirm: true }).error, "invalid-argument");
+  assert.equal(composeUp("\t\\\\attacker\\share\\dc.yml", { confirm: true }).error, "invalid-argument");
+});

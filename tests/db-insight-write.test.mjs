@@ -52,3 +52,16 @@ test("classifyWrite:合法引用标识符不误伤", () => {
   assert.equal(classifyWrite(`UPDATE "drop" SET x=1`).kind, "update");
   assert.equal(classifyWrite("INSERT INTO t VALUES ('a;b')").kind, "insert");
 });
+
+test("classifyWrite:拒绝 E-string 反斜杠转义脱同步走私(R22 绕过回归)", () => {
+  // E'\'') 中 \' 是转义引号,PG 已出串;剥离器若吞引号会漏掉 ;COPY → RCE
+  assert.equal(classifyWrite(`INSERT INTO t VALUES (E'\\''); COPY t TO PROGRAM 'calc'`).kind, "reject");
+  assert.equal(classifyWrite(`UPDATE t SET x=E'\\''); DROP TABLE t; --'`).kind, "reject");
+  // E 前缀本身即拒绝(fail-closed)
+  assert.equal(classifyWrite(`INSERT INTO t VALUES (E'abc')`).kind, "reject");
+});
+
+test("classifyWrite:标准字符串反斜杠字面量不误伤多语句判定", () => {
+  // 标准串内的反斜杠按转义处理,闭引号正确识别,后续 ;COPY 仍被拒
+  assert.equal(classifyWrite(`INSERT INTO t VALUES ('a\\''); COPY t TO PROGRAM 'c'`).kind, "reject");
+});

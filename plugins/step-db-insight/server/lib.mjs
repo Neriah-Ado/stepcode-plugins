@@ -227,6 +227,8 @@ function stripLiteralsAndComments(sql) {
     if (inLine) { if (c === '\n') { inLine = false; out += c; } else { out += ' '; } continue; }
     if (inBlock) { if (c === '*' && next === '/') { inBlock = false; i += 1; out += '  '; } else { out += ' '; } continue; }
     if (inSingle) {
+      // 反斜杠转义(E'…' 或 standard_conforming_strings=off):\' 是转义引号而非闭引号。
+      if (c === '\\') { i += 1; out += '  '; continue; }
       if (c === "'") { if (next === "'") { i += 1; out += '  '; } else { inSingle = false; out += ' '; } } else { out += ' '; }
       continue;
     }
@@ -252,7 +254,13 @@ function stripLiteralsAndComments(sql) {
 }
 
 export function classifyWrite(sql) {
-  const stripped = stripLiteralsAndComments(String(sql).trim());
+  const raw = String(sql).trim();
+  // fail-closed:拒绝 E'…' 转义字符串。其反斜杠转义与标准字符串的 '' 双写规则
+  // 交互引入解析歧义(可构造脱同步走私多语句),受控写入请用标准字符串字面量。
+  if (/\bE'/i.test(raw)) {
+    return { kind: 'reject', reason: "拒绝 E'…' 转义字符串（反斜杠转义引入解析歧义）,请用标准字符串字面量" };
+  }
+  const stripped = stripLiteralsAndComments(raw);
   if (/;\s*\S/.test(stripped)) {
     return { kind: 'reject', reason: '受控写入仅允许单条语句,禁止多语句拼接（防 COPY/DO 等走私）' };
   }
