@@ -346,9 +346,10 @@ func (s *Store) applyToolCall(message incoming) {
 	}
 
 	evicted := s.retainLocked(node)
+	nodeSnapshot := *node
 	s.mu.Unlock()
 
-	s.publishNode(node)
+	s.publishNode(nodeSnapshot)
 	s.publishEvicted(evicted)
 }
 
@@ -439,9 +440,10 @@ func (s *Store) applyToolUpdate(message incoming) {
 	if node.Status == StatusPending {
 		node.Status = StatusRunning
 	}
+	nodeSnapshot := *node
 	s.mu.Unlock()
 
-	s.publishNode(node)
+	s.publishNode(nodeSnapshot)
 	s.publishEvicted(evicted)
 }
 
@@ -473,9 +475,10 @@ func (s *Store) applyToolResult(message incoming) {
 	} else {
 		node.Status = StatusDone
 	}
+	nodeSnapshot := *node
 	s.mu.Unlock()
 
-	s.publishNode(node)
+	s.publishNode(nodeSnapshot)
 }
 
 func (s *Store) setRun(status, phase string) {
@@ -559,25 +562,27 @@ func (s *Store) statsLocked() Stats {
 	return stats
 }
 
-// publishNode hands the hub a value copy: emit marshals outside s.mu, and a
-// live pointer would race with the next tool_update folding into the node.
-// Shallow copy is safe — slice/pointer fields are replaced wholesale, never
-// mutated in place.
-func (s *Store) publishNode(node *Node) {
-	s.emit("node", *node)
+// publishNode hands the hub a value copy taken UNDER s.mu by the caller, so the
+// copy cannot race a concurrent Apply folding into the same node. emit marshals
+// outside s.mu; shallow copy is safe — slice/pointer fields are replaced
+// wholesale, never mutated in place.
+func (s *Store) publishNode(node Node) {
+	s.emit("node", node)
 }
 
 // SnapshotFrame builds the initial frame for a new subscriber. It carries the
 // current sequence so the next delta lines up and does not look like a gap.
-// The sequence is read AFTER building the snapshot to narrow the window where a
-// concurrent emit folds a delta into the snapshot yet carries a higher seq.
+// The sequence is read BEFORE building the snapshot: every frame with seq <= N
+// has its state change committed before the seq bump, so a snapshot taken after
+// reading N covers them all. Reading after would anchor a frame emitted during
+// the build as "covered" while it is missing from the snapshot — the client
+// would drop it (seq <= lastSeq) and never resync, drifting silently.
 func (s *Store) SnapshotFrame() Frame {
-	payload := s.Snapshot()
 	s.emitMu.Lock()
 	seq := s.seq
 	s.emitMu.Unlock()
 
-	return Frame{Type: "snapshot", Payload: payload, TS: nowMs(), Seq: seq}
+	return Frame{Type: "snapshot", Payload: s.Snapshot(), TS: nowMs(), Seq: seq}
 }
 
 func (s *Store) publishRun() {
