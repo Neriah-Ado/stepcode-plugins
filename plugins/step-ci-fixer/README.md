@@ -23,7 +23,7 @@ CI 挂了以后，常见流程是「打开网页找失败 run → 翻很长的�
 | `list_failed_runs` / `list_workflows` | 失败 run 定位、多 workflow 选择器 |
 | `fetch_run_log` | 错误段抓取（只取尾部 16KB，控制上下文体积） |
 | `classify_failure` | lint/test/build/deploy 分类与修复策略 |
-| `rerun_workflow` / `run_status` | 重跑与状态轮询 |
+| `rerun_workflow` / `run_status` | 重跑（默认 dry-run，`confirm:true` 才执行，可能触发部署）与状态轮询 |
 | `fetch_pr_comments` | PR 评论读取（截断 8KB） |
 
 ## 安装
