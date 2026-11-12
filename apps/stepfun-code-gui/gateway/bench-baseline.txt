@@ -1,0 +1,24 @@
+goos: windows
+goarch: amd64
+pkg: step-orchestra/gateway
+cpu: AMD Ryzen 9 9950X3D 16-Core Processor          
+BenchmarkApplyToolCallLifecycle-32    	  345810	      3039 ns/op	    3256 B/op	      26 allocs/op
+BenchmarkApplyToolCallLifecycle-32    	  441109	      2943 ns/op	    3260 B/op	      26 allocs/op
+BenchmarkApplyToolCallLifecycle-32    	  429472	      3164 ns/op	    3259 B/op	      26 allocs/op
+BenchmarkApplyWithEviction-32         	  436873	      3141 ns/op	    3258 B/op	      27 allocs/op
+BenchmarkApplyWithEviction-32         	  453373	      3272 ns/op	    3258 B/op	      27 allocs/op
+BenchmarkApplyWithEviction-32         	  409570	      3477 ns/op	    3258 B/op	      27 allocs/op
+BenchmarkHubBroadcast/8-32            	 1868450	       704.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHubBroadcast/8-32            	 1841344	       661.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHubBroadcast/8-32            	 1766059	       662.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHubBroadcast/32-32           	  410914	      2550 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHubBroadcast/32-32           	  463760	      2709 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHubBroadcast/32-32           	  473714	      2628 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSnapshot-32                  	   20713	     56575 ns/op	  212993 B/op	       1 allocs/op
+BenchmarkSnapshot-32                  	   21265	     56915 ns/op	  212993 B/op	       1 allocs/op
+BenchmarkSnapshot-32                  	   19478	     67585 ns/op	  212993 B/op	       1 allocs/op
+BenchmarkApplyParallel-32             	  291454	      4281 ns/op	    3194 B/op	      27 allocs/op
+BenchmarkApplyParallel-32             	  262174	      4624 ns/op	    3193 B/op	      27 allocs/op
+BenchmarkApplyParallel-32             	  280592	      4425 ns/op	    3194 B/op	      27 allocs/op
+PASS
+ok  	step-orchestra/gateway	28.058s
