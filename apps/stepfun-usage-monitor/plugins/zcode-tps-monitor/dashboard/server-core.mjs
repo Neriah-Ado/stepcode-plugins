@@ -375,8 +375,10 @@ export function createDashboardServer(opts = {}) {
       sendJson(res, 403, { error: "仅接受本机同源请求" });
       return;
     }
-    // B-01:POST 只收 JSON(CORS 简单请求带不了这个 Content-Type)
-    if (req.method === "POST" && !isJsonContentType(req.headers["content-type"])) {
+    // B-01:POST 只收 JSON(CORS 简单请求带不了这个 Content-Type)。
+    // 门禁仅作用于消费 JSON 体的路由(/api/config);GET-only 路由不受影响,
+    // 方法不匹配仍由各自路由返回 405(RFC 9110:405 先于 415)
+    if (req.method === "POST" && req.url.startsWith("/api/config") && !isJsonContentType(req.headers["content-type"])) {
       sendJson(res, 415, { error: "POST 仅接受 Content-Type: application/json" });
       return;
     }

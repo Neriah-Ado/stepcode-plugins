@@ -9,7 +9,10 @@
     "test: 补充清单校验用例",
     "ci: 调整发布流水线触发条件",
     "perf(parser): 减少重复扫描",
-    "revert: feat: 临时回退实验特性"
+    "revert: feat: 临时回退实验特性",
+    "merge: 并入 stepfun-code-gui（子代理可视化面板）→ apps/stepfun-code-gui",
+    "release: v2.0.0 — 一键启用、性能模式与可靠性测试基建",
+    "dsh-resident-theme v0.2.0: Red Queen splash, theme and brand for DeepSeek Harness"
   ],
   "invalid": [
     "updated some stuff",

@@ -80,12 +80,17 @@ for (const needle of ['gh --version', 'gh auth login', 'winget install GitHub.cl
 }
 
 // ---------- 5. Conventional Commits 校验 ----------
-const CC_RE = /^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9._/-]+\))?!?: (.+)$/;
+// 类型集含本仓库实际使用的历史类型:merge(并入子项目)与 release(版本发布);
+// PLUGIN_RELEASE_RE 覆盖 <插件id> vX.Y.Z: 形式的发布提交
+const CC_RE = /^(build|chore|ci|docs|feat|fix|merge|perf|refactor|release|revert|style|test)(\([a-z0-9._/-]+\))?!?: (.+)$/;
+const PLUGIN_RELEASE_RE = /^[a-z0-9][a-z0-9._-]* v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?: (.+)$/;
 const subjectOk = (subject) =>
   subject.length > 0 && subject.length <= 160 && !subject.endsWith('.') && !subject.endsWith('。'); // 本仓库上限 160（多任务 ID 后缀的历史提交已推送，不改写）
 const checkMessage = (line) => {
-  const m = CC_RE.exec(line);
-  return Boolean(m) && subjectOk(m[3]);
+  const cc = CC_RE.exec(line);
+  if (cc) return subjectOk(cc[3]);
+  const pr = PLUGIN_RELEASE_RE.exec(line);
+  return Boolean(pr) && subjectOk(pr[1]);
 };
 
 const samples = JSON.parse(readFileSync(join(ROOT, 'tests/samples/commits.json'), 'utf8'));
