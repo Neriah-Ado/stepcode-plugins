@@ -6,6 +6,7 @@
  * here so a host rename degrades to a partial reading rather than a blank panel.
  */
 import type { AgentRow, ProgressSnapshot } from "./types.ts";
+import { scrubValue } from "./redact.ts";
 
 /** Field aliases per counter, in priority order. */
 const COUNTER_ALIASES: Record<keyof Omit<ProgressSnapshot, "phase">, readonly string[]> = {
@@ -129,7 +130,7 @@ function readAgentRows(source: Record<string, unknown>): AgentRow[] | undefined 
 			if (id) row.id = id;
 
 			const summary = readString(record, AGENT_SUMMARY_ALIASES);
-			if (summary) row.summary = summary.slice(0, 200);
+			if (summary) row.summary = scrubValue(summary).slice(0, 200);
 
 			const status = readString(record, AGENT_STATUS_ALIASES);
 			if (status) row.status = status;
@@ -164,7 +165,7 @@ export function extractProgress(raw: unknown): ExtractedProgress {
 	// Without at least one of these the payload is not a fan-out snapshot.
 	if (running === undefined && queued === undefined && completed === undefined && total === undefined) {
 		const text = readString(asRecord(raw) ?? {}, TEXT_ALIASES);
-		return { progress: null, text };
+		return { progress: null, text: text === undefined ? undefined : scrubValue(text) };
 	}
 
 	const progress: ProgressSnapshot = {
@@ -185,7 +186,8 @@ export function extractProgress(raw: unknown): ExtractedProgress {
 	// original payload when the located container carries no agent list.
 	const agents = readAgentRows(source) ?? readAgentRows(asRecord(raw) ?? {});
 
-	const extracted: ExtractedProgress = { progress, text: readString(source, TEXT_ALIASES) };
+	const text = readString(source, TEXT_ALIASES);
+	const extracted: ExtractedProgress = { progress, text: text === undefined ? undefined : scrubValue(text) };
 	if (agents) extracted.agents = agents;
 	return extracted;
 }

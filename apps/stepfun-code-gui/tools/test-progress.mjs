@@ -112,6 +112,17 @@ check(
 );
 check("normalizeMode rejects unknown", normalizeMode("nope") === undefined && normalizeMode(7) === undefined);
 
+// 9. Value-pattern secret scrubbing in progress text / agent summary (R13).
+const secretText = extractProgress({ toolCallId: "a", toolName: "subagent", text: "run curl Bearer sk-live-ABCDEFGHIJ1234567890" });
+check("progress text secret scrubbed", !String(secretText.text).includes("sk-live-ABCDEFGHIJ"), JSON.stringify(secretText.text));
+const secretAgent = extractProgress({
+	toolCallId: "a", toolName: "subagent",
+	progress: { running: 1, total: 1 },
+	agents: [{ label: "w", summary: "leak ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ1234 here" }],
+});
+check("agent summary secret scrubbed", !String(secretAgent.agents?.[0]?.summary).includes("ghp_ABCDEFGHIJKLMNOP"), JSON.stringify(secretAgent.agents));
+check("agent summary benign preserved", extractProgress({ toolCallId: "a", toolName: "subagent", progress: { running: 1, total: 1 }, agents: [{ label: "w", summary: "map the repo" }] }).agents?.[0]?.summary === "map the repo");
+
 let failed = 0;
 for (const item of checks) {
 	if (!item.passed) failed += 1;

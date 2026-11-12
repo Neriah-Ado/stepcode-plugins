@@ -16,7 +16,7 @@ import { createConversation } from "./conversation.ts";
 import { createTurnTracker } from "./metrics.ts";
 import { applyProfile } from "./profiles.ts";
 import { extractProgress, normalizeMode } from "./progress.ts";
-import { digestSummary, firstString, redactArgs } from "./redact.ts";
+import { digestSummary, firstString, redactArgs, scrubValue } from "./redact.ts";
 import {
 	isOrchestrationTool,
 	type BridgeAction,
@@ -313,8 +313,10 @@ export default function stepOrchestra(pi: StepExtensionAPI): void {
 
 		if (isOrchestrationTool(toolName)) {
 			message.mode = inferMode(input);
-			message.label = firstString(input.label, input.agent, input.role, input.name) || toolName;
-			message.summary = summarizeInput(input);
+			// label/summary derive from the same raw input as args; scrub them too
+			// so a secret in input.label/agent/name does not bypass redactArgs.
+			message.label = scrubValue(firstString(input.label, input.agent, input.role, input.name) || toolName);
+			message.summary = scrubValue(summarizeInput(input));
 		}
 
 		emit(message);

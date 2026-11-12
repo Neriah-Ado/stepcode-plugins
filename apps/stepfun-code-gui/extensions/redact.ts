@@ -3,8 +3,10 @@
  *
  * Tool arguments routinely contain credentials (`Authorization` headers, API
  * keys in bash commands, tokens in curl invocations) and multi-megabyte file
- * bodies. Everything crossing the process boundary is clipped and scrubbed
- * first, so the gateway and the browser never see raw secrets.
+ * bodies. Tool-call arguments and progress text are clipped and scrubbed before
+ * crossing the process boundary so the gateway and browser do not see raw
+ * secrets in those fields. (Conversation body is a mirror of the host terminal
+ * and is intentionally not masked — see docs/releases/optimization-v2.md.)
  */
 
 /**
@@ -43,7 +45,7 @@ function isSensitiveKey(raw: string): boolean {
 const SECRET_VALUE =
 	/\b(?:sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}|Bearer\s+[A-Za-z0-9._~+/=-]{16,})/g;
 
-function scrubValue(value: string): string {
+export function scrubValue(value: string): string {
 	return value.replace(SECRET_VALUE, "***");
 }
 
