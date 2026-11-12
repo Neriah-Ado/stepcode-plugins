@@ -345,23 +345,27 @@ func (s *Store) applyToolCall(message incoming) {
 		Orchestration: isOrchestration(message.ToolName),
 	}
 
-	s.retainLocked(node)
+	evicted := s.retainLocked(node)
 	s.mu.Unlock()
 
 	s.publishNode(node)
+	s.publishEvicted(evicted)
 }
 
-// retainLocked registers a node under the size cap. The map entry is written
-// before the eviction scan so the fresh node can never be selected by the
-// nil-tombstone fallback (which would desynchronise order from nodes). The
-// common path stays O(1); a scan that finds nothing evictable leaves the tree
-// intact until the hard ceiling forces bounding.
-func (s *Store) retainLocked(node *Node) {
+// retainLocked registers a node under the size cap and returns the ids it
+// evicted. The map entry is written before the eviction scan so the fresh node
+// can never be selected by the nil-tombstone fallback (which would desynchronise
+// order from nodes). The common path stays O(1); a scan that finds nothing
+// evictable leaves the tree intact until the hard ceiling forces bounding.
+// Callers publish the returned ids so tabs drop evicted nodes instead of
+// accumulating them for the whole session.
+func (s *Store) retainLocked(node *Node) []string {
 	if _, exists := s.nodes[node.ID]; exists {
-		return
+		return nil
 	}
 	s.nodes[node.ID] = node
 	s.order = append(s.order, node.ID)
+	var evicted []string
 	for len(s.order) > maxNodes {
 		victim := -1
 		for index, id := range s.order {
@@ -383,9 +387,19 @@ func (s *Store) retainLocked(node *Node) {
 				break
 			}
 		}
+		evicted = append(evicted, s.order[victim])
 		delete(s.nodes, s.order[victim])
 		s.order = append(s.order[:victim], s.order[victim+1:]...)
 	}
+	return evicted
+}
+
+// publishEvicted tells every tab to drop nodes the gateway has reclaimed.
+func (s *Store) publishEvicted(ids []string) {
+	if len(ids) == 0 {
+		return
+	}
+	s.emit("node_evicted", map[string]any{"ids": ids})
 }
 
 func (s *Store) applyToolUpdate(message incoming) {
@@ -395,6 +409,7 @@ func (s *Store) applyToolUpdate(message incoming) {
 
 	s.mu.Lock()
 	node := s.nodes[message.ToolCallID]
+	var evicted []string
 	if node == nil {
 		// The gateway can attach mid-flight, so materialise a placeholder rather
 		// than discarding the first progress frames.
@@ -407,7 +422,7 @@ func (s *Store) applyToolUpdate(message incoming) {
 			StartedAt:     orNow(message.TS),
 			Orchestration: true,
 		}
-		s.retainLocked(node)
+		evicted = s.retainLocked(node)
 	}
 
 	if message.Progress != nil {
@@ -427,6 +442,7 @@ func (s *Store) applyToolUpdate(message incoming) {
 	s.mu.Unlock()
 
 	s.publishNode(node)
+	s.publishEvicted(evicted)
 }
 
 func (s *Store) applyToolResult(message incoming) {

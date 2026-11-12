@@ -230,6 +230,37 @@
 		else scheduleNodeUpdate(node.id);
 	}
 
+	// The gateway reclaims terminal nodes past its retention cap and tells us
+	// which ids to drop. Without this, a long session without a reconnect would
+	// accumulate every node ever seen (the gateway evicts, the tab never did).
+	function handleEvicted(payload) {
+		var ids = payload && Array.isArray(payload.ids) ? payload.ids : [];
+		if (!ids.length) return;
+		var dropped = new Set(ids);
+
+		state.nodes = state.nodes.filter(function (node) {
+			return !dropped.has(node.id);
+		});
+		// splice shifts positions, so the O(1) position map must be rebuilt.
+		nodeIndex.clear();
+		nodePositions.clear();
+		state.nodes.forEach(function (node, position) {
+			nodeIndex.set(node.id, node);
+			nodePositions.set(node.id, position);
+			dirtyNodeIds.delete(node.id);
+		});
+		ids.forEach(function (id) {
+			dirtyNodeIds.delete(id);
+		});
+
+		if (selectedId !== null && dropped.has(selectedId)) {
+			selectedId = null;
+			renderInspector();
+		}
+		// tree.render prunes orphaned cards/cache for ids no longer in state.
+		scheduleRender();
+	}
+
 	function handleRun(run) {
 		state.run = run || {};
 		updateChrome();
@@ -326,6 +357,9 @@
 	/** Last frame sequence seen, for gap detection. */
 	var lastSeq = 0;
 	var resyncing = false;
+	var lastResyncAt = 0;
+	/** Cooldown so a slow tab shedding frames doesn't storm full-snapshot fetches. */
+	var RESYNC_COOLDOWN_MS = 1000;
 
 	/**
 	 * The hub drops frames for a slow reader rather than blocking its event loop,
@@ -334,6 +368,9 @@
 	 */
 	function resync() {
 		if (resyncing) return;
+		var now = Date.now();
+		if (now - lastResyncAt < RESYNC_COOLDOWN_MS) return;
+		lastResyncAt = now;
 		resyncing = true;
 
 		global
@@ -384,6 +421,9 @@
 				break;
 			case "node":
 				handleNode(frame.payload);
+				break;
+			case "node_evicted":
+				handleEvicted(frame.payload);
 				break;
 			case "run":
 				handleRun(frame.payload);

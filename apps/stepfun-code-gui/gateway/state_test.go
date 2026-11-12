@@ -305,6 +305,60 @@ func TestConcurrentEmitsPreserveSeqOrder(t *testing.T) {
 	}
 }
 
+// Past the retention cap the gateway must tell tabs which nodes it reclaimed,
+// so a long session does not accumulate evicted nodes client-side.
+func TestEvictionEmitsNodeEvictedFrame(t *testing.T) {
+	store := newTestStore(t)
+	channel := store.hub.Subscribe()
+
+	// Drain continuously: the hub drops NEW frames once the buffer is full, so
+	// without a live reader the late eviction frames would never be observed.
+	var mu sync.Mutex
+	evicted := map[string]bool{}
+	done := make(chan struct{})
+	go func() {
+		for frame := range channel {
+			var env struct {
+				Type    string `json:"type"`
+				Payload struct {
+					IDs []string `json:"ids"`
+				} `json:"payload"`
+			}
+			if err := json.Unmarshal(frame[6:len(frame)-2], &env); err != nil {
+				continue
+			}
+			if env.Type == "node_evicted" {
+				mu.Lock()
+				for _, id := range env.Payload.IDs {
+					evicted[id] = true
+				}
+				mu.Unlock()
+			}
+		}
+		close(done)
+	}()
+
+	for i := 0; i < maxNodes+10; i++ {
+		id := "ev-" + itoa(i)
+		store.Apply(incoming{Kind: "tool_call", TS: int64(i), ToolCallID: id, ToolName: "read"})
+		store.Apply(incoming{Kind: "tool_result", TS: int64(i + 1), ToolCallID: id, ToolName: "read"})
+	}
+
+	store.hub.Unsubscribe(channel)
+	<-done
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(evicted) == 0 {
+		t.Fatal("expected node_evicted frames past the cap")
+	}
+	for _, node := range store.Snapshot().Nodes {
+		if evicted[node.ID] {
+			t.Fatalf("evicted node %s still present in snapshot", node.ID)
+		}
+	}
+}
+
 func itoa(value int) string {
 	if value == 0 {
 		return "0"

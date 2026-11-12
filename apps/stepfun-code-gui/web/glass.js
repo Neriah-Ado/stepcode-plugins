@@ -6,7 +6,7 @@
  * parallax tilt on node cards. Work is coalesced into one rAF per frame and
  * skipped entirely when the user prefers reduced motion.
  */
-(function () {
+(function (global) {
 	"use strict";
 
 	var TARGET_SELECTOR = ".glass, .node-card";
@@ -84,4 +84,4 @@
 
 	document.addEventListener("pointermove", onPointerMove, { passive: true });
 	document.addEventListener("pointerleave", onPointerLeave, true);
-})();
+})(window);
