@@ -28,6 +28,21 @@ func (h *Hub) Subscribe() chan []byte {
 	return channel
 }
 
+// SubscribeWithin registers a listener only while fewer than limit listeners
+// are connected, bounding the fan-out cost of a leaked read token. The check
+// and the insert share one lock so concurrent connects cannot overshoot.
+func (h *Hub) SubscribeWithin(limit int) (chan []byte, bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if len(h.clients) >= limit {
+		return nil, false
+	}
+	channel := make(chan []byte, clientBuffer)
+	h.clients[channel] = struct{}{}
+	return channel, true
+}
+
 // Unsubscribe closes and forgets a listener. Safe to call once per Subscribe.
 func (h *Hub) Unsubscribe(channel chan []byte) {
 	h.mu.Lock()

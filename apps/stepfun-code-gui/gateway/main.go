@@ -13,6 +13,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -24,6 +25,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -37,6 +39,11 @@ const (
 	// Generous ceiling for a single JSONL line after extension-side redaction.
 	maxLineBytes = 4 << 20
 	heartbeat    = 15 * time.Second
+	// A leaked read token must not fan out to unlimited SSE connections.
+	maxEventClients = 32
+	// Stalled readers are dropped after this long without a successful write;
+	// comfortably above the heartbeat so healthy streams never hit it.
+	eventWriteDeadline = 30 * time.Second
 )
 
 func main() {
@@ -64,7 +71,15 @@ func main() {
 	fmt.Printf("[step-orchestra] assets %s\n", webDir)
 	_ = os.Stdout.Sync()
 
-	if err := http.Serve(listener, newRouter(store, hub, newActionWriter(os.Stdout), token, webDir)); err != nil {
+	// ReadHeaderTimeout bounds slow-header attacks; IdleTimeout reaps abandoned
+	// keep-alive connections. WriteTimeout stays zero: it would kill the
+	// long-lived SSE stream and its 15s heartbeat.
+	server := &http.Server{
+		Handler:           newRouter(store, hub, newActionWriter(os.Stdout), token, webDir),
+		ReadHeaderTimeout: 5 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+	if err := server.Serve(listener); err != nil {
 		log.Fatalf("server stopped: %v", err)
 	}
 }
@@ -110,17 +125,20 @@ func (w *actionWriter) send(action BridgeAction) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	_, err = fmt.Fprintf(w.out, "%s\n", payload)
+	_, err = w.out.Write(append(payload, '\n'))
 	return err
 }
 
 // readStdin consumes the extension's JSONL stream until the pipe closes.
 func readStdin(store *Store) {
 	// One malformed frame must not take down the whole gateway: the panel can
-	// survive a dropped update, but not a dead process.
+	// survive a dropped update, but not a dead process. A panic, however, means
+	// an unexpected bug — exit so the host can restart us rather than leaving a
+	// zombie panel that never receives another update.
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			log.Printf("stdin reader panicked: %v", recovered)
+			os.Exit(1)
 		}
 	}()
 
@@ -131,13 +149,15 @@ func readStdin(store *Store) {
 	var line []byte
 
 	handle := func(raw []byte) {
-		text := strings.TrimSpace(string(raw))
-		if text == "" {
+		trimmed := bytes.TrimSpace(raw)
+		if len(trimmed) == 0 {
 			return
 		}
 
 		var message incoming
-		if err := json.Unmarshal([]byte(text), &message); err != nil {
+		// Decode straight from the reused line buffer: json.Unmarshal copies
+		// every string field, so nothing aliases raw after this returns.
+		if err := json.Unmarshal(trimmed, &message); err != nil {
 			log.Printf("dropping malformed line: %v", err)
 			return
 		}
@@ -499,15 +519,34 @@ func serveEvents(w http.ResponseWriter, r *http.Request, store *Store, hub *Hub)
 	// in the channel buffer and are replayed after the initial frame. Any that
 	// the snapshot already covers are dropped client-side as stale (their seq
 	// is <= the snapshot's), so the ordering is safe in both directions.
-	channel := hub.Subscribe()
+	channel, ok := hub.SubscribeWithin(maxEventClients)
+	if !ok {
+		http.Error(w, "too many event streams", http.StatusServiceUnavailable)
+		return
+	}
 	defer hub.Unsubscribe(channel)
 
+	// A stalled reader must not pin a goroutine, ticker, and subscription
+	// forever: bound every write so a dead connection is reaped promptly.
+	controller := http.NewResponseController(w)
+	write := func(payload []byte) bool {
+		_ = controller.SetWriteDeadline(time.Now().Add(eventWriteDeadline))
+		if _, err := w.Write(payload); err != nil {
+			return false
+		}
+		flusher.Flush()
+		return true
+	}
+
 	if payload, err := json.Marshal(store.SnapshotFrame()); err == nil {
-		if _, err := w.Write(sseFrame(payload)); err != nil {
+		if !write(sseFrame(payload)) {
 			return
 		}
 	}
-	flusher.Flush()
+	// Tell EventSource to reconnect after 2s instead of its ~3s default.
+	if !write([]byte("retry: 2000\n\n")) {
+		return
+	}
 
 	ticker := time.NewTicker(heartbeat)
 	defer ticker.Stop()
@@ -517,18 +556,16 @@ func serveEvents(w http.ResponseWriter, r *http.Request, store *Store, hub *Hub)
 		case <-r.Context().Done():
 			return
 		case <-ticker.C:
-			if _, err := w.Write([]byte(": ping\n\n")); err != nil {
+			if !write([]byte(": ping\n\n")) {
 				return
 			}
-			flusher.Flush()
 		case frame, open := <-channel:
 			if !open {
 				return
 			}
-			if _, err := w.Write(frame); err != nil {
+			if !write(frame) {
 				return
 			}
-			flusher.Flush()
 		}
 	}
 }
@@ -541,8 +578,24 @@ func staticHandler(webDir string) http.Handler {
 	}
 
 	files := http.FileServer(http.Dir(webDir))
+	base := filepath.Clean(webDir)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
+		// Assets are served without a token; never expose a directory listing.
+		// The root still resolves to index.html via the FileServer. Clean the
+		// URL with path (always slash-based) so the root check is portable.
+		rel := path.Clean("/" + r.URL.Path)
+		clean := filepath.Join(base, filepath.FromSlash(rel))
+		// Defence in depth: confirm the resolved path stays inside webDir even
+		// though Clean already strips traversal segments.
+		if resolved, err := filepath.Rel(base, clean); err != nil || resolved == ".." || strings.HasPrefix(resolved, ".."+string(filepath.Separator)) {
+			http.NotFound(w, r)
+			return
+		}
+		if info, err := os.Stat(clean); err == nil && info.IsDir() && rel != "/" {
+			http.NotFound(w, r)
+			return
+		}
 		files.ServeHTTP(w, r)
 	})
 }
@@ -654,7 +707,8 @@ func isDirectory(path string) bool {
 func newRequestID() string {
 	buffer := make([]byte, 8)
 	if _, err := rand.Read(buffer); err != nil {
-		return strconv.FormatInt(time.Now().UnixNano(), 36)
+		// Fail closed: a predictable id is worse than no panel at all.
+		log.Fatalf("cannot generate request id: %v", err)
 	}
 	return hex.EncodeToString(buffer)
 }
@@ -662,7 +716,8 @@ func newRequestID() string {
 func randomToken() string {
 	buffer := make([]byte, 24)
 	if _, err := rand.Read(buffer); err != nil {
-		return strconv.FormatInt(time.Now().UnixNano(), 36)
+		// Fail closed: never fall back to a guessable timestamp token.
+		log.Fatalf("cannot generate auth token: %v", err)
 	}
 	return hex.EncodeToString(buffer)
 }
