@@ -107,7 +107,7 @@ function assertComposeFile(file) {
   if (typeof file !== 'string' || !file.trim()) return { ok: false, reason: 'file 必须是非空字符串' };
   if (/^-/.test(file)) return { ok: false, reason: 'file 不得以 - 开头（防参数注入）' };
   if (/[\r\n]/.test(file)) return { ok: false, reason: 'file 不得含换行符' };
-  if (/^\\\\/.test(file)) return { ok: false, reason: '拒绝 UNC/设备路径（防 NTLM 凭据泄露）' };
+  if (/^\\\\/.test(file) || /^\/\//.test(file)) return { ok: false, reason: '拒绝 UNC/设备路径（防 NTLM 凭据泄露）' };
   return { ok: true };
 }
 

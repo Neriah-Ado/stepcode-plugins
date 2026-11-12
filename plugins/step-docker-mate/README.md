@@ -11,7 +11,7 @@
 | 工具 / 命令 | 说明 |
 | --- | --- |
 | `docker_ps` / `docker_inspect` / `docker_logs` | 状态总览、详情（ExitCode/OOMKilled/挂载）、日志（尾部 200 行截断） |
-| `compose_up` / `compose_down` / `compose_ls` | 编排启动；down 默认 dry-run 只列受影响资源，确认后才执行 |
+| `compose_up` / `compose_down` / `compose_ls` | 编排启动/停止；up 与 down 均默认 dry-run，`confirm:true` 才执行（G3） |
 | `diagnose` / `docker_events` | 崩溃归因（OOM、依赖未就绪、端口冲突、卷权限）与事件巡检（过滤 die/oom/kill） |
 | `image_layers` / `slimming_plan` | 镜像层体积分析、瘦身建议与预估减重比例 |
 | `/docker-health` | 容器健康日报：汇总状态与异常事件，落盘 `docs/docker-health.md`，只读，退出码 0/1/2 |

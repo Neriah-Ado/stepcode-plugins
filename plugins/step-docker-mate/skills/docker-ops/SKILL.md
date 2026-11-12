@@ -12,7 +12,7 @@ description: Docker/Compose 容器运维方法论：起停编排、日志解读�
 <!-- DANGEROUS-OPS-START -->
 ```json
 {
-  "dangerous": ["compose_down", "docker rm", "docker system prune", "docker volume rm", "docker rmi"],
+  "dangerous": ["compose_up", "compose_down", "docker rm", "docker system prune", "docker volume rm", "docker rmi"],
   "rule": "先 dry-run/列出将受影响的资源 → 用户明确确认 → 执行；绝不静默执行，绝不在循环里批量确认",
   "context": "远程主机（DOCKER_MATE_CONTEXT）上执行危险操作前必须再次确认目标主机名"
 }
@@ -23,7 +23,7 @@ description: Docker/Compose 容器运维方法论：起停编排、日志解读�
 
 1. `docker_ps` 总览；异常容器（exited/restarting）用 `docker_inspect` 看 `State.ExitCode`、`OOMKilled`、`RestartCount`。
 2. `docker_logs` 取尾部日志（默认 200 行，勿全量拉取）；结合退出码与日志末段归因（崩溃模式库见下）。
-3. 处置：先 `compose_up` 恢复；反复崩溃的容器先定位根因再重启，避免无限 restart 掩盖问题。
+3. 处置：先 `compose_up`（默认 dry-run，用户确认后 `confirm:true`）恢复；反复崩溃的容器先定位根因再重启，避免无限 restart 掩盖问题。
 4. 汇报：容器状态表 + 归因 + 已采取措施；危险操作列出待确认清单。
 
 ## 崩溃模式库（v1.1.0）

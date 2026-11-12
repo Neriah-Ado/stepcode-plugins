@@ -208,14 +208,16 @@ export function slowQueryAdvice(planText) {
 // ---------- v1.2.0 受控写入 ----------
 
 /**
- * 剥离字符串字面量与注释,保留 SQL 结构(字面量/注释以空格占位)。追踪单引号
- * ('' 转义)、dollar-quoting、行/块注释。后续的多语句探测与危险关键字扫描都
- * 在剥离后的文本上进行,因此字面量里的 ';' 或 'call'/'create' 等词不会误伤,
- * 而 "INSERT…; COPY…TO PROGRAM 'cmd'" 这类拼接走私仍被精确拒绝。
+ * 剥离字符串字面量、引用标识符与注释,保留 SQL 结构(以空格占位)。追踪单引号
+ * 字符串('' 转义)、双引号/反引号标识符("" / `` 转义,其中的单引号是字面量而非
+ * 字符串起点)、dollar-quoting、行/块注释。后续的多语句探测与危险关键字扫描都
+ * 在剥离后的文本上进行,因此字面量/标识符里的 ';' 或 'call'/'create' 等词不会
+ * 误伤,而 "INSERT…; COPY…TO PROGRAM 'cmd'" 这类拼接走私仍被精确拒绝。
  */
 function stripLiteralsAndComments(sql) {
   let out = '';
   let inSingle = false;
+  let identQuote = null;
   let dollarTag = null;
   let inLine = false;
   let inBlock = false;
@@ -228,6 +230,10 @@ function stripLiteralsAndComments(sql) {
       if (c === "'") { if (next === "'") { i += 1; out += '  '; } else { inSingle = false; out += ' '; } } else { out += ' '; }
       continue;
     }
+    if (identQuote) {
+      if (c === identQuote) { if (next === identQuote) { i += 1; out += '  '; } else { identQuote = null; out += ' '; } } else { out += ' '; }
+      continue;
+    }
     if (dollarTag) {
       if (sql.startsWith(dollarTag, i)) { i += dollarTag.length - 1; out += ' '.repeat(dollarTag.length); dollarTag = null; } else { out += ' '; }
       continue;
@@ -235,6 +241,7 @@ function stripLiteralsAndComments(sql) {
     if (c === '-' && next === '-') { inLine = true; i += 1; out += '  '; continue; }
     if (c === '/' && next === '*') { inBlock = true; i += 1; out += '  '; continue; }
     if (c === "'") { inSingle = true; out += ' '; continue; }
+    if (c === '"' || c === '`') { identQuote = c; out += ' '; continue; }
     if (c === '$') {
       const m = /^\$[A-Za-z0-9_]*\$/.exec(sql.slice(i));
       if (m) { dollarTag = m[0]; i += m[0].length - 1; out += ' '.repeat(m[0].length); continue; }

@@ -1325,6 +1325,19 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
   check(readFileSync(join(ROOT, 'README.md'), 'utf8').includes('badge/version-1.0.0-blue) | 上下文归档与召回'), 'README 徽章已回填 v1.0.0');
 }
 
+// ---------- 安全/正确性回归测试（node:test，R16/R21） ----------
+{
+  const regressionTests = [
+    'tests/db-insight-write.test.mjs',
+    'tests/sec-scan-robust.test.mjs',
+    'tests/docker-compose-file.test.mjs',
+  ];
+  for (const t of regressionTests) {
+    const r = spawnSync(process.execPath, ['--test', join(ROOT, t)], { cwd: ROOT, encoding: 'utf8', timeout: 60000 });
+    check(r.status === 0, `回归测试 ${t}`, r.status !== 0 ? (r.stderr || r.stdout || '').slice(0, 200) : '');
+  }
+}
+
 // ---------- 汇总 ----------
 console.log(failed === 0 ? '\nALL PASS' : `\n${failed} FAILED`);
 process.exit(failed === 0 ? 0 : 1);

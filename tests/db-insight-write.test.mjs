@@ -38,3 +38,17 @@ test("assertReadOnlyQuery:只读守卫仍拒绝写与多语句", () => {
   assert.equal(assertReadOnlyQuery("SELECT 1; DROP TABLE t").ok, false);
   assert.equal(assertReadOnlyQuery("DELETE FROM t").ok, false);
 });
+
+test("classifyWrite:双引号标识符内单引号不得掩盖多语句走私(R21 绕过回归)", () => {
+  // 攻击向量:"x'" 内的单引号曾被误判为字符串起点,吞掉 ;COPY → RCE
+  assert.equal(classifyWrite(`INSERT INTO t SELECT 1 AS "x'"; COPY (SELECT 1) TO PROGRAM 'calc'; --'`).kind, "reject");
+  assert.equal(classifyWrite(`INSERT INTO t SELECT 1 AS "x'"; DROP TABLE t; --'`).kind, "reject");
+  // 反引号标识符同理
+  assert.equal(classifyWrite("INSERT INTO t SELECT 1 AS `x'`; COPY t TO PROGRAM 'c'; --`").kind, "reject");
+});
+
+test("classifyWrite:合法引用标识符不误伤", () => {
+  assert.equal(classifyWrite(`INSERT INTO "my table" VALUES (1)`).kind, "insert");
+  assert.equal(classifyWrite(`UPDATE "drop" SET x=1`).kind, "update");
+  assert.equal(classifyWrite("INSERT INTO t VALUES ('a;b')").kind, "insert");
+});

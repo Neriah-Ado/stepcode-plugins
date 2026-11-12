@@ -611,9 +611,9 @@ func staticHandler(webDir string) http.Handler {
 	})
 }
 
-// setSecurityHeaders adds low-cost, zero-regression hardening shared by every
-// response: nosniff blocks MIME sniffing, no-referrer keeps the query token out
-// of Referer, and DENY prevents the panel being framed (clickjacking).
+// setSecurityHeaders adds low-cost, zero-regression hardening to JSON, static
+// and SSE responses: nosniff blocks MIME sniffing, no-referrer keeps the query
+// token out of Referer, and DENY prevents the panel being framed (clickjacking).
 func setSecurityHeaders(w http.ResponseWriter) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Referrer-Policy", "no-referrer")
