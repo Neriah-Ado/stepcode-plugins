@@ -116,9 +116,10 @@
 			// orchestration nodes yet, a hint beats a blank panel.
 			els.empty.hidden = tree.visibleCount(state, options) > 0;
 		} else if (hasUpdates) {
+			var visibleCount = tree.visibleCount(state, options);
 			dirtyNodeIds.forEach(function (id) {
 				var node = nodeIndex.get(id);
-				if (node) tree.upsert(els.tree, state, options, node);
+				if (node) tree.upsert(els.tree, state, options, node, visibleCount);
 			});
 			dirtyNodeIds.clear();
 		}

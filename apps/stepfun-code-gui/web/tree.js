@@ -201,7 +201,9 @@
 		card.dataset.status = node.status || "pending";
 		card.dataset.orchestration = node.orchestration ? "true" : "false";
 
-		card.querySelector(".node-label").textContent = node.label || node.toolName || "工具";
+		var labelEl = card.querySelector(".node-label");
+		var labelText = node.label || node.toolName || "工具";
+		if (labelEl.textContent !== labelText) labelEl.textContent = labelText;
 
 		var top = card.querySelector(".node-top");
 		var chip = top.querySelector(".mode-chip");
@@ -210,7 +212,7 @@
 				chip = el("span", "mode-chip");
 				top.appendChild(chip);
 			}
-			chip.textContent = node.mode;
+			if (chip.textContent !== node.mode) chip.textContent = node.mode;
 		} else if (chip) {
 			chip.remove();
 		}
@@ -264,7 +266,8 @@
 			timeEl = el("span", "node-time");
 			right.appendChild(timeEl);
 		}
-		timeEl.textContent = formatDuration(time);
+		var timeText = formatDuration(time);
+		if (timeEl.textContent !== timeText) timeEl.textContent = timeText;
 	}
 
 	// --------------------------------------------------------------- leaf card
@@ -297,13 +300,17 @@
 		card.dataset.status = status;
 
 		card.querySelector(".agent-pip").dataset.status = status;
-		card.querySelector(".node-label").textContent = agent.label || "agent";
+		var leafLabel = card.querySelector(".node-label");
+		var leafLabelText = agent.label || "agent";
+		if (leafLabel.textContent !== leafLabelText) leafLabel.textContent = leafLabelText;
 
 		var sub = card.querySelector(".node-sub");
 		var subText = agent.summary || lookup(STATUS_TEXT, status, "");
 		if (sub.textContent !== subText) sub.textContent = subText;
 
-		card.querySelector(".node-time").textContent = agent.tokens ? formatTokens(agent.tokens) + " tok" : "";
+		var leafTime = card.querySelector(".node-time");
+		var leafTimeText = agent.tokens ? formatTokens(agent.tokens) + " tok" : "";
+		if (leafTime.textContent !== leafTimeText) leafTime.textContent = leafTimeText;
 	}
 
 	// ----------------------------------------------------------------- branches
@@ -405,14 +412,21 @@
 		var run = state.run || {};
 
 		var status = run.status === "running" ? "running" : run.status === "settled" ? "done" : "pending";
-		card.dataset.status = status;
+		var cwd = session.cwd || "等待会话";
+		var model = session.model || "";
+		// upsert calls this once per dirty node; gate the DOM rebuild so a batch
+		// of K updates only repaints the root card when its content actually moved.
+		var rootKey = JSON.stringify([status, cwd, model, visibleCount, totalCount]);
+		if (card.dataset.rootKey === rootKey) return entry;
+		card.dataset.rootKey = rootKey;
 
-		card.querySelector(".node-sub").textContent = session.cwd || "等待会话";
+		card.dataset.status = status;
+		card.querySelector(".node-sub").textContent = cwd;
 
 		var meta = card.querySelector(".node-meta-row");
 		meta.textContent = "";
 		meta.appendChild(el("span", "pill", visibleCount + "/" + totalCount + " 节点"));
-		if (session.model) meta.appendChild(el("span", "pill", session.model));
+		if (model) meta.appendChild(el("span", "pill", model));
 
 		return entry;
 	}
@@ -473,7 +487,7 @@
 	}
 
 	/** In-place update for a single node. Falls back to a structural render. */
-	function upsert(container, state, options, node) {
+	function upsert(container, state, options, node, visibleCount) {
 		if (!shouldShow(node, options)) {
 			render(container, state, options);
 			return;
@@ -487,7 +501,10 @@
 
 		updateCard(entry.card, node);
 		syncLeaves(entry, node.agents);
-		updateRoot(state, countVisible(state, options), (state.nodes || []).length);
+		// A batch flush passes the count once; avoid re-filtering all nodes per
+		// dirty node (O(K·N) → O(N)).
+		var vc = typeof visibleCount === "number" ? visibleCount : countVisible(state, options);
+		updateRoot(state, vc, (state.nodes || []).length);
 	}
 
 	function countVisible(state, options) {
