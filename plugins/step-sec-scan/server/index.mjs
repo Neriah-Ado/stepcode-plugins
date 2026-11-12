@@ -40,13 +40,26 @@ function handleCall(name, args) {
     case 'baseline_diff': {
       if (!args?.findings) return { error: 'missing-arg: findings' };
       const bp = args.baselinePath ?? join(process.cwd(), '.stepcode', 'sec-baseline.json');
-      const baseline = existsSync(bp) ? JSON.parse(readFileSync(bp, 'utf8')) : [];
+      let baseline = [];
+      if (existsSync(bp)) {
+        try {
+          baseline = JSON.parse(readFileSync(bp, 'utf8'));
+        } catch (err) {
+          return { error: 'baseline-read-failed', guidance: `无法读取/解析基线文件 ${bp}: ${err.message}` };
+        }
+      }
       return diffBaseline(args.findings, baseline);
     }
     case 'sbom_generate': {
       const p = args?.packageJsonPath;
       if (!p || !existsSync(p)) return { error: 'missing-arg: packageJsonPath（文件不存在）' };
-      return buildCycloneDX(JSON.parse(readFileSync(p, 'utf8')));
+      let pkg;
+      try {
+        pkg = JSON.parse(readFileSync(p, 'utf8'));
+      } catch (err) {
+        return { error: 'package-json-read-failed', guidance: `无法读取/解析 ${p}: ${err.message}` };
+      }
+      return buildCycloneDX(pkg);
     }
     case 'upgrade_plan':
       return args?.findings ? { plan: buildUpgradePlan(args.findings) } : { error: 'missing-arg: findings' };
@@ -84,7 +97,14 @@ rl.on('line', (line) => {
     return;
   }
   if (method === 'tools/call') {
-    const result = handleCall(params?.name, params?.arguments);
+    let result;
+    try {
+      result = handleCall(params?.name, params?.arguments);
+    } catch (err) {
+      // 任何工具异常都不得崩掉 stdio 服务:回结构化错误,宿主可继续调用。
+      send({ jsonrpc: '2.0', id, result: { content: [{ type: 'text', text: `工具执行失败: ${err.message}` }], isError: true } });
+      return;
+    }
     if (result === null) {
       send({ jsonrpc: '2.0', id, error: { code: -32602, message: `Unknown tool: ${params?.name}` } });
       return;

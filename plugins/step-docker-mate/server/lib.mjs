@@ -100,7 +100,24 @@ export function logs(container, { tail = 200, ctx } = {}) {
   return { container: id.value, tail: safeTail, truncated: text.length >= safeTail, lines: text.slice(-safeTail) };
 }
 
-export function composeUp(file, { ctx } = {}) {
+// compose 文件参数校验:shell:false 已防 shell 注入,这里防参数注入(首字符 -)
+// 与 UNC 路径(\\host\share 触发 SMB→NTLM 凭据泄露)。相对/绝对路径均放行,
+// 不限制基目录(宿主授权跨目录正当用法,C8 信任边界在宿主进程)。
+function assertComposeFile(file) {
+  if (typeof file !== 'string' || !file.trim()) return { ok: false, reason: 'file 必须是非空字符串' };
+  if (/^-/.test(file)) return { ok: false, reason: 'file 不得以 - 开头（防参数注入）' };
+  if (/[\r\n]/.test(file)) return { ok: false, reason: 'file 不得含换行符' };
+  if (/^\\\\/.test(file)) return { ok: false, reason: '拒绝 UNC/设备路径（防 NTLM 凭据泄露）' };
+  return { ok: true };
+}
+
+// G3：起服务属写操作,默认 dry-run;confirm=true 才真正 up（与 compose_down 一致）
+export function composeUp(file, { confirm = false, ctx } = {}) {
+  const f = assertComposeFile(file);
+  if (!f.ok) return { error: 'invalid-argument', reason: f.reason };
+  if (!confirm) {
+    return { file, dryRun: true, message: 'dry-run：将以后台模式启动该 compose 栈。用户确认后以 confirm=true 重新调用（G3）。' };
+  }
   const r = runDocker(['compose', '-f', file, 'up', '-d'], { context: ctx, timeoutMs: 300000 });
   if (r.missing) return { error: 'docker-not-found', guidance: INSTALL_GUIDANCE };
   if (r.code !== 0) return { error: 'compose-failed', stderr: r.stderr.slice(-500) };
@@ -109,6 +126,8 @@ export function composeUp(file, { ctx } = {}) {
 
 // G3：dry-run 列出将停止/删除的资源；confirm=true 才真正 down（含 -v 需 removeVolumes）
 export function composeDown(file, { confirm = false, removeVolumes = false, ctx } = {}) {
+  const f = assertComposeFile(file);
+  if (!f.ok) return { error: 'invalid-argument', reason: f.reason };
   const psR = runDocker(['compose', '-f', file, 'ps', '--format', '{{json .}}'], { context: ctx });
   const affected = psR.code === 0
     ? psR.stdout.split('\n').filter(Boolean).map((l) => {

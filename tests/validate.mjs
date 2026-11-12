@@ -645,7 +645,7 @@ check(mixed.records.length === 2 && mixed.records[1].total === 7, 'v1/v2 混合�
         call(2, 'docker_ps'),
         call(3, 'docker_inspect', { container: 'demo-web' }),
         call(4, 'docker_logs', { container: 'demo-web', tail: 200 }),
-        call(5, 'compose_up', { file: 'compose.yaml' }),
+        call(5, 'compose_up', { file: 'compose.yaml', confirm: true }),
         call(6, 'compose_down', { file: 'compose.yaml' }),
         call(8, 'compose_ls'),
         call(9, 'image_layers', { image: 'demo/web:latest' }),
@@ -684,6 +684,11 @@ check(mixed.records.length === 2 && mixed.records[1].total === 7, 'v1/v2 混合�
     const msgs2 = runMcp([call(1, 'compose_down', { file: 'compose.yaml', confirm: true }), ''], baseEnv);
     check(msgs2.find((m) => m.id === 1)?.result?.structuredContent?.removed === true, 'compose_down 确认后执行');
     check(existsSync(marker), 'G3：确认后 down 真实执行（fake 标记）');
+
+    const upDry = runMcp([call(1, 'compose_up', { file: 'compose.yaml' }), ''], baseEnv);
+    check(upDry.find((m) => m.id === 1)?.result?.structuredContent?.dryRun === true, 'G3：compose_up 默认 dry-run（需 confirm）');
+    const upBadFile = runMcp([call(1, 'compose_up', { file: '--evil', confirm: true }), ''], baseEnv);
+    check(upBadFile.find((m) => m.id === 1)?.result?.structuredContent?.error === 'invalid-argument', 'compose_up 拒绝首字符 - 的文件（防参数注入）');
 
     const bad = runMcp([call(1, 'docker_ps'), ''], mkEnv({ DOCKER_MATE_FAKE: '', DOCKER_MATE_BIN: 'no-such-docker-bin-xyz' }));
     const fail = bad.find((m) => m.id === 1)?.result;
@@ -801,7 +806,7 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
         call3(3, 'list_failed_runs', { workflow: 'deploy' }),
         call3(4, 'fetch_run_log', { runId: 9001, maxBytes: 16 * 1024 }),
         call3(5, 'classify_failure', { text: 'eslint --fix failed with 3 errors (ES2101)' }),
-        call3(6, 'rerun_workflow', { runId: 9001 }),
+        call3(6, 'rerun_workflow', { runId: 9001, confirm: true }),
         call3(7, 'run_status', { runId: 9001 }),
         call3(8, 'fetch_pr_comments', { prNumber: 42 }),
         call3(9, 'list_failed_runs', { workflow: '--evil' }),
@@ -817,6 +822,8 @@ check(healthCmd.includes('DOCKER_MATE_CONTEXT'), '日报支持远程 context');
     check(log?.truncated === true && log?.bytes === 16 * 1024 && log?.text.includes('exit code 1'), 'fetch_run_log 尾部 16KB 截断', JSON.stringify({ bytes: log?.bytes }));
     check(sc3(msgs, 5)?.kind === 'lint', '失败分类：lint');
     check(sc3(msgs, 6)?.rerun === true, 'rerun_workflow 触发');
+    const rerunDry = runMcp3([call3(1, 'rerun_workflow', { runId: 9001 }), ''], goodEnv);
+    check(sc3(rerunDry, 1)?.dryRun === true, 'G3：rerun_workflow 默认 dry-run（需 confirm）');
     check(sc3(msgs, 7)?.conclusion === 'failure', 'run_status 查询');
     check(sc3(msgs, 8)?.comments?.length === 2, 'PR 评论读取');
     check(sc3(msgs, 9)?.error === 'invalid-argument', 'C-05：list_failed_runs 拒绝以 - 开头的 workflow');

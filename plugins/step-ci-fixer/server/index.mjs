@@ -18,7 +18,7 @@ const TOOLS = [
   { name: 'list_workflows', description: '列出近期 workflow 及其运行次数（多 workflow 选择器）', inputSchema: { type: 'object', properties: { limit: { type: 'number' } } } },
   { name: 'fetch_run_log', description: '抓取 run 日志的错误段（只取尾部，C5）', inputSchema: { type: 'object', properties: { runId: { type: 'number' }, maxBytes: { type: 'number' } }, required: ['runId'] } },
   { name: 'classify_failure', description: '失败分类：lint/test/build/deploy/unknown', inputSchema: { type: 'object', properties: { text: { type: 'string' } }, required: ['text'] } },
-  { name: 'rerun_workflow', description: '触发 run 重跑', inputSchema: { type: 'object', properties: { runId: { type: 'number' } }, required: ['runId'] } },
+  { name: 'rerun_workflow', description: '触发 run 重跑（可能触发部署）。默认 dry-run；confirm=true 才执行（G3）', inputSchema: { type: 'object', properties: { runId: { type: 'number' }, confirm: { type: 'boolean' } }, required: ['runId'] } },
   { name: 'run_status', description: '查询 run 状态与结论', inputSchema: { type: 'object', properties: { runId: { type: 'number' } }, required: ['runId'] } },
   { name: 'fetch_pr_comments', description: '读取 PR 评论（截断，C5）', inputSchema: { type: 'object', properties: { prNumber: { type: 'number' } }, required: ['prNumber'] } },
 ];
@@ -36,7 +36,7 @@ function handleCall(name, args) {
     case 'classify_failure':
       return args?.text ? { kind: classifyFailure(args.text) } : { error: 'missing-arg: text' };
     case 'rerun_workflow':
-      return args?.runId ? rerunWorkflow(args.runId) : { error: 'missing-arg: runId' };
+      return args?.runId ? rerunWorkflow(args.runId, { confirm: Boolean(args.confirm) }) : { error: 'missing-arg: runId' };
     case 'run_status':
       return args?.runId ? runStatus(args.runId) : { error: 'missing-arg: runId' };
     case 'fetch_pr_comments':

@@ -102,9 +102,13 @@ export function fetchRunLog(runId, { maxBytes = 16 * 1024 } = {}) {
   return { runId, truncated, bytes: Math.min(buf.length, maxBytes), text };
 }
 
-export function rerunWorkflow(runId) {
+// G3：重跑可能触发部署流水线,默认 dry-run;confirm=true 才真正 rerun
+export function rerunWorkflow(runId, { confirm = false } = {}) {
   const id = normalizeRunId(runId);
   if (!id) return { error: 'invalid-argument', reason: 'runId 必须是正整数' };
+  if (!confirm) {
+    return { runId: Number(runId), dryRun: true, message: '将重跑该 workflow（可能触发部署流水线）。用户确认后以 confirm=true 重新调用（G3）。' };
+  }
   const r = runGh(['run', 'rerun', id]);
   if (r.missing) return { error: 'gh-missing', guidance: GH_MISSING_GUIDANCE };
   if (r.code !== 0) return { error: 'gh-failed', stderr: r.stderr.slice(0, 300) };

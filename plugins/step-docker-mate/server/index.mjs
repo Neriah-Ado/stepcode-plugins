@@ -18,7 +18,7 @@ const TOOLS = [
   { name: 'docker_ps', description: '列出全部容器（含已停止）', inputSchema: { type: 'object', properties: {} } },
   { name: 'docker_inspect', description: '容器详情（状态/重启次数/挂载）', inputSchema: { type: 'object', properties: { container: { type: 'string' } }, required: ['container'] } },
   { name: 'docker_logs', description: '容器日志（默认尾部 200 行，C5 截断）', inputSchema: { type: 'object', properties: { container: { type: 'string' }, tail: { type: 'number' } }, required: ['container'] } },
-  { name: 'compose_up', description: 'compose 起服务（-d 后台）', inputSchema: { type: 'object', properties: { file: { type: 'string' } }, required: ['file'] } },
+  { name: 'compose_up', description: 'compose 起服务（-d 后台）。默认 dry-run；confirm=true 才执行（G3）', inputSchema: { type: 'object', properties: { file: { type: 'string' }, confirm: { type: 'boolean' } }, required: ['file'] } },
   { name: 'compose_down', description: '停止并移除 compose 栈。默认 dry-run 只列受影响资源；confirm=true 才执行（G3）', inputSchema: { type: 'object', properties: { file: { type: 'string' }, confirm: { type: 'boolean' }, removeVolumes: { type: 'boolean' } }, required: ['file'] } },
   { name: 'compose_ls', description: '列出本机全部 compose 项目', inputSchema: { type: 'object', properties: {} } },
   { name: 'image_layers', description: '镜像层体积分析（瘦身建议见 skill）', inputSchema: { type: 'object', properties: { image: { type: 'string' } }, required: ['image'] } },
@@ -38,7 +38,7 @@ function handleCall(name, args) {
     case 'docker_logs':
       return args?.container ? logs(args.container, { tail: args.tail ?? 200, ctx }) : { error: 'missing-arg: container' };
     case 'compose_up':
-      return args?.file ? composeUp(args.file, { ctx }) : { error: 'missing-arg: file' };
+      return args?.file ? composeUp(args.file, { confirm: Boolean(args.confirm), ctx }) : { error: 'missing-arg: file' };
     case 'compose_down':
       return args?.file ? composeDown(args.file, { confirm: Boolean(args.confirm), removeVolumes: Boolean(args.removeVolumes), ctx }) : { error: 'missing-arg: file' };
     case 'compose_ls':
