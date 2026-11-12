@@ -569,12 +569,15 @@ func (s *Store) publishNode(node *Node) {
 
 // SnapshotFrame builds the initial frame for a new subscriber. It carries the
 // current sequence so the next delta lines up and does not look like a gap.
+// The sequence is read AFTER building the snapshot to narrow the window where a
+// concurrent emit folds a delta into the snapshot yet carries a higher seq.
 func (s *Store) SnapshotFrame() Frame {
+	payload := s.Snapshot()
 	s.emitMu.Lock()
 	seq := s.seq
 	s.emitMu.Unlock()
 
-	return Frame{Type: "snapshot", Payload: s.Snapshot(), TS: nowMs(), Seq: seq}
+	return Frame{Type: "snapshot", Payload: payload, TS: nowMs(), Seq: seq}
 }
 
 func (s *Store) publishRun() {

@@ -358,6 +358,8 @@
 	var lastSeq = 0;
 	var resyncing = false;
 	var lastResyncAt = 0;
+	/** A resync was skipped (cooldown) or failed; retry on the next frame/visible. */
+	var resyncDirty = false;
 	/** Cooldown so a slow tab shedding frames doesn't storm full-snapshot fetches. */
 	var RESYNC_COOLDOWN_MS = 1000;
 
@@ -369,9 +371,14 @@
 	function resync() {
 		if (resyncing) return;
 		var now = Date.now();
-		if (now - lastResyncAt < RESYNC_COOLDOWN_MS) return;
+		if (now - lastResyncAt < RESYNC_COOLDOWN_MS) {
+			// Don't lose the request: a later frame or visibility change retries.
+			resyncDirty = true;
+			return;
+		}
 		lastResyncAt = now;
 		resyncing = true;
+		resyncDirty = false;
 
 		global
 			.fetch("/api/snapshot", {
@@ -384,15 +391,29 @@
 				if (payload) handleSnapshot(payload);
 			})
 			.catch(function () {
-				// Stay quiet: the next frame triggers another attempt.
+				// Failed: mark dirty so the next frame/visibility change retries.
+				resyncDirty = true;
 			})
 			.then(function () {
 				resyncing = false;
 			});
 	}
 
+	// A backgrounded tab keeps its EventSource alive but the hub may shed frames
+	// while it is frozen; if the last frame before idle was dropped, no later
+	// data frame arrives to expose the gap. Re-sync when the tab becomes visible
+	// again so the panel never stays stale after a freeze.
+	document.addEventListener("visibilitychange", function () {
+		if (document.visibilityState === "visible") {
+			resyncDirty = true;
+			resync();
+		}
+	});
+
 	function dispatch(frame) {
 		if (!frame || !frame.type) return;
+		// Retry a resync that was skipped by cooldown or failed earlier.
+		if (resyncDirty) resync();
 
 		if (typeof frame.seq === "number") {
 			if (frame.type === "snapshot") {
