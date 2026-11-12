@@ -12,6 +12,9 @@
 (() => {
   const doc = document;
   const ID = 'redqueen-splash';
+  // Tracks the live instance's teardown so replay() can stop its timers/rAF/
+  // keydown listener instead of orphaning them on a detached root.
+  let activeDestroy = null;
   const BASE_MS = 4500;
   const REDUCED_HOLD_MS = 700;
   const FADE_MS = 280;
@@ -455,6 +458,9 @@
     const root = doc.createElement('div');
     root.id = ID;
     root.className = 'rq-root';
+    // Activate the CSS reduced-motion degradation (animation:none); without
+    // this class the computed `reduced` flag never reaches the stylesheet.
+    if (reduced) root.classList.add('is-reduced');
     root.dataset.theme = pickTheme(cfg);
     root.dataset.exit = exitName;
     root.dataset.intro = introName;
@@ -555,7 +561,9 @@
       if (observer) observer.disconnect();
       globalThis.removeEventListener('keydown', onKey, true);
       root.remove();
+      if (activeDestroy === destroy) activeDestroy = null;
     };
+    activeDestroy = destroy;
 
     const leave = () => {
       if (left) return;
@@ -668,7 +676,11 @@
 
   globalThis.__redqueenSplash = {
     replay(options = {}) {
-      doc.getElementById(ID)?.remove();
+      // Tear down the live instance first: merely removing the root would leave
+      // its rAF/intervals/keydown listener running on a detached node, and rapid
+      // preview clicks would stack instances.
+      if (activeDestroy) activeDestroy();
+      else doc.getElementById(ID)?.remove();
       return mount(Object.assign({ replayOnReload: true }, options));
     },
   };

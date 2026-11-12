@@ -200,8 +200,17 @@ const ctxClient = {
 
 const clientSource = readFileSync(join(lib, 'client.js'), 'utf8');
 // The style effect touches document at apply time; stub it for the test.
+// addEventListener/removeEventListener are needed because the resume trigger
+// binds a visibilitychange listener through ctx.effect (invoked eagerly here).
 const realDocument = globalThis.document;
-globalThis.document = { createElement: () => ({ textContent: '' }), head: { append: () => {} } };
+globalThis.document = {
+  createElement: () => ({ textContent: '', classList: { add: () => {} }, style: {} }),
+  head: { append: () => {} },
+  body: { appendChild: () => {} },
+  addEventListener: () => {},
+  removeEventListener: () => {},
+  visibilityState: 'visible',
+};
 const loaderStubs = {
   react: reactStub,
   'react/jsx-runtime': jsxRuntimeStub,

@@ -415,7 +415,7 @@ window.__ModuleLoader__.load({
       const resumeEffect = CONFIG.resumeEffect || "random";
       if (resumeEffect !== "off") {
         let awaySince = 0;
-        document.addEventListener("visibilitychange", () => {
+        const onVisibility = () => {
           if (document.visibilityState === "hidden") {
             awaySince = Date.now();
           } else if (document.visibilityState === "visible") {
@@ -425,6 +425,12 @@ window.__ModuleLoader__.load({
               || (resumeTrigger === "hidden" && awayMs > 5000);
             if (shouldPlay) playResume(resumeEffect);
           }
+        };
+        // Bind through ctx.effect so a resident-theme re-activation does not
+        // stack anonymous listeners (each would replay N resume layers).
+        ctx.effect(() => {
+          document.addEventListener("visibilitychange", onVisibility);
+          return () => document.removeEventListener("visibilitychange", onVisibility);
         });
       }
 
