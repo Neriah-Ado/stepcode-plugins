@@ -1,6 +1,9 @@
 package main
 
 import (
+	"encoding/json"
+	"strings"
+	"sync"
 	"testing"
 )
 
@@ -177,6 +180,128 @@ func TestStatsAggregation(t *testing.T) {
 	}
 	if stats.TokenSpend != 15 {
 		t.Fatalf("token spend should sum input+output=15, got %d", stats.TokenSpend)
+	}
+}
+
+// A replayed tool_call for an id that already carries a terminal result must
+// not reset the node back to pending or wipe its tokens.
+func TestDuplicateToolCallDoesNotResetNode(t *testing.T) {
+	store := newTestStore(t)
+
+	ingest(t, store, []incoming{
+		{Kind: "tool_call", TS: 1, ToolCallID: "dup", ToolName: "read"},
+		{Kind: "tool_result", TS: 2, ToolCallID: "dup", ToolName: "read",
+			Tokens: &TokenUsage{Input: 7, Output: 3}},
+		{Kind: "tool_call", TS: 3, ToolCallID: "dup", ToolName: "read", Label: "replayed"},
+	})
+
+	node := findNode(t, store, "dup")
+	if node == nil || node.Status != StatusDone || node.Tokens == nil {
+		t.Fatalf("replayed tool_call must not reset terminal node: %+v", node)
+	}
+	stats := store.Snapshot().Stats
+	if stats.Total != 1 || stats.Completed != 1 || stats.TokenSpend != 10 {
+		t.Fatalf("stats drifted after replay: %+v", stats)
+	}
+}
+
+// A flood of live (never-terminated) nodes must stay bounded by the hard cap,
+// and the order slice must stay consistent with the nodes map.
+func TestAllLiveFloodStaysBoundedAndConsistent(t *testing.T) {
+	store := newTestStore(t)
+
+	for i := 0; i < hardNodeCap+20; i++ {
+		store.Apply(incoming{Kind: "tool_call", TS: int64(i), ToolCallID: "live-" + itoa(i), ToolName: "read"})
+	}
+
+	store.mu.Lock()
+	orderLen, nodeCount := len(store.order), len(store.nodes)
+	store.mu.Unlock()
+	if orderLen > hardNodeCap || nodeCount > hardNodeCap {
+		t.Fatalf("live flood grew past hard cap: order=%d nodes=%d", orderLen, nodeCount)
+	}
+	if orderLen != nodeCount {
+		t.Fatalf("order/nodes diverged: order=%d nodes=%d", orderLen, nodeCount)
+	}
+
+	snapshot := store.Snapshot()
+	if snapshot.Stats.Total != len(snapshot.Nodes) {
+		t.Fatalf("stats/snapshot mismatch: stats=%d nodes=%d", snapshot.Stats.Total, len(snapshot.Nodes))
+	}
+}
+
+// Oversized inbound text/args are clamped at ingest so one frame cannot dominate
+// retained memory or every future snapshot.
+func TestOversizedPayloadsAreClamped(t *testing.T) {
+	store := newTestStore(t)
+	big := strings.Repeat("x", maxNodeTextBytes*2)
+
+	store.Apply(incoming{Kind: "tool_update", TS: 1, ToolCallID: "big", ToolName: "read", Text: big})
+	node := findNode(t, store, "big")
+	if node == nil || len(node.Text) > maxNodeTextBytes+3 {
+		t.Fatalf("node text not clamped: %d bytes", len(node.Text))
+	}
+
+	hugeArgs := map[string]any{"blob": strings.Repeat("y", maxNodeArgsJSONBytes*2)}
+	store.Apply(incoming{Kind: "tool_call", TS: 2, ToolCallID: "args", ToolName: "read", Args: hugeArgs})
+	argsNode := findNode(t, store, "args")
+	if argsNode == nil || argsNode.Args["_truncated"] != true {
+		t.Fatalf("oversized args not stubbed: %+v", argsNode.Args)
+	}
+
+	store.Apply(incoming{Kind: "conversation", Message: &ConversationMessage{ID: "m1", Role: "assistant", Text: big}})
+	snapshot := store.Snapshot()
+	if len(snapshot.Messages) != 1 || len(snapshot.Messages[0].Text) > maxMessageTextBytes+3 {
+		t.Fatalf("conversation text not clamped: %d bytes", len(snapshot.Messages[0].Text))
+	}
+}
+
+// Concurrent emitters must deliver frames to the hub in strictly increasing
+// seq order: a client reads any inversion as a lost frame and resynchronises.
+// (Dropped frames are fine — the hub sheds slow readers — only order matters.)
+func TestConcurrentEmitsPreserveSeqOrder(t *testing.T) {
+	store := newTestStore(t)
+	channel := store.hub.Subscribe()
+
+	var wg sync.WaitGroup
+	for g := 0; g < 4; g++ {
+		wg.Add(1)
+		go func(g int) {
+			defer wg.Done()
+			for i := 0; i < 200; i++ {
+				store.Apply(incoming{Kind: "tool_call", TS: int64(i),
+					ToolCallID: "g" + itoa(g) + "-" + itoa(i), ToolName: "read"})
+			}
+		}(g)
+	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 100; i++ {
+			store.Snapshot()
+			store.SnapshotFrame()
+		}
+	}()
+	wg.Wait()
+
+	store.hub.Unsubscribe(channel)
+	last := int64(0)
+	count := 0
+	for frame := range channel {
+		var envelope struct {
+			Seq int64 `json:"seq"`
+		}
+		if err := json.Unmarshal(frame[6:len(frame)-2], &envelope); err != nil {
+			t.Fatalf("bad frame envelope: %v", err)
+		}
+		if envelope.Seq <= last {
+			t.Fatalf("seq inversion: %d after %d", envelope.Seq, last)
+		}
+		last = envelope.Seq
+		count++
+	}
+	if count == 0 {
+		t.Fatal("no frames reached the hub")
 	}
 }
 

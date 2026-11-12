@@ -40,6 +40,7 @@ func (c *Conversation) Replace(list []ConversationMessage) {
 		if message.ID == "" {
 			continue
 		}
+		message.Text = clampText(message.Text, maxMessageTextBytes)
 		// Defensive copy: the slice belongs to the caller.
 		stored := message
 		c.messages[stored.ID] = &stored
@@ -54,6 +55,7 @@ func (c *Conversation) Upsert(message ConversationMessage) (ConversationMessage,
 	if message.ID == "" {
 		return message, false
 	}
+	message.Text = clampText(message.Text, maxMessageTextBytes)
 
 	c.mu.Lock()
 	defer c.mu.Unlock()

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 // NodeStatus mirrors the lifecycle vocabulary shared with the extension.
@@ -177,6 +178,7 @@ type UsageSnapshot struct {
 // Store owns the reconstructed tree and pushes deltas onto the hub.
 type Store struct {
 	mu           sync.Mutex
+	emitMu       sync.Mutex
 	hub          *Hub
 	conversation *Conversation
 	profiles     *profileStore
@@ -191,8 +193,21 @@ type Store struct {
 
 // Soft ceiling on retained nodes so a very long session cannot grow the
 // gateway's memory (and every future snapshot) without bound. Terminal nodes
-// are evicted oldest-first; running and pending work is never dropped.
+// are evicted oldest-first; running and pending work is never dropped — unless
+// the tree saturates at hardNodeCap with no evictable entry, where bounding
+// memory wins (guards against a hostile or buggy stdin flood).
 const maxNodes = 1000
+const hardNodeCap = 4 * maxNodes
+
+// Inbound payloads are bounded by the 4MB stdin line limit; the fields below
+// cap what a single node or conversation message may retain after decoding so
+// one oversized frame cannot dominate memory or every future snapshot.
+const (
+	maxMessageTextBytes  = 32 << 10
+	maxNodeTextBytes     = 32 << 10
+	maxNodeSummaryBytes  = 4 << 10
+	maxNodeArgsJSONBytes = 64 << 10
+)
 
 func NewStore(hub *Hub, profileDir string) *Store {
 	return &Store{
@@ -310,54 +325,67 @@ func (s *Store) applyToolCall(message incoming) {
 		return
 	}
 
+	s.mu.Lock()
+	if existing := s.nodes[message.ToolCallID]; existing != nil {
+		// A repeated tool_call for a live id is a replay: never reset a node
+		// that may already carry progress or a terminal state.
+		s.mu.Unlock()
+		return
+	}
 	node := &Node{
 		ID:            message.ToolCallID,
 		ParentID:      parentOf(message.ParentID),
 		ToolName:      message.ToolName,
-		Label:         labelOf(message),
+		Label:         clampText(labelOf(message), maxNodeSummaryBytes),
 		Mode:          message.Mode,
-		Summary:       message.Summary,
+		Summary:       clampText(message.Summary, maxNodeSummaryBytes),
 		Status:        StatusPending,
 		StartedAt:     orNow(message.TS),
-		Args:          message.Args,
+		Args:          clampArgs(message.Args),
 		Orchestration: isOrchestration(message.ToolName),
 	}
 
-	s.mu.Lock()
 	s.retainLocked(node)
 	s.mu.Unlock()
 
 	s.publishNode(node)
 }
 
-// retainLocked registers a node under the size cap. Eviction only walks the
-// front of the order list when the cap is actually exceeded, so the common
-// path stays O(1); a scan that finds nothing evictable leaves the tree intact.
+// retainLocked registers a node under the size cap. The map entry is written
+// before the eviction scan so the fresh node can never be selected by the
+// nil-tombstone fallback (which would desynchronise order from nodes). The
+// common path stays O(1); a scan that finds nothing evictable leaves the tree
+// intact until the hard ceiling forces bounding.
 func (s *Store) retainLocked(node *Node) {
-	if _, exists := s.nodes[node.ID]; !exists {
-		s.order = append(s.order, node.ID)
-		for len(s.order) > maxNodes {
-			victim := -1
-			for index, id := range s.order {
-				candidate := s.nodes[id]
-				if candidate == nil {
-					victim = index
-					break
-				}
-				if candidate.Status == StatusDone || candidate.Status == StatusFailed ||
-					candidate.Status == StatusCancelled {
-					victim = index
-					break
-				}
-			}
-			if victim < 0 {
-				break
-			}
-			delete(s.nodes, s.order[victim])
-			s.order = append(s.order[:victim], s.order[victim+1:]...)
-		}
+	if _, exists := s.nodes[node.ID]; exists {
+		return
 	}
 	s.nodes[node.ID] = node
+	s.order = append(s.order, node.ID)
+	for len(s.order) > maxNodes {
+		victim := -1
+		for index, id := range s.order {
+			candidate := s.nodes[id]
+			if candidate == nil {
+				victim = index
+				break
+			}
+			if candidate.Status == StatusDone || candidate.Status == StatusFailed ||
+				candidate.Status == StatusCancelled {
+				victim = index
+				break
+			}
+		}
+		if victim < 0 {
+			if len(s.order) >= hardNodeCap {
+				victim = 0
+			} else {
+				break
+			}
+		}
+		delete(s.nodes, s.order[victim])
+		s.order = append(s.order[:victim], s.order[victim+1:]...)
+	}
 }
 
 func (s *Store) applyToolUpdate(message incoming) {
@@ -391,7 +419,7 @@ func (s *Store) applyToolUpdate(message incoming) {
 		node.Orchestration = true
 	}
 	if message.Text != "" {
-		node.Text = message.Text
+		node.Text = clampText(message.Text, maxNodeTextBytes)
 	}
 	if node.Status == StatusPending {
 		node.Status = StatusRunning
@@ -449,29 +477,38 @@ func (s *Store) setRun(status, phase string) {
 // into the live nodes; handing out pointers would be a data race (and torn
 // JSON). A shallow copy is enough: every slice/pointer field of Node is
 // replaced wholesale on update, never mutated in place.
+//
+// Profile views and conversation messages are gathered before s.mu: both have
+// their own locks and the profile store writes to disk under it — a slow disk
+// must not stall the stdin hot path through this snapshot.
 func (s *Store) Snapshot() Snapshot {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	views, activeID := s.profiles.Views()
+	profileError := s.profiles.LastError()
+	messages := s.conversation.Snapshot()
 
+	s.mu.Lock()
 	nodes := make([]Node, 0, len(s.order))
 	for _, id := range s.order {
 		if node := s.nodes[id]; node != nil {
 			nodes = append(nodes, *node)
 		}
 	}
-
-	views, activeID := s.profiles.Views()
+	stats := s.statsLocked()
+	session := s.session
+	run := s.run
+	usage := s.usage
+	s.mu.Unlock()
 
 	return Snapshot{
-		Session:       s.session,
-		Run:           s.run,
+		Session:       session,
+		Run:           run,
 		Nodes:         nodes,
-		Messages:      s.conversation.Snapshot(),
+		Messages:      messages,
 		Profiles:      views,
 		ActiveProfile: activeID,
-		ProfileError:  s.profiles.LastError(),
-		Usage:         s.usage,
-		Stats:         s.statsLocked(),
+		ProfileError:  profileError,
+		Usage:         usage,
+		Stats:         stats,
 		ServerAt:      nowMs(),
 	}
 }
@@ -479,7 +516,13 @@ func (s *Store) Snapshot() Snapshot {
 func (s *Store) statsLocked() Stats {
 	var stats Stats
 
-	for _, node := range s.nodes {
+	// order is slice-ordered (sequential memory); its member set equals the
+	// nodes map key set by the retainLocked invariant.
+	for _, id := range s.order {
+		node := s.nodes[id]
+		if node == nil {
+			continue
+		}
 		stats.Total++
 		if node.Orchestration {
 			stats.Orchestrations++
@@ -500,16 +543,20 @@ func (s *Store) statsLocked() Stats {
 	return stats
 }
 
+// publishNode hands the hub a value copy: emit marshals outside s.mu, and a
+// live pointer would race with the next tool_update folding into the node.
+// Shallow copy is safe — slice/pointer fields are replaced wholesale, never
+// mutated in place.
 func (s *Store) publishNode(node *Node) {
-	s.emit("node", node)
+	s.emit("node", *node)
 }
 
 // SnapshotFrame builds the initial frame for a new subscriber. It carries the
 // current sequence so the next delta lines up and does not look like a gap.
 func (s *Store) SnapshotFrame() Frame {
-	s.mu.Lock()
+	s.emitMu.Lock()
 	seq := s.seq
-	s.mu.Unlock()
+	s.emitMu.Unlock()
 
 	return Frame{Type: "snapshot", Payload: s.Snapshot(), TS: nowMs(), Seq: seq}
 }
@@ -528,18 +575,22 @@ func (s *Store) publishSnapshot() {
 
 // emit broadcasts one delta with the next sequence number.
 //
-// Sequence assignment, marshalling, and the broadcast happen under one lock so
-// frames reach the hub in seq order even when HTTP handlers and the stdin
-// reader emit concurrently — otherwise a client could observe seq 6 before 5
-// and misread the inversion as a gap.
+// emitMu serialises seq assignment, marshalling, and the broadcast as one
+// critical section so frames reach the hub in seq order even when HTTP
+// handlers and the stdin reader emit concurrently — otherwise a client could
+// observe seq 6 before 5 and misread the inversion as a gap. emitMu is separate
+// from s.mu so a multi-megabyte snapshot marshal never stalls the stdin reader
+// folding the next update into the tree. Payloads must be value copies or
+// immutable: marshal runs while Apply keeps mutating nodes under s.mu.
 //
 // The hub drops frames for a slow reader rather than blocking the event loop,
 // so the sequence is what lets a client detect the gap and resynchronise.
 func (s *Store) emit(kind string, payload any) {
-	s.mu.Lock()
+	s.emitMu.Lock()
+	defer s.emitMu.Unlock()
+
 	s.seq++
 	frame, err := json.Marshal(Frame{Type: kind, Payload: payload, TS: nowMs(), Seq: s.seq})
-	s.mu.Unlock()
 	if err != nil {
 		return
 	}
@@ -585,4 +636,32 @@ func orNow(ts int64) int64 {
 		return ts
 	}
 	return nowMs()
+}
+
+// clampText cuts oversized strings on a rune boundary so truncation never
+// produces invalid UTF-8, and appends an ellipsis marker.
+func clampText(s string, limit int) string {
+	if len(s) <= limit {
+		return s
+	}
+	cut := limit
+	for cut > 0 && !utf8.RuneStart(s[cut]) {
+		cut--
+	}
+	return s[:cut] + "…"
+}
+
+// clampArgs bounds what one node retains of the tool-call arguments: the JSON
+// form is kept when small, otherwise replaced by an explicit truncation stub.
+// The marshal check runs once per tool_call (args are typically a few hundred
+// bytes); the stub keeps the UI legible instead of silently dropping fields.
+func clampArgs(args map[string]any) map[string]any {
+	if len(args) == 0 {
+		return args
+	}
+	raw, err := json.Marshal(args)
+	if err != nil || len(raw) <= maxNodeArgsJSONBytes {
+		return args
+	}
+	return map[string]any{"_truncated": true, "_bytes": len(raw)}
 }
