@@ -7,7 +7,7 @@
 //   { sessionId, scoped, latest, session, history, follow? }
 //   latest : { model, outputTokens, reasoningTokens, ttftMs, genMs, tokPerSec, completedAt } | null
 //   session: { samples, requests, avg, max, min, totalOutput, totalReasoning, totalInput, totalCacheRead } | null
-//   history: 同 latest 的数组(曲线历史,新→旧)
+//   history: 同 latest 的数组(曲线历史,旧→新)
 export function buildOverlayPayload(result) {
   const latest = result && result.latest ? result.latest : null;
   const session = result && result.session ? result.session : null;
@@ -40,11 +40,12 @@ export function buildOverlayPayload(result) {
     avg,
     samples,
     totalTok,
-    // 迷你曲线:最近若干个有效样本的 tok/s(新→旧),供悬浮条画 sparkline
+    // 迷你曲线:最近若干个有效样本的 tok/s(旧→新),供悬浮条画 sparkline。
+    // history 为旧→新,取尾部 12 条才是最近样本;窗口默认 5,>12 时仍保最新。
     spark: history
       .map((h) => fin(h && h.tokPerSec))
       .filter((v) => v != null)
-      .slice(0, 12),
+      .slice(-12),
   };
 }
 

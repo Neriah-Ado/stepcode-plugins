@@ -64,7 +64,7 @@ function cachedAgentStatus() {
   }
   return agentStatusCache;
 }
-const { loadState, saveState, mergeBounds } = await import(
+const { loadState, saveState, mergeBounds, isRectVisible } = await import(
   pathToFileURL(path.join(HERE, "lib", "state-store.mjs")).href
 );
 const { isSafeExternalUrl, escapeHtml } = await import(
@@ -146,6 +146,11 @@ function createMainWindow() {
   if (state.main.x != null && state.main.y != null) {
     bounds.x = state.main.x;
     bounds.y = state.main.y;
+  }
+  // 记忆坐标可能落在已拔掉的副屏上:不相交则交给系统居中放置
+  if (!isRectVisible(bounds, screen.getAllDisplays().map((d) => d.workArea))) {
+    delete bounds.x;
+    delete bounds.y;
   }
   const win = new BrowserWindow({
     ...bounds,
@@ -248,12 +253,16 @@ function defaultOverlayBounds() {
   const m = 24;
   const w = state.overlay.width;
   const h = state.overlay.height;
-  return {
-    width: w,
-    height: h,
-    x: state.overlay.x != null ? state.overlay.x : Math.round(wa.x + wa.width - w - m),
-    y: state.overlay.y != null ? state.overlay.y : Math.round(wa.y + wa.height - h - m),
-  };
+  const fallbackX = Math.round(wa.x + wa.width - w - m);
+  const fallbackY = Math.round(wa.y + wa.height - h - m);
+  let x = state.overlay.x != null ? state.overlay.x : fallbackX;
+  let y = state.overlay.y != null ? state.overlay.y : fallbackY;
+  // 记忆位置在屏外(副屏已拔)时回退到主屏右下角
+  if (!isRectVisible({ x, y, width: w, height: h }, screen.getAllDisplays().map((d) => d.workArea))) {
+    x = fallbackX;
+    y = fallbackY;
+  }
+  return { width: w, height: h, x, y };
 }
 
 function createOverlayWindow() {

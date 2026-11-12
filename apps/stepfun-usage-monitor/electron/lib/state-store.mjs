@@ -77,7 +77,8 @@ export function saveState(state) {
   }
 }
 
-// 把窗口边界合并进状态(仅更新传入的键),返回新状态对象(纯函数)
+// 把窗口边界合并进状态(仅更新传入的键),返回新状态对象(纯函数)。
+// 缺省(undefined)的键保留记忆值;显式 null 才清除位置。
 export function mergeBounds(state, which, bounds) {
   const cur = state[which] || {};
   return {
@@ -86,8 +87,21 @@ export function mergeBounds(state, which, bounds) {
       ...cur,
       width: clampInt(bounds.width, 120, 10000, cur.width ?? DEFAULTS[which].width),
       height: clampInt(bounds.height, 40, 10000, cur.height ?? DEFAULTS[which].height),
-      x: bounds.x == null ? null : clampInt(bounds.x, -10000, 10000, cur.x ?? 0),
-      y: bounds.y == null ? null : clampInt(bounds.y, -10000, 10000, cur.y ?? 0),
+      x: bounds.x === undefined ? (cur.x ?? null) : (bounds.x == null ? null : clampInt(bounds.x, -10000, 10000, cur.x ?? 0)),
+      y: bounds.y === undefined ? (cur.y ?? null) : (bounds.y == null ? null : clampInt(bounds.y, -10000, 10000, cur.y ?? 0)),
     },
   };
+}
+
+// 判断窗口矩形是否与任一显示器工作区相交。拔掉副屏后,记忆坐标可能落在
+// 已不存在的屏幕上,导致窗口恢复到屏外且无法拖回——建窗前用此校验,
+// 不相交则回退默认放置。无坐标(尚未放置)视为可见,交由系统决定位置。
+export function isRectVisible(bounds, workAreas) {
+  if (!bounds || bounds.x == null || bounds.y == null) return true;
+  const areas = Array.isArray(workAreas) ? workAreas : [];
+  const w = bounds.width || 0;
+  const h = bounds.height || 0;
+  return areas.some(
+    (a) => bounds.x < a.x + a.width && bounds.x + w > a.x && bounds.y < a.y + a.height && bounds.y + h > a.y
+  );
 }

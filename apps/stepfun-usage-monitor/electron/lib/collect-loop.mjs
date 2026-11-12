@@ -13,7 +13,8 @@ export const OVERLAY_INTERVAL_MS = 1000;
 //   onData(payload)    每次采集后调用(含失败占位载荷)
 //   onError(err)       循环本身出错(理论上不会,onData 已兜底)
 export function createOverlayCollector(opts) {
-  const intervalMs = Math.max(200, Number(opts.intervalMs) || OVERLAY_INTERVAL_MS);
+  // 夹紧到 [200ms, 60s]:下界防疯转,上界防 >2^31 的值被 Node 溢出成 ~1ms。
+  const intervalMs = Math.min(60000, Math.max(200, Number(opts.intervalMs) || OVERLAY_INTERVAL_MS));
   let timer = null;
   let stopped = false;
   let running = false;
