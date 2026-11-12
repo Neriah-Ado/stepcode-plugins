@@ -38,8 +38,10 @@ function collectRecords() {
       else if (e.name.endsWith('.jsonl')) {
         try {
           const { records: rs, warnings: ws } = parseSessionText(readFileSync(p, 'utf8'));
-          records.push(...rs);
-          warnings.push(...ws);
+          // 逐条 push 而非 spread:超大文件 spread 超 V8 参数上限会抛 RangeError,
+          // 被 catch 吞为 unreadable-file 致整份记录静默丢弃、用量少计。
+          for (const r of rs) records.push(r);
+          for (const w of ws) warnings.push(w);
         } catch {
           warnings.push(`unreadable-file: ${p}`);
         }

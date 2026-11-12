@@ -86,12 +86,15 @@ export function parseNpmAudit(jsonText) {
 }
 
 export function runScanner(bin, args) {
+  // 扫描器可能网络挂起(npm audit)或输出巨大:超时兜底 + 放宽 maxBuffer,
+  // 避免默认 1MB 上限把大报告误报为 spawn 失败。
+  const opts = { encoding: 'utf8', timeout: 120_000, maxBuffer: 16 * 1024 * 1024 };
   if (process.env.SEC_FAKE) {
     const scriptMap = { gitleaks: 'fake-gitleaks.mjs', 'pip-audit': 'fake-pip-audit.mjs', 'cargo-audit': 'fake-cargo-audit.mjs' };
-    const r = spawnSync(process.execPath, [`${process.env.SEC_FAKE}/${scriptMap[bin] ?? 'fake-generic.mjs'}`, ...args], { encoding: 'utf8' });
+    const r = spawnSync(process.execPath, [`${process.env.SEC_FAKE}/${scriptMap[bin] ?? 'fake-generic.mjs'}`, ...args], opts);
     return { code: r.status, stdout: r.stdout ?? '', stderr: r.stderr ?? '', missing: Boolean(r.error) };
   }
-  const r = spawnSync(bin, args, { encoding: 'utf8', shell: false });
+  const r = spawnSync(bin, args, { ...opts, shell: false });
   if (r.error || r.status === null) return { code: null, stdout: '', stderr: String(r.error?.message ?? 'spawn failed'), missing: true };
   return { code: r.status, stdout: r.stdout ?? '', stderr: r.stderr ?? '', missing: false };
 }

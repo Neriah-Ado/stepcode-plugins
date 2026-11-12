@@ -161,12 +161,14 @@ export function runPsql(sql, { databaseUrl } = {}) {
   if (parsed.error) return { invalidCredential: true, guidance: parsed.guidance };
   // C-02：连接串只经 PG* 环境变量传子进程（argv 仅含 SQL），避免密码出现在进程列表/审计日志
   const env = { ...process.env, ...parsed.env };
+  // 超时兜底:pg_sleep/网络挂起不得永久阻塞 stdio 宿主（timeout 是 spawn 选项,不进 argv）
+  const timeout = 30_000;
   if (process.env.PSQL_FAKE) {
-    const r = spawnSync(process.execPath, [process.env.PSQL_FAKE, sql], { encoding: 'utf8', env });
+    const r = spawnSync(process.execPath, [process.env.PSQL_FAKE, sql], { encoding: 'utf8', env, timeout });
     return { code: r.status, stdout: r.stdout ?? '', stderr: r.stderr ?? '', missing: Boolean(r.error) };
   }
   const bin = process.env.PSQL_BIN || 'psql';
-  const r = spawnSync(bin, ['-c', sql], { encoding: 'utf8', shell: false, env });
+  const r = spawnSync(bin, ['-c', sql], { encoding: 'utf8', shell: false, env, timeout });
   if (r.error || r.status === null) return { code: null, stdout: '', stderr: String(r.error?.message ?? 'spawn failed'), missing: true };
   return { code: r.status, stdout: r.stdout ?? '', stderr: r.stderr ?? '', missing: false };
 }
@@ -204,14 +206,55 @@ export function slowQueryAdvice(planText) {
 }
 
 // ---------- v1.2.0 受控写入 ----------
-export function classifyWrite(sql) {
-  const s = String(sql).trim();
-  if (/\b(delete|drop|truncate|alter|grant|revoke|vacuum)\b/i.test(s)) {
-    return { kind: 'reject', reason: 'DELETE/DDL 类操作默认永久拒绝（只读兜底之外的最高红线）' };
+
+/**
+ * 剥离字符串字面量与注释,保留 SQL 结构(字面量/注释以空格占位)。追踪单引号
+ * ('' 转义)、dollar-quoting、行/块注释。后续的多语句探测与危险关键字扫描都
+ * 在剥离后的文本上进行,因此字面量里的 ';' 或 'call'/'create' 等词不会误伤,
+ * 而 "INSERT…; COPY…TO PROGRAM 'cmd'" 这类拼接走私仍被精确拒绝。
+ */
+function stripLiteralsAndComments(sql) {
+  let out = '';
+  let inSingle = false;
+  let dollarTag = null;
+  let inLine = false;
+  let inBlock = false;
+  for (let i = 0; i < sql.length; i += 1) {
+    const c = sql[i];
+    const next = sql[i + 1];
+    if (inLine) { if (c === '\n') { inLine = false; out += c; } else { out += ' '; } continue; }
+    if (inBlock) { if (c === '*' && next === '/') { inBlock = false; i += 1; out += '  '; } else { out += ' '; } continue; }
+    if (inSingle) {
+      if (c === "'") { if (next === "'") { i += 1; out += '  '; } else { inSingle = false; out += ' '; } } else { out += ' '; }
+      continue;
+    }
+    if (dollarTag) {
+      if (sql.startsWith(dollarTag, i)) { i += dollarTag.length - 1; out += ' '.repeat(dollarTag.length); dollarTag = null; } else { out += ' '; }
+      continue;
+    }
+    if (c === '-' && next === '-') { inLine = true; i += 1; out += '  '; continue; }
+    if (c === '/' && next === '*') { inBlock = true; i += 1; out += '  '; continue; }
+    if (c === "'") { inSingle = true; out += ' '; continue; }
+    if (c === '$') {
+      const m = /^\$[A-Za-z0-9_]*\$/.exec(sql.slice(i));
+      if (m) { dollarTag = m[0]; i += m[0].length - 1; out += ' '.repeat(m[0].length); continue; }
+    }
+    out += c;
   }
-  if (/^\s*insert\b/i.test(s)) return { kind: 'insert' };
-  if (/^\s*update\b/i.test(s)) return { kind: 'update' };
-  if (/^\s*merge\b/i.test(s)) return { kind: 'insert' };
+  return out;
+}
+
+export function classifyWrite(sql) {
+  const stripped = stripLiteralsAndComments(String(sql).trim());
+  if (/;\s*\S/.test(stripped)) {
+    return { kind: 'reject', reason: '受控写入仅允许单条语句,禁止多语句拼接（防 COPY/DO 等走私）' };
+  }
+  if (/\b(delete|drop|truncate|alter|grant|revoke|vacuum|copy|call|do|create|execute|prepare|listen|notify|reindex|cluster|refresh|import|discard)\b/i.test(stripped)) {
+    return { kind: 'reject', reason: 'DELETE/DDL/危险命令类操作默认永久拒绝（只读兜底之外的最高红线）' };
+  }
+  if (/^\s*insert\b/i.test(stripped)) return { kind: 'insert' };
+  if (/^\s*update\b/i.test(stripped)) return { kind: 'update' };
+  if (/^\s*merge\b/i.test(stripped)) return { kind: 'insert' };
   return { kind: 'reject', reason: '仅支持受控 INSERT/UPDATE' };
 }
 

@@ -33,12 +33,15 @@ export const GH_AUTH_GUIDANCE = [
 ].join('\n');
 
 export function runGh(args, { timeoutMs = 120000 } = {}) {
+  // CI 日志(gh run view --log)可远超默认 1MB maxBuffer:超限会 ENOBUFS 被误报为
+  // "gh 未安装"。放宽上限,尾部截断仍由调用方负责(C5)。maxBuffer 是 spawn 选项,不进 argv。
+  const maxBuffer = 16 * 1024 * 1024;
   if (process.env.GH_FIXER_FAKE) {
-    const r = spawnSync(process.execPath, [process.env.GH_FIXER_FAKE, ...args], { encoding: 'utf8', timeout: timeoutMs });
+    const r = spawnSync(process.execPath, [process.env.GH_FIXER_FAKE, ...args], { encoding: 'utf8', timeout: timeoutMs, maxBuffer });
     return { code: r.status, stdout: r.stdout ?? '', stderr: r.stderr ?? '', missing: Boolean(r.error) };
   }
   const bin = process.env.GH_FIXER_BIN || 'gh';
-  const r = spawnSync(bin, args, { encoding: 'utf8', timeout: timeoutMs, shell: false });
+  const r = spawnSync(bin, args, { encoding: 'utf8', timeout: timeoutMs, shell: false, maxBuffer });
   if (r.error || r.status === null) {
     return { code: null, stdout: '', stderr: String(r.error?.message ?? 'spawn failed'), missing: true, notLoggedIn: false };
   }
